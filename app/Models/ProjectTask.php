@@ -60,6 +60,7 @@ use Request;
  * @property-read int|null $task_user_count
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask authData($userid = null, $owner = null)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask depData($userids = [])
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask betweenTime($start, $end, $type = 'taskTime')
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newQuery()
@@ -310,6 +311,30 @@ class ProjectTask extends AbstractModel
         if ($owner !== null) {
             $query->where('project_task_users.owner', $owner);
         }
+        return $query;
+    }
+
+    /**
+     * 查询自己负责部门所有任务
+     * @param self $query
+     * @param [] $userids
+     * @return self
+     */
+    public function scopeDepData($query, $userids = [])
+    {
+        $userid = User::userid();
+        $depIds = UserDepartment::where('owner_userid', $userid)->pluck('id')->toArray(); // 获取用户所有的部门id
+        $depIds = implode(',', $depIds);
+        $userids = User::whereRaw("FIND_IN_SET(department,'$depIds')")->pluck('userid')->toArray(); // 查询所有部门下的用户
+        $userids = array_merge($userids, [$userid]);
+        $query
+            ->select([
+                'project_tasks.*',
+                'project_task_users.owner'
+            ])
+            ->selectRaw("1 AS assist")
+            ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
+            ->whereIn('project_task_users.userid', $userids);
         return $query;
     }
 

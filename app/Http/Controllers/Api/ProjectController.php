@@ -117,6 +117,9 @@ class ProjectController extends AbstractController
         if ($all || $user->isAdmin()) {
             $user->identity('admin');
             $builder = Project::allData();
+        } elseif($user->isDepOwner()){
+            // 如果是部门负责人，看到部门的项目
+            $builder = Project::depData();
         } else {
             $builder = Project::authData();
         }

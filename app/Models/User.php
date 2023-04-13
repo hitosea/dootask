@@ -214,6 +214,15 @@ class User extends AbstractModel
     }
 
     /**
+     * 返回是否部门负责人
+     * @return bool
+     */
+    public function isDepOwner()
+    {
+        return UserDepartment::isOwnerByUserid($this->userid);
+    }
+
+    /**
      * 判断是否管理员
      */
     public function checkAdmin()

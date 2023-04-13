@@ -36,6 +36,7 @@ use Request;
  * @property-read int|null $project_user_count
  * @method static \Illuminate\Database\Eloquent\Builder|Project allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|Project authData($userid = null, $owner = null)
+ * @method static \Illuminate\Database\Eloquent\Builder|Project depData($userids = [])
  * @method static \Illuminate\Database\Eloquent\Builder|Project newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Project newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Project onlyTrashed()
@@ -153,6 +154,34 @@ class Project extends AbstractModel
     }
 
     /**
+     * 查询自己负责部门所有任务
+     * @param self $query
+     * @param [] $userids
+     * @return self
+     */
+    public function scopeDepData($query, $userids = [])
+    {
+        $userid = User::userid();
+        $depIds = UserDepartment::where('owner_userid', $userid)->pluck('id')->toArray(); // 获取用户所有的部门id
+        $depIds = implode(',', $depIds);
+        $userids = User::whereRaw("FIND_IN_SET(department,'$depIds')")->pluck('userid')->toArray(); // 查询所有部门下的用户
+        $userids = array_merge($userids, [$userid]);
+        $query
+            ->select([
+                'projects.*',
+                'project_users.owner',
+                'project_users.top_at',
+            ])
+            ->join('project_users', 'projects.id', '=', 'project_users.project_id')
+            // 过滤掉部门下用户的个人项目
+            ->where(function ($query) use ($userid){
+                $query->where('projects.personal', 0)->orWhere('projects.userid', $userid);
+            })
+            ->whereIn('project_users.userid', $userids);
+        return $query;
+    }
+
+    /**
      * 获取任务统计数据
      * @param $userid
      * @return array
@@ -165,7 +194,8 @@ class Project extends AbstractModel
         $array['task_complete'] = $builder->whereNotNull('complete_at')->count();
         $array['task_percent'] = $array['task_num'] ? intval($array['task_complete'] / $array['task_num'] * 100) : 0;
         //
-        $builder = User::auth()->isAdmin() ? ProjectTask::allData() : ProjectTask::authData($userid, 1);
+        $user = User::auth();
+        $builder = $user->isAdmin() ? ProjectTask::allData() : ($user->isDepOwner() ? ProjectTask::depData() : ProjectTask::authData());
         $builder = $builder->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
         $array['task_my_num'] = $builder->count();
         $array['task_my_complete'] = $builder->whereNotNull('project_tasks.complete_at')->count();
@@ -600,7 +630,8 @@ class Project extends AbstractModel
      */
     public static function userProject($project_id, $archived = true, $mustOwner = null)
     {
-        $builder = User::auth()->isAdmin() ? self::allData() : self::authData();
+        $user = User::auth();
+        $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::depData() : self::authData());
         $project = $builder->where('projects.id', intval($project_id))->first();
         if (empty($project)) {
             throw new ApiException('项目不存在或不在成员列表内', [ 'project_id' => $project_id ], -4001);
