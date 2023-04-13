@@ -1,8 +1,15 @@
 <template>
     <div class="common-tag-input" :class="{focus:isFocus}" @paste="pasteText($event)" @click="focus">
-        <div class="tags-item" v-for="(text, index) in disSource">
-            <span class="tags-content" @click.stop="">{{text}}</span><span class="tags-del" @click.stop="delTag(index)">&times;</span>
-        </div>
+            <Draggable
+                :list="disSource"
+                :animation="150"
+                tag="ul"
+                draggable=".column-item"
+            >
+                <div class="tags-item column-item"  v-for="(text, index) in disSource">
+                    <span class="tags-content" @click.stop="edit(disSource,index)">{{text}}</span><span class="tags-del" @click.stop="delTag(index)">&times;</span>
+                </div>
+            </Draggable>
         <textarea
             ref="myTextarea"
             class="tags-input"
@@ -18,12 +25,31 @@
             :disabled="disabled"
             :readonly="readonly"/>
         <span ref="myPlaceholder" v-if="showPlaceholder || tis !== ''" class="tags-placeholder">{{tis || placeholderText}}</span>
+
+        <!--编辑-->
+        <Modal
+            v-model="editShow"
+            :title="$L('编辑')"
+            :mask-closable="false"
+        >
+            <Form ref="addProject" :model="editData" :rules="addRule" label-width="auto" @submit.native.prevent>
+                <FormItem prop="name" :label="$L('名称')">
+                    <Input ref="projectName" type="text" v-model="editData.name"></Input>
+                </FormItem>
+            </Form>
+            <div slot="footer" class="adaption">
+                <Button type="default" @click="editShow=false">{{$L('取消')}}</Button>
+                <Button type="primary" @click="onEdit">{{$L('确定')}}</Button>
+            </div>
+        </Modal>
     </div>
 </template>
 
 <script>
+    import Draggable from 'vuedraggable'
     export default {
         name: 'TagInput',
+        components: {Draggable},
         props: {
             value: {
                 default: ''
@@ -69,7 +95,20 @@
 
                 disSource,
 
-                isFocus: false
+                isFocus: false,
+
+                editShow: false,
+
+                editData:{
+                    index:0,
+                    disSource:[],
+                    name:""
+                },
+                addRule: {
+                    name: [
+                        { required: true, message: this.$L('请填写名称！'), trigger: 'change' },
+                    ]
+                },
             }
         },
         mounted() {
@@ -80,13 +119,15 @@
                 this.wayMinWidth();
             },
             value(val) {
-                let disSource = [];
-                val?.split(",").forEach(item => {
-                    if (item) {
-                        disSource.push(item)
-                    }
-                });
-                this.disSource = disSource;
+                if( val && typeof val == 'string' ){
+                    let disSource = [];
+                    val?.split(",").forEach(item => {
+                        if (item) {
+                            disSource.push(item)
+                        }
+                    });
+                    this.disSource = disSource;
+                }
             },
             disSource(val) {
                 let temp = '';
@@ -109,6 +150,20 @@
             }
         },
         methods: {
+            edit(disSource,index){
+                this.editData.disSource = disSource
+                this.editData.index = index
+                this.editData.name = disSource[index] + ''
+                this.editShow = true;
+            },
+            onEdit(){
+                this.$refs.addProject.validate((valid) => {
+                    if (valid) {
+                        this.editData.disSource[this.editData.index] = this.editData.name
+                        this.editShow = false;
+                    }
+                })
+            },
             focus(option) {
                 const $el = this.$refs.myTextarea;
                 $el.focus(option);
