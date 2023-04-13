@@ -484,6 +484,7 @@ class Project extends AbstractModel
         $name = trim(Arr::get($params, 'name', ''));
         $desc = trim(Arr::get($params, 'desc', ''));
         $flow = trim(Arr::get($params, 'flow', 'close'));
+        $autoAddTask = trim(Arr::get($params, 'auto_add_task', 'close'));
         $isPersonal = intval(Arr::get($params, 'personal'));
         if (mb_strlen($name) < 2) {
             return Base::retError('项目名称不可以少于2个字');
@@ -527,17 +528,51 @@ class Project extends AbstractModel
             }
             $project->personal = 1;
         }
-        AbstractModel::transaction(function() use ($flow, $insertColumns, $project) {
+        AbstractModel::transaction(function() use ($flow, $autoAddTask, $insertColumns, $project, $userid) {
             $project->save();
             ProjectUser::createInstance([
                 'project_id' => $project->id,
                 'userid' => $project->userid,
                 'owner' => 1,
             ])->save();
-            foreach ($insertColumns AS $column) {
-                $column['project_id'] = $project->id;
-                ProjectColumn::createInstance($column)->save();
+            
+            $setting = [];
+            if($autoAddTask == "open"){
+                $setting = Base::setting('priority');
             }
+
+            foreach ($insertColumns AS $column) {
+                // 处理时间
+                $day = 0;
+                preg_match('/\d+D/', $column['name'], $matches);
+                if($days=$matches[0]){
+                    $day = preg_replace('/\D/', '', $days);  
+                    $column['name'] = preg_replace('/\d+D/', '', $column['name']); 
+                }
+                // 添加项目列
+                $column['project_id'] = $project->id;
+                $column = ProjectColumn::createInstance($column);
+                $column->save();
+                // 添加任务
+                if($autoAddTask == "open"){
+                    $start = Carbon::now();
+                    $end = Carbon::now()->addDays($day ? $day : 1);
+                    $task = ProjectTask::addTask([
+                        'parent_id' => 0,
+                        'project_id' => $project->id,
+                        'column_id' => $column->id,
+                        'name' => $column->name,
+                        'times' => [$start->toDateTimeString(),$end->toDateTimeString()],
+                        'owner' => $userid,
+                        'p_level' => $setting[0]['priority'],
+                        'p_name' => $setting[0]['name'],
+                        'p_color' => $setting[0]['color'],
+                        'subtasks' => [],
+                        'top' => 0
+                    ]);
+                }
+            }
+            // throw new ApiException('创建项目聊天室失败');
             $dialog = WebSocketDialog::createGroup($project->name, $project->userid, 'project');
             if (empty($dialog)) {
                 throw new ApiException('创建项目聊天室失败');

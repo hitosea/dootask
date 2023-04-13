@@ -212,8 +212,14 @@
                         <Option v-for="(item, index) in columns" :value="index" :key="index">{{ item.name }}</Option>
                     </Select>
                 </FormItem>
-                <FormItem prop="flow" :label="$L('开启工作流')">
+                <FormItem prop="flow" :label="$L('开启工作流')" style="margin-bottom:10px;">
                     <RadioGroup v-model="addData.flow">
+                        <Radio label="open">{{$L('开启')}}</Radio>
+                        <Radio label="close">{{$L('关闭')}}</Radio>
+                    </RadioGroup>
+                </FormItem>
+                <FormItem prop="flow" :label="$L('自动生成任务')">
+                    <RadioGroup v-model="addData.auto_add_task">
                         <Radio label="open">{{$L('开启')}}</Radio>
                         <Radio label="close">{{$L('关闭')}}</Radio>
                     </RadioGroup>
@@ -341,6 +347,7 @@ export default {
                 name: '',
                 columns: '',
                 flow: 'open',
+                auto_add_task:'open'
             },
             addRule: {
                 name: [
