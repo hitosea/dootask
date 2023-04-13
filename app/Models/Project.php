@@ -165,7 +165,8 @@ class Project extends AbstractModel
         $array['task_complete'] = $builder->whereNotNull('complete_at')->count();
         $array['task_percent'] = $array['task_num'] ? intval($array['task_complete'] / $array['task_num'] * 100) : 0;
         //
-        $builder = ProjectTask::authData($userid, 1)->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
+        $builder = User::auth()->isAdmin() ? ProjectTask::allData() : ProjectTask::authData($userid, 1);
+        $builder = $builder->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
         $array['task_my_num'] = $builder->count();
         $array['task_my_complete'] = $builder->whereNotNull('project_tasks.complete_at')->count();
         $array['task_my_percent'] = $array['task_my_num'] ? intval($array['task_my_complete'] / $array['task_my_num'] * 100) : 0;
@@ -564,7 +565,8 @@ class Project extends AbstractModel
      */
     public static function userProject($project_id, $archived = true, $mustOwner = null)
     {
-        $project = self::authData()->where('projects.id', intval($project_id))->first();
+        $builder = User::auth()->isAdmin() ? self::allData() : self::authData();
+        $project = $builder->where('projects.id', intval($project_id))->first();
         if (empty($project)) {
             throw new ApiException('项目不存在或不在成员列表内', [ 'project_id' => $project_id ], -4001);
         }

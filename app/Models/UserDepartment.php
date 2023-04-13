@@ -149,4 +149,23 @@ class UserDepartment extends AbstractModel
             }
         });
     }
+
+    /**
+     * 判断是否为部门负责人
+     *
+     * @param [type] $userid
+     * @return boolean
+     */
+    public function isOwner($userid) {
+        return $this->owner_userid == $userid;
+    }
+
+    /**
+     * 查询判断是否为部门负责人
+     * @param [type] $userid
+     * @return boolean
+     */
+    public static function isOwnerByUserid($userid) {
+        return self::whereOwnerUserid($userid)->count() > 0;
+    }
 }

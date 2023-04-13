@@ -18,6 +18,7 @@ use App\Models\ProjectTaskFile;
 use App\Models\ProjectTaskFlowChange;
 use App\Models\ProjectUser;
 use App\Models\User;
+use App\Models\UserDepartment;
 use App\Models\WebSocketDialog;
 use App\Module\Base;
 use App\Module\BillExport;
@@ -113,15 +114,15 @@ class ProjectController extends AbstractController
         $keys = Request::input('keys');
         $timerange = TimeRange::parse(Request::input('timerange'));
         //
-        if ($all) {
+        if ($all || $user->isAdmin()) {
             $user->identity('admin');
             $builder = Project::allData();
         } else {
             $builder = Project::authData();
         }
-        // 
+        //
         $usersList = User::whereIn('userid', $builder->distinct()->pluck("userid")->toArray() )
-            ->select("userid","nickname","email")
+            ->select("userid", "nickname", "email")
             ->get();
         //
         if ($getcolumn == 'yes') {
