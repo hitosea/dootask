@@ -40,6 +40,18 @@
                         </Select>
                     </div>
                 </li>
+                <li>
+                    <div class="search-label">
+                        {{$L("项目负责人")}}
+                    </div>
+                    <div class="search-content">
+                        <Select v-model="keys.status" :placeholder="$L('未归档')">
+                            <Option value="">{{$L('未归档')}}</Option>
+                            <Option value="archived">{{$L('已归档')}}</Option>
+                            <Option value="all">{{$L('全部')}}</Option>
+                        </Select>
+                    </div>
+                </li>
                 <li class="search-button">
                     <Tooltip
                         theme="light"
