@@ -42,13 +42,12 @@
                 </li>
                 <li>
                     <div class="search-label">
-                        {{$L("项目负责人")}}
+                        {{$L("负责人")}}
                     </div>
                     <div class="search-content">
-                        <Select v-model="keys.status" :placeholder="$L('未归档')">
-                            <Option value="">{{$L('未归档')}}</Option>
-                            <Option value="archived">{{$L('已归档')}}</Option>
-                            <Option value="all">{{$L('全部')}}</Option>
+                        <Select v-model="keys.principal" :placeholder="$L('全部')">
+                            <Option value=" ">{{$L('全部')}}</Option>
+                            <Option :value="item.userid" v-for="(item, key) in usersList">{{item.nickname}}</Option>
                         </Select>
                     </div>
                 </li>
@@ -187,11 +186,13 @@ export default {
                 },
             ],
             list: [],
-
+                
             page: 1,
             pageSize: 20,
             total: 0,
-            noText: ''
+            noText: '',
+
+            usersList:[]
         }
     },
     mounted() {
@@ -240,6 +241,7 @@ export default {
                 this.page = data.current_page;
                 this.total = data.total;
                 this.list = data.data;
+                this.usersList = data.usersList;
                 this.noText = '没有相关的数据';
             }).catch(() => {
                 this.noText = '数据加载失败';

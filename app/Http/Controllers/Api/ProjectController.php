@@ -119,6 +119,10 @@ class ProjectController extends AbstractController
         } else {
             $builder = Project::authData();
         }
+        // 
+        $usersList = User::whereIn('userid', $builder->distinct()->pluck("userid")->toArray() )
+            ->select("userid","nickname","email")
+            ->get();
         //
         if ($getcolumn == 'yes') {
             $builder->with(['projectColumn']);
@@ -144,22 +148,25 @@ class ProjectController extends AbstractController
             if ($keys['name']) {
                 $builder->where("projects.name", "like", "%{$keys['name']}%");
             }
+            if ($keys['principal']) {
+                $builder->where("projects.userid", "like", "%{$keys['principal']}%");
+            }
         }
         //
         if ($timerange->updated) {
             $builder->where('projects.updated_at', '>', $timerange->updated);
         }
         //
-        $list = $builder->orderByDesc('projects.id')->paginate(Base::getPaginate(100, 50));
+        $list = $builder->clone()->orderByDesc('projects.id')->paginate(Base::getPaginate(100, 50));
         $list->transform(function (Project $project) use ($user) {
             return array_merge($project->toArray(), $project->getTaskStatistics($user->userid));
         });
-        //
         $data = $list->toArray();
         $data['total_all'] = $totalAll ?? $data['total'];
         if ($list->currentPage() === 1) {
             $data['deleted_id'] = Deleted::ids('project', $user->userid, $timerange->deleted);
         }
+        $data['usersList'] = $usersList;
         //
         return Base::retSuccess('success', $data);
     }
