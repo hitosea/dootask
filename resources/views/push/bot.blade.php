@@ -108,6 +108,37 @@
     <span style="color:#84c56a">version</span>: 系统版本
 @elseif ($type === 'notice')
     {{$notice}}
+@elseif ($type === 'project_reviewer')
+<b>{{$data->nickname}}提交的「{{$data->project_name}}」延期任务待你审批</b>
+
+申请人：<span style="color:#84c56a">{{$data->nickname}}</span>
+
+<b>审批事由</b>
+申请天数：<span style="color:#84c56a">{{$data->days}}</span>
+申请原因：<span style="color:#84c56a">{{$data->reason}}</span>
+申请时间：<span style="color:#84c56a">{{$data->created_at}}</span>
+
+    @if ($action === 'pass')
+        <span style="color:#84c56a">已同意</span>
+    @elseif ($action === 'refuse')
+        <span style="color:#84c56a">已拒绝</span>
+    @else
+        <span style="color:#84c56a">同意</span>
+        <span style="color:#84c56a">拒绝</span>
+    @endif
+
+@elseif ($type === 'project_submitter')
+    @if ($action === 'pass')
+        <b>您发起的「{{$data->project_name}}」延期任务已通过</b>
+    @else
+        <b>您发起的「{{$data->project_name}}」延期任务被{{$data->nickname}}拒绝</b>
+    @endif
+
+<b>审批事由</b>
+申请天数：<span style="color:#84c56a">{{$data->days}}</span>
+申请原因：<span style="color:#84c56a">{{$data->reason}}</span>
+申请时间：<span style="color:#84c56a">{{$data->created_at}}</span>
+<span style="color:#84c56a">查看详情</span>
 @else
     你好，我是你的机器人助理，你可以发送 <span style="color:#84c56a">/help</span> 查看帮助菜单。
 @endif
