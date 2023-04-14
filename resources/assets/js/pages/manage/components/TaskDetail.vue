@@ -264,13 +264,15 @@
                                     @on-open-change="timeChange"
                                     @on-clear="timeClear"
                                     @on-ok="timeOk"
-                                    transfer>
+                                    transfer
+                                >
                                     <div class="picker-time">
-                                        <div @click="openTime" class="time">{{taskDetail.end_at ? cutTime : '--'}}</div>
+                                        <div @click="isShowExtension ? extension() : openTime()" class="time">{{taskDetail.end_at ? cutTime : '--'}}</div>
                                         <template v-if="!taskDetail.complete_at && taskDetail.end_at">
                                             <Tag v-if="within24Hours(taskDetail.end_at)" color="blue"><i class="taskfont">&#xe71d;</i>{{expiresFormat(taskDetail.end_at)}}</Tag>
                                             <Tag v-if="isOverdue(taskDetail)" color="red">{{$L('超期未完成')}}</Tag>
                                         </template>
+                                        <Button v-if="isShowExtension" type="primary" size="small" @click="extension">申请延期</Button>
                                     </div>
                                 </DatePicker>
                             </li>
@@ -453,6 +455,27 @@
             </div>
         </div>
         <div v-if="!taskDetail.id" class="task-load"><Loading/></div>
+
+        <!-- 申请延期 -->
+        <Modal v-model="delayShow" :title="$L('申请延期')" :mask-closable="false">
+            <Form ref="addDelay" :model="delayData" :rules="delayRule" label-width="auto" @submit.native.prevent>
+                <FormItem prop="day" :label="$L('延期天数')">
+                    <InputNumber
+                    :max="10000"
+                    v-model="delayData.day"
+                    :min="1"
+                    :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                    :parser="value => value.replace(/\$\s?|(,*)/g, '')"></InputNumber>
+                </FormItem>
+                <FormItem prop="remarks" :label="$L('延期原因')" style="margin-bottom:10px;">
+                    <Input type="textarea" v-model="delayData.remarks"></Input>
+                </FormItem>
+            </Form>
+            <div slot="footer" class="adaption">
+                <Button type="default" @click="delayShow=false">{{$L('取消')}}</Button>
+                <Button type="primary" :loading="loadIng > 0" @click="onDelay">{{$L('确定')}}</Button>
+            </div>
+        </Modal>
     </div>
 </template>
 
@@ -571,7 +594,23 @@ export default {
                 {key: 'month', label: '每月'},
                 {key: 'year', label: '每年'},
                 {key: 'custom', label: '自定义'},
-            ]
+            ],
+
+            isShowExtension:true,
+            delayShow:false,
+            loadIng:false,
+            delayData: {
+                day: 1,
+                remarks: '',
+            },
+            delayRule: {
+                day: [
+                    { type: 'number', required: true, trigger: 'change' },
+                ],
+                remarks: [
+                    { required: true, message: this.$L('请填写延期原因！'), trigger: 'change' },
+                ]
+            },
         }
     },
 
@@ -1515,6 +1554,33 @@ export default {
                 okText: '立即下载',
                 onOk: () => {
                     this.$store.dispatch('downUrl', $A.apiUrl(`project/task/filedown?file_id=${file.id}`))
+                }
+            });
+        },
+
+        extension(){
+            this.delayShow = true;
+        },
+
+        onDelay(){
+            this.$refs.addDelay.validate((valid) => {
+                if (valid) {
+                    this.loadIng++;
+                    this.$store.dispatch("call", {
+                        url: 'project/add',
+                        data: this.delayData,
+                    }).then(({data, msg}) => {
+                        $A.messageSuccess(msg);
+                        this.delayShow = false;
+                        this.$refs.addDelay.resetFields();
+
+                        // this.$store.dispatch("saveProject", data);
+                        // this.toggleRoute('project', {projectId: data.id})
+                    }).catch(({msg}) => {
+                        $A.modalError(msg);
+                    }).finally(_ => {
+                        this.loadIng--;
+                    });
                 }
             });
         }

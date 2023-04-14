@@ -1803,6 +1803,9 @@ class ProjectController extends AbstractController
         $type = Request::input('type', 'delete');
         //
         $task = ProjectTask::userTask($task_id, null, $type !== 'recovery', true);
+        if($task->is_default && $task->userid != User::userid()){
+            throw new ApiException('仅限项目创建者操作');
+        }
         if ($type == 'recovery') {
             $task->restoreTask();
             return Base::retSuccess('操作成功', ['id' => $task->id]);

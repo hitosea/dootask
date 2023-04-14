@@ -25,23 +25,6 @@
             :disabled="disabled"
             :readonly="readonly"/>
         <span ref="myPlaceholder" v-if="showPlaceholder || tis !== ''" class="tags-placeholder">{{tis || placeholderText}}</span>
-
-        <!--编辑-->
-        <Modal
-            v-model="editShow"
-            :title="$L('编辑')"
-            :mask-closable="false"
-        >
-            <Form ref="addProject" :model="editData" :rules="addRule" label-width="auto" @submit.native.prevent>
-                <FormItem prop="name" :label="$L('名称')">
-                    <Input ref="projectName" type="text" v-model="editData.name"></Input>
-                </FormItem>
-            </Form>
-            <div slot="footer" class="adaption">
-                <Button type="default" @click="editShow=false">{{$L('取消')}}</Button>
-                <Button type="primary" @click="onEdit">{{$L('确定')}}</Button>
-            </div>
-        </Modal>
     </div>
 </template>
 
@@ -154,15 +137,21 @@
                 this.editData.disSource = disSource
                 this.editData.index = index
                 this.editData.name = disSource[index] + ''
-                this.editShow = true;
-            },
-            onEdit(){
-                this.$refs.addProject.validate((valid) => {
-                    if (valid) {
-                        this.editData.disSource[this.editData.index] = this.editData.name
-                        this.editShow = false;
-                    }
-                })
+                $A.modalInput({
+                    title: `编辑`,
+                    placeholder: `请输入名称`,
+                    okText: "确定",
+                    value: disSource[index] + '',
+                    onOk: (desc) => {
+                        if (!desc) {
+                            return `请输入名称`
+                        }
+                        this.editData.name = desc
+                        this.editData.disSource[this.editData.index] = desc
+                        this.$set(this.disSource,this.editData.index,desc)
+                        return false
+                    },
+                });
             },
             focus(option) {
                 const $el = this.$refs.myTextarea;

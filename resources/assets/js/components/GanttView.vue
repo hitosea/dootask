@@ -289,11 +289,11 @@ export default {
             if (typeof item[type] !== "number") {
                 this.$set(item, type, 0);
             }
-            this.mouseBak = {
-                type: type,
-                clientX: e.clientX,
-                value: item[type],
-            };
+            // this.mouseBak = {
+            //     type: type,
+            //     clientX: e.clientX,
+            //     value: item[type],
+            // };
             this.mouseItem = item;
             this.dateMove = null;
         },

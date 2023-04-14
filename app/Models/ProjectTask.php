@@ -369,6 +369,7 @@ class ProjectTask extends AbstractModel
         $p_name     = $data['p_name'];
         $p_color    = $data['p_color'];
         $top        = intval($data['top']);
+        $is_default = $data['is_default'] ?: 0;
         $userid     = User::userid();
         //
         if (ProjectTask::whereProjectId($project_id)
@@ -398,6 +399,7 @@ class ProjectTask extends AbstractModel
             'p_level' => $p_level,
             'p_name' => $p_name,
             'p_color' => $p_color,
+            'is_default' => $is_default,
         ]);
         if ($content) {
             $task->desc = Base::getHtml($content, 100);

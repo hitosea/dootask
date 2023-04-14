@@ -536,18 +536,22 @@ class Project extends AbstractModel
                 'owner' => 1,
             ])->save();
             
-            $setting = [];
-            if($autoAddTask == "open"){
-                $setting = Base::setting('priority');
+            // 添加工作流
+            if ($flow == 'open') {
+                $project->addFlow(Base::json2array('[{"id":-10,"name":"待处理","status":"start","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-11,"name":"进行中","status":"progress","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-12,"name":"待测试","status":"test","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-13,"name":"已完成","status":"end","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-14,"name":"已取消","status":"end","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0}]'));
             }
 
+            // 
+            $day = 0;
+            $endTime = "";
             foreach ($insertColumns AS $column) {
                 // 处理时间
-                $day = 0;
                 preg_match('/\d+D/', $column['name'], $matches);
-                if($days=$matches[0]){
-                    $day = preg_replace('/\D/', '', $days);  
+                if($matches[0]){
                     $column['name'] = preg_replace('/\d+D/', '', $column['name']); 
+                    $day = $day + preg_replace('/\D/', '', $matches[0]);  
+                }else{
+                    $day = $day + 1;
                 }
                 // 添加项目列
                 $column['project_id'] = $project->id;
@@ -555,34 +559,32 @@ class Project extends AbstractModel
                 $column->save();
                 // 添加任务
                 if($autoAddTask == "open"){
-                    $start = Carbon::now();
-                    $end = Carbon::now()->addDays($day ? $day : 1);
-                    $task = ProjectTask::addTask([
+                    $start = $endTime ? $endTime : Carbon::now()->toDateTimeString();
+                    $endTime = Carbon::now()->addDays($day)->toDateTimeString();
+                    $setting = Base::setting('priority');
+                    ProjectTask::addTask([
                         'parent_id' => 0,
                         'project_id' => $project->id,
                         'column_id' => $column->id,
                         'name' => $column->name,
-                        'times' => [$start->toDateTimeString(),$end->toDateTimeString()],
+                        'times' => [$start,$endTime],
                         'owner' => $userid,
                         'p_level' => $setting[0]['priority'],
                         'p_name' => $setting[0]['name'],
                         'p_color' => $setting[0]['color'],
                         'subtasks' => [],
-                        'top' => 0
+                        'top' => 0,
+                        'is_default' => 1
                     ]);
                 }
             }
-            // throw new ApiException('创建项目聊天室失败');
+            // 
             $dialog = WebSocketDialog::createGroup($project->name, $project->userid, 'project');
             if (empty($dialog)) {
                 throw new ApiException('创建项目聊天室失败');
             }
             $project->dialog_id = $dialog->id;
             $project->save();
-            //
-            if ($flow == 'open') {
-                $project->addFlow(Base::json2array('[{"id":-10,"name":"待处理","status":"start","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-11,"name":"进行中","status":"progress","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-12,"name":"待测试","status":"test","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-13,"name":"已完成","status":"end","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-14,"name":"已取消","status":"end","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0}]'));
-            }
         });
         //
         $data = Project::find($project->id);
