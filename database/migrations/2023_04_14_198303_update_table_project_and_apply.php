@@ -28,6 +28,7 @@ class UpdateTableProjectAndApply extends Migration
                 $table->bigInteger('project_id')->nullable()->default(0)->comment('项目ID');
                 $table->bigInteger('task_id')->nullable()->default(0)->comment('任务ID');
                 $table->bigInteger('userid')->nullable()->default(0)->comment('用户ID');
+                $table->string('msg_id', 255)->nullable()->default('')->comment('消息ID');
                 $table->integer('days')->nullable()->default(0)->comment('申请天数');
                 $table->string('reason', 255)->nullable()->default('')->comment('申请理由');
                 $table->bigInteger('audit_userid')->nullable()->default(0)->comment('审核人');
