@@ -448,7 +448,7 @@ class ProjectTask extends AbstractModel
         foreach ($owner as $uid) {
             if (intval($uid) == 0) continue;
             if (!ProjectUser::whereProjectId($project_id)->whereUserid($uid)->exists()) {
-                throw new ApiException($retPre . '负责人填写错误');
+                throw new ApiException("仅限{$retPre}负责人操作");
             }
             if (ProjectTask::authData($uid)
                     ->whereNull('project_tasks.complete_at')
