@@ -117,6 +117,9 @@ class ProjectController extends AbstractController
         if ($all || $user->isAdmin()) {
             $user->identity('admin');
             $builder = Project::allData();
+        } elseif($user->isDepOwner()){
+            // 如果是部门负责人，看到部门的项目
+            $builder = Project::depData();
         } else {
             $builder = Project::authData();
         }
@@ -800,7 +803,7 @@ class ProjectController extends AbstractController
             return Base::retError('列表不存在');
         }
         // 项目
-        Project::userProject($column->project_id);
+        Project::userProject($column->project_id, true, true);
         //
         if (Arr::exists($data, 'name') && $column->name != $data['name']) {
             $column->addLog("修改列表名称：{$column->name} => {$data['name']}");
@@ -1707,7 +1710,7 @@ class ProjectController extends AbstractController
         //
         $task_id = intval(Request::input('task_id'));
         //
-        $task = ProjectTask::userTask($task_id);
+        $task = ProjectTask::userTask($task_id, true, true, true);
         //
         if ($task->parent_id > 0) {
             return Base::retError('子任务不支持此功能');
