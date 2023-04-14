@@ -629,4 +629,18 @@ class User extends AbstractModel
         }
         return $botUser;
     }
+
+    /**
+     * 返回部门负责人Ids
+     * @return self|null
+     */
+    public function getDepOwner()
+    {
+        $user = $this;
+        return self::select("userid","identity","email", "nickname")
+            ->whereIn('userid',function ($q) use ($user){
+                $q->select('owner_userid')->from('user_departments')->whereIn("id",$user->department);
+            })
+            ->get();
+    }
 }

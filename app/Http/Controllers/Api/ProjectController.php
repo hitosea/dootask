@@ -2,36 +2,38 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\ApiException;
-use App\Models\AbstractModel;
-use App\Models\Deleted;
-use App\Models\File;
-use App\Models\FileContent;
-use App\Models\Project;
-use App\Models\ProjectColumn;
-use App\Models\ProjectFlow;
-use App\Models\ProjectFlowItem;
-use App\Models\ProjectInvite;
-use App\Models\ProjectLog;
-use App\Models\ProjectTask;
-use App\Models\ProjectTaskFile;
-use App\Models\ProjectTaskFlowChange;
-use App\Models\ProjectUser;
-use App\Models\User;
-use App\Models\UserDepartment;
-use App\Models\WebSocketDialog;
-use App\Module\Base;
-use App\Module\BillExport;
-use App\Module\BillMultipleExport;
-use App\Module\Doo;
-use App\Module\TimeRange;
-use Carbon\Carbon;
-use Illuminate\Support\Arr;
-use Madzipper;
-use Redirect;
 use Request;
-use Response;
 use Session;
+use Redirect;
+use Response;
+use Madzipper;
+use Carbon\Carbon;
+use App\Module\Doo;
+use App\Models\File;
+use App\Models\User;
+use App\Module\Base;
+use App\Models\Deleted;
+use App\Models\Project;
+use App\Module\TimeRange;
+use App\Models\ProjectLog;
+use App\Module\BillExport;
+use App\Models\FileContent;
+use App\Models\ProjectFlow;
+use App\Models\ProjectTask;
+use App\Models\ProjectUser;
+use Illuminate\Support\Arr;
+use App\Models\AbstractModel;
+use App\Models\ProjectApplie;
+use App\Models\ProjectColumn;
+use App\Models\ProjectInvite;
+use App\Models\UserDepartment;
+use App\Models\ProjectFlowItem;
+use App\Models\ProjectTaskFile;
+use App\Models\WebSocketDialog;
+use App\Exceptions\ApiException;
+use App\Module\BillMultipleExport;
+use App\Models\ProjectTaskFlowChange;
+use Maatwebsite\Excel\Concerns\ToArray;
 
 /**
  * @apiDefine project
@@ -2132,5 +2134,47 @@ class ProjectController extends AbstractController
             'id' => $projectUser->project_id,
             'top_at' => $projectUser->top_at?->toDateTimeString(),
         ]);
+    }
+
+    /**
+     * @api {get} api/project/task/delay          32. 任务延期
+     *
+     * @apiDescription 需要token身份（限：项目、任务负责人）
+     * @apiVersion 1.0.0
+     * @apiGroup project
+     * @apiName task__delay
+     *
+     * @apiParam {Number} task_id               任务ID
+     * @apiParam {String} [type]                类型
+     * - add：归档（默认）
+     * - recovery：还原归档
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function task__delay()
+    {
+        $user = User::auth();
+        //
+        $task_id = intval(Request::input('task_id'));
+        $days = intval(Request::input('days', 1));
+        $reason = Request::input('reason', '');
+        //
+        $task = ProjectTask::userTask($task_id, true, true, true);
+        //
+        if ($task->parent_id > 0) {
+            return Base::retError('子任务不支持此功能');
+        }
+        //
+        ProjectApplie::add($user,[
+            'project_id'  => $task->project_id,
+            'task_id'  => $task->id,
+            'userid'  => $user->userid,
+            'days'  => $days,
+            'reason'  => $reason,
+        ]);
+        // 
+        return Base::retSuccess('操作成功');
     }
 }

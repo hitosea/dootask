@@ -459,16 +459,16 @@
         <!-- 申请延期 -->
         <Modal v-model="delayShow" :title="$L('申请延期')" :mask-closable="false">
             <Form ref="addDelay" :model="delayData" :rules="delayRule" label-width="auto" @submit.native.prevent>
-                <FormItem prop="day" :label="$L('延期天数')">
+                <FormItem prop="days" :label="$L('延期天数')">
                     <InputNumber
                     :max="10000"
-                    v-model="delayData.day"
+                    v-model="delayData.days"
                     :min="1"
                     :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
                     :parser="value => value.replace(/\$\s?|(,*)/g, '')"></InputNumber>
                 </FormItem>
-                <FormItem prop="remarks" :label="$L('延期原因')" style="margin-bottom:10px;">
-                    <Input type="textarea" v-model="delayData.remarks"></Input>
+                <FormItem prop="reason" :label="$L('延期原因')" style="margin-bottom:10px;">
+                    <Input type="textarea" v-model="delayData.reason"></Input>
                 </FormItem>
             </Form>
             <div slot="footer" class="adaption">
@@ -600,14 +600,15 @@ export default {
             delayShow:false,
             loadIng:false,
             delayData: {
-                day: 1,
-                remarks: '',
+                task_id:this.taskId,
+                days: 1,
+                reason: '',
             },
             delayRule: {
-                day: [
+                days: [
                     { type: 'number', required: true, trigger: 'change' },
                 ],
-                remarks: [
+                reason: [
                     { required: true, message: this.$L('请填写延期原因！'), trigger: 'change' },
                 ]
             },
@@ -1567,13 +1568,12 @@ export default {
                 if (valid) {
                     this.loadIng++;
                     this.$store.dispatch("call", {
-                        url: 'project/add',
+                        url: 'project/task/delay',
                         data: this.delayData,
                     }).then(({data, msg}) => {
                         $A.messageSuccess(msg);
                         this.delayShow = false;
                         this.$refs.addDelay.resetFields();
-
                         // this.$store.dispatch("saveProject", data);
                         // this.toggleRoute('project', {projectId: data.id})
                     }).catch(({msg}) => {
