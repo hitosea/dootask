@@ -109,36 +109,36 @@
 @elseif ($type === 'notice')
     {{$notice}}
 @elseif ($type === 'project_reviewer')
-<b>{{$data->nickname}}提交的「{{$data->project_name}}」延期任务待你审批</b>
-
-申请人：<span style="color:#84c56a">{{$data->nickname}}</span>
-
-<b>审批事由</b>
-申请天数：<span style="color:#84c56a">{{$data->days}}</span>
-申请原因：<span style="color:#84c56a">{{$data->reason}}</span>
-申请时间：<span style="color:#84c56a">{{$data->created_at}}</span>
-
-    @if ($action === 'pass')
-        <span style="color:#84c56a">已同意</span>
-    @elseif ($action === 'refuse')
-        <span style="color:#84c56a">已拒绝</span>
-    @else
-        <span style="color:#84c56a">同意</span>
-        <span style="color:#84c56a">拒绝</span>
-    @endif
-
+    <span class="open-review-details" data-id="{{$data->id}}"><b>提交的「{{$data->project_name}}」延期任务待你审批</b>
+    <div class="cause"><span>申请人：<span style="color:#84c56a">{{$data->nickname}}</span></span>
+        <b>审批事由</b>
+        <span>申请天数：<span style="color:#84c56a">{{$data->days}}天</span></span>
+        <span>申请原因：<span style="color:#84c56a">{{$data->reason}}</span></span>
+        <span>申请时间：<span style="color:#84c56a">{{$data->created_at}}</span></span>
+    </div><div class="btn-raw">
+        @if ($action === 'pass')
+            <Button type="button" class="ivu-btn ivu-btn-small" style="flex: 1;">已同意</Button>
+        @elseif ($action === 'refuse')
+            <Button type="button" class="ivu-btn ivu-btn-small" style="flex: 1;">已拒绝</Button>
+        @else
+            <Button type="button" class="ivu-btn ivu-btn-primary ivu-btn-small" style="flex: 1;">同意</Button>
+            <Button type="button" class="ivu-btn ivu-btn-error ivu-btn-small" style="flex: 1;">拒绝</Button>
+        @endif
+    </div></span>
 @elseif ($type === 'project_submitter')
-    @if ($action === 'pass')
-        <b>您发起的「{{$data->project_name}}」延期任务已通过</b>
-    @else
-        <b>您发起的「{{$data->project_name}}」延期任务被{{$data->nickname}}拒绝</b>
-    @endif
-
-<b>审批事由</b>
-申请天数：<span style="color:#84c56a">{{$data->days}}</span>
-申请原因：<span style="color:#84c56a">{{$data->reason}}</span>
-申请时间：<span style="color:#84c56a">{{$data->created_at}}</span>
-<span style="color:#84c56a">查看详情</span>
+    <span class="open-review-details" data-id="{{$data->id}}"><b>@if ($action === 'pass')您发起的延期任务「{{$data->project_name}}」已通过 @else 您发起的延期任务「{{$data->project_name}}」被{{$data->nickname}}拒绝@endif</b>
+    <div class="cause"><span>申请人：<span style="color:#84c56a">{{$data->nickname}}</span></span>
+        <b>审批事由</b>
+        <span>申请天数：<span style="color:#84c56a">{{$data->days}}天</span></span>
+        <span>申请原因：<span style="color:#84c56a">{{$data->reason}}</span></span>
+        <span>申请时间：<span style="color:#84c56a">{{$data->created_at}}</span></span>
+    </div><div class="btn-raw">
+        @if ($action === 'pass')
+            <Button type="button" class="ivu-btn ivu-btn-small" style="flex: 1;">已同意</Button>
+        @else
+            <Button type="button" class="ivu-btn ivu-btn-small" style="flex: 1;">已拒绝</Button>
+        @endif
+    </div></span>
 @else
     你好，我是你的机器人助理，你可以发送 <span style="color:#84c56a">/help</span> 查看帮助菜单。
 @endif
