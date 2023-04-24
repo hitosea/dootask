@@ -340,7 +340,6 @@
                             if (e.key === 'Backspace') {
                                 setTimeout(()=>{
                                     let node = editor.selection.getNode();
-                                    console.log(node)
                                     if ($(node).is(".task-open")){
                                         node.remove();
                                     }
