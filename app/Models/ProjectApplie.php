@@ -83,9 +83,11 @@ class ProjectApplie extends AbstractModel
     public function applyMsg($type, $action = '', $applies, $dialog, $botUser, $toUser)
     {
         $project = Project::find($applies->project_id);
+        $projectTask = ProjectTask::find($applies->task_id);
         $data = [
             'id' => $applies->id,
             'task_id' => $applies->task_id,
+            'task_name' => $projectTask->name,
             'nickname' => User::userid2nickname($applies->userid),
             'project_name' => $project->name,
             'days' => $applies->days, //申请天数
@@ -130,7 +132,7 @@ class ProjectApplie extends AbstractModel
     public function updateStatus(int $status,$reason='')
     {
         $this->status = $status;
-        $this->reason = $reason;
+        $this->status_reason = $reason;
         $res = $this->save();
         // 推送提醒
         $toUser = [$this->userid];

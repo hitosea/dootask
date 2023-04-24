@@ -2123,9 +2123,8 @@ class ProjectController extends AbstractController
      * @apiName task__delay
      *
      * @apiParam {Number} task_id               任务ID
-     * @apiParam {String} [type]                类型
-     * - add：归档（默认）
-     * - recovery：还原归档
+     * @apiParam {Number} [days]                天数
+     * @apiParam {String} [reason]              原因
      *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -2152,6 +2151,41 @@ class ProjectController extends AbstractController
             'days'  => $days,
             'reason'  => $reason,
         ]);
+        //
+        return Base::retSuccess('操作成功');
+    }
+
+    /**
+     * @api {get} api/project/task/delayApprove          32. 任务延期 - 审批
+     *
+     * @apiDescription 需要token身份（限：项目、任务负责人）
+     * @apiVersion 1.0.0
+     * @apiGroup project
+     * @apiName task__delayApprove
+     *
+     * @apiParam {Number} id                    审批ID
+     * @apiParam {Number} pass                  是否通过
+     * @apiParam {String} reason                原因
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function task__delayApprove()
+    {
+        User::auth();
+        //
+        $id = intval(Request::input('id'));
+        $pass = intval(Request::input('pass', true));
+        $reason = Request::input('reason', '');
+        //
+        $applie = ProjectApplie::find($id);
+        //
+        if (!$applie) {
+            return Base::retError('无申请记录');
+        }
+        //
+        $applie->updateStatus($pass ? 1 : 2, $reason);
         //
         return Base::retSuccess('操作成功');
     }

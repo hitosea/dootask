@@ -2363,23 +2363,35 @@ export default {
             let domAudits = $(target).parents(".open-review-details")
             if( domAudits.length > 0 ){
                 let dataId = domAudits[0].getAttribute("data-id")
-                let dataTaskId = domAudits[0].getAttribute("data-task-id")
-
                 // 同意
-                if($(target).is(".ivu-btn-error")){
-                    console.log("同意",dataId)
+                if($(target).is(".ivu-btn-primary") || $(target).is(".ivu-btn-error")){
+                    var type = $(target).is(".ivu-btn-primary")
+                    $A.modalInput({
+                        title: `审批`,
+                        placeholder: `请输入审批意见`,
+                        type:"textarea",
+                        okText: type == 1 ? "同意" : "拒绝",
+                        onOk: (desc) => {
+                            if (type !=1 && !desc) {
+                                return `请输入审批意见`
+                            }
+                            this.$store.dispatch("call", {
+                                url: 'project/task/delayApprove',
+                                data: {
+                                    id: dataId,
+                                    pass: type == 1,
+                                    reason: desc,
+                                }
+                            }).then(({msg}) => {
+                                $A.messageSuccess(msg);
+                            }).catch(({msg}) => {
+                                $A.modalError(msg);
+                            });
+                            return false
+                        }
+                    });
                     return;
                 }
-
-                // 拒绝
-                if($(target).is(".ivu-btn-primary")){
-                    console.log("拒绝",dataId)
-                    return;
-                }
-
-                // 详情
-                this.$store.dispatch("openTask", $A.runNum(dataTaskId));
-                return;
             }
 
             switch (target.nodeName) {

@@ -109,7 +109,7 @@
 @elseif ($type === 'notice')
     {{$notice}}
 @elseif ($type === 'project_reviewer')
-    <span class="open-review-details" data-id="{{$data->id}}" data-task-id="{{$data->task_id}}"><b>提交的延期任务「{{$data->project_name}}」待你审批</b>
+    <span class="open-review-details" data-id="{{$data->id}}"><b>提交的延期任务「<span data-id="{{$data->task_id}}" class="mention task">{{$data->task_name}}</span>」待你审批</b>
     <div class="cause"><span>申请人：<span style="color:#84c56a">{{$data->nickname}}</span></span>
         <b>审批事由</b>
         <span>申请天数：<span style="color:#84c56a">{{$data->days}}天</span></span>
@@ -126,7 +126,7 @@
         @endif
     </div></span>
 @elseif ($type === 'project_submitter')
-    <span class="open-review-details" data-id="{{$data->id}}" data-task-id="{{$data->task_id}}"><b>@if ($action === 'pass')您发起的延期任务「{{$data->project_name}}」已通过 @else 您发起的延期任务「{{$data->project_name}}」被{{$data->nickname}}拒绝@endif</b>
+    <span class="open-review-details" data-id="{{$data->id}}"><b>@if ($action === 'pass')您发起的延期任务「<span data-id="{{$data->task_id}}" class="mention task">{{$data->task_name}}</span>」已通过 @else 您发起的延期任务「<span data-id="{{$data->task_id}}" class="mention task">{{$data->task_name}}</span>」被{{$data->nickname}}拒绝@endif</b>
     <div class="cause"><span>申请人：<span style="color:#84c56a">{{$data->nickname}}</span></span>
         <b>审批事由</b>
         <span>申请天数：<span style="color:#84c56a">{{$data->days}}天</span></span>
