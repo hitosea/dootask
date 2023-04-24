@@ -70,7 +70,6 @@ class ProjectApplie extends AbstractModel
      */
     public function appliesPush($type, $action = '', $applies, $userids)
     {
-        info($userids);
         $botUser = User::botGetOrCreate('approval-alert');
         $toUsers = User::whereIn('userid', $userids)->get()->toArray();
         foreach ($toUsers as $toUser) {
@@ -84,16 +83,15 @@ class ProjectApplie extends AbstractModel
     public function applyMsg($type, $action = '', $applies, $dialog, $botUser, $toUser)
     {
         $project = Project::find($applies->project_id);
-        info($project);
-        info($applies);
         $data = [
+            'id' => $applies->id,
+            'task_id' => $applies->task_id,
             'nickname' => User::userid2nickname($applies->userid),
             'project_name' => $project->name,
             'days' => $applies->days, //申请天数
             'reason' => $applies->reason, //原因说明
             'created_at' => $applies->created_at,
         ];
-        info($data);
         $text = preg_replace("/\n\x20+/", "\n", preg_replace("/^\x20+/", "", view('push.bot', ['type' => $type, 'action' => $action, 'data' => (object)$data])->render()));
         $msg_action = null;
         if ($action == 'pass' || $action == 'refuse') {
@@ -101,7 +99,6 @@ class ProjectApplie extends AbstractModel
             // if($action == 'pass'){
             //     $text = preg_replace("/\n\x20+/", "\n", preg_replace("/^\x20+/", "", view('push.bot', ['type' => $type, 'action' => $action, 'data' => (object)$data])->render()));
             // }
-            info($msg_action);
             // 查找最后一条消息msg_id
             $msg_id = trim($applies->msg_id, ',');
             $msg_id = explode(',', $msg_id);

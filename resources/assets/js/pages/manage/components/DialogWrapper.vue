@@ -2358,6 +2358,30 @@ export default {
             if (this.operateVisible) {
                 return
             }
+
+            // 打开审批详情
+            let domAudits = $(target).parents(".open-review-details")
+            if( domAudits.length > 0 ){
+                let dataId = domAudits[0].getAttribute("data-id")
+                let dataTaskId = domAudits[0].getAttribute("data-task-id")
+
+                // 同意
+                if($(target).is(".ivu-btn-error")){
+                    console.log("同意",dataId)
+                    return;
+                }
+
+                // 拒绝
+                if($(target).is(".ivu-btn-primary")){
+                    console.log("拒绝",dataId)
+                    return;
+                }
+
+                // 详情
+                this.$store.dispatch("openTask", $A.runNum(dataTaskId));
+                return;
+            }
+
             switch (target.nodeName) {
                 case "IMG":
                     if (target.classList.contains('browse')) {
