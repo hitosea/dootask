@@ -2206,12 +2206,12 @@ class ProjectController extends AbstractController
      */
     public function task__correlation()
     {
-        $user = User::auth();
+//        $user = User::auth();
         //
-        $keyword = intval(Request::input('keyword'));
+        $keyword = trim(Request::input('keyword'));
         //
         $builder = ProjectTask::select(["*"]);
-        $builder->whereUserid($user->userid);
+//        $builder->whereUserid($user->userid);
         if ($keyword) {
             $builder->where("name", "like", "%{$keyword}%");
         }
