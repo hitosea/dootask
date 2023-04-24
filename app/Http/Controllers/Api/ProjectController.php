@@ -671,7 +671,7 @@ class ProjectController extends AbstractController
         //
         $project_id = intval(Request::input('project_id'));
         //
-        $project = Project::userProject($project_id, null, true);
+        $project = Project::userProject($project_id, null, true, true);
         //
         $project->deleteProject();
         return Base::retSuccess('删除成功', ['id' => $project->id]);
@@ -732,7 +732,7 @@ class ProjectController extends AbstractController
         $project_id = intval(Request::input('project_id'));
         $name = trim(Request::input('name'));
         // 项目
-        $project = Project::userProject($project_id);
+        $project = Project::userProject($project_id, true, true);
         //
         if (empty($name)) {
             return Base::retError('列表名称不能为空');

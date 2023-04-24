@@ -315,30 +315,6 @@ class ProjectTask extends AbstractModel
     }
 
     /**
-     * 查询自己负责部门所有任务
-     * @param self $query
-     * @param [] $userids
-     * @return self
-     */
-    public function scopeDepData($query, $userids = [])
-    {
-        $userid = User::userid();
-        $depIds = UserDepartment::where('owner_userid', $userid)->pluck('id')->toArray(); // 获取用户所有的部门id
-        $depIds = implode(',', $depIds);
-        $userids = User::whereRaw("FIND_IN_SET(department,'$depIds')")->pluck('userid')->toArray(); // 查询所有部门下的用户
-        $userids = array_merge($userids, [$userid]);
-        $query
-            ->select([
-                'project_tasks.*',
-                'project_task_users.owner'
-            ])
-            ->selectRaw("1 AS assist")
-            ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
-            ->whereIn('project_task_users.userid', $userids);
-        return $query;
-    }
-
-    /**
      * 指定范围内的任务
      * @param $query
      * @param $start
@@ -1512,7 +1488,7 @@ class ProjectTask extends AbstractModel
             }
         }
     }
-    
+
     /**
      * 获取任务
      * @param $task_id
