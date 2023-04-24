@@ -2213,7 +2213,7 @@ class ProjectController extends AbstractController
         $builder = ProjectTask::select(["*"]);
         $builder->whereUserid($user->userid);
         if ($keyword) {
-            $builder->where("email", "like", "%{$keyword}%");
+            $builder->where("name", "like", "%{$keyword}%");
         }
         //
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
