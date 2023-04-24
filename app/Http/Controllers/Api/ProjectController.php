@@ -345,30 +345,8 @@ class ProjectController extends AbstractController
         if (count($userid) > 100) {
             return Base::retError('项目人数最多100个');
         }
-        //
-        $project = Project::userProject($project_id, true, true);
-        //
-        $deleteUser = AbstractModel::transaction(function() use ($project, $userid) {
-            $array = [];
-            foreach ($userid as $uid) {
-                if ($project->joinProject($uid)) {
-                    $array[] = $uid;
-                }
-            }
-            $deleteRows = ProjectUser::whereProjectId($project->id)->whereNotIn('userid', $array)->get();
-            $deleteUser = $deleteRows->pluck('userid');
-            foreach ($deleteRows as $row) {
-                $row->exitProject();
-            }
-            $project->syncDialogUser();
-            $project->addLog("修改项目成员");
-            $project->user_simple = count($array) . "|" . implode(",", array_slice($array, 0, 3));
-            $project->save();
-            return $deleteUser->toArray();
-        });
-        //
-        $project->pushMsg('delete', null, $deleteUser);
-        $project->pushMsg('detail');
+        $project = Project::userProject($project_id, true, true, true);
+        $project = Project::updateProjectUser($project_id, $userid);
         return Base::retSuccess('修改成功', ['id' => $project->id]);
     }
 
@@ -522,7 +500,7 @@ class ProjectController extends AbstractController
         $project_id = intval(Request::input('project_id'));
         $owner_userid = intval(Request::input('owner_userid'));
         //
-        $project = Project::userProject($project_id, true, true);
+        $project = Project::userProject($project_id, true, true, true);
         //
         if (!User::whereUserid($owner_userid)->exists()) {
             return Base::retError('成员不存在');
@@ -627,7 +605,7 @@ class ProjectController extends AbstractController
         //
         $project_id = intval(Request::input('project_id'));
         //
-        $project = Project::userProject($project_id, true, false);
+        $project = Project::userProject($project_id, true, false, true);
         //
         AbstractModel::transaction(function() use ($user, $project) {
             $row = ProjectUser::whereProjectId($project->id)->whereUserid($user->userid)->first();
@@ -663,7 +641,7 @@ class ProjectController extends AbstractController
         $project_id = intval(Request::input('project_id'));
         $type = Request::input('type', 'add');
         //
-        $project = Project::userProject($project_id, $type == 'add', true);
+        $project = Project::userProject($project_id, $type == 'add', true, true);
         //
         if ($type == 'recovery') {
             $project->archivedProject(null);

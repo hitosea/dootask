@@ -2,30 +2,31 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Ldap\LdapUser;
-use App\Models\AbstractModel;
-use App\Models\Meeting;
-use App\Models\Project;
-use App\Models\UmengAlias;
-use App\Models\User;
-use App\Models\UserBot;
-use App\Models\UserCheckinMac;
-use App\Models\UserCheckinRecord;
-use App\Models\UserDelete;
-use App\Models\UserDepartment;
-use App\Models\UserEmailVerification;
-use App\Models\UserTransfer;
-use App\Models\WebSocket;
-use App\Models\WebSocketDialog;
-use App\Models\WebSocketDialogMsg;
-use App\Module\AgoraIO\AgoraTokenGenerator;
-use App\Module\Base;
-use App\Module\Doo;
 use Arr;
 use Cache;
 use Captcha;
-use Carbon\Carbon;
 use Request;
+use Carbon\Carbon;
+use App\Module\Doo;
+use App\Models\User;
+use App\Module\Base;
+use App\Ldap\LdapUser;
+use App\Models\Meeting;
+use App\Models\Project;
+use App\Models\UserBot;
+use App\Models\WebSocket;
+use App\Models\UmengAlias;
+use App\Models\UserDelete;
+use App\Models\ProjectUser;
+use App\Models\UserTransfer;
+use App\Models\AbstractModel;
+use App\Models\UserCheckinMac;
+use App\Models\UserDepartment;
+use App\Models\WebSocketDialog;
+use App\Models\UserCheckinRecord;
+use App\Models\WebSocketDialogMsg;
+use App\Models\UserEmailVerification;
+use App\Module\AgoraIO\AgoraTokenGenerator;
 
 /**
  * @apiDefine users
@@ -141,6 +142,24 @@ class UsersController extends AbstractController
                 'desc' => Doo::translate('注册时系统自动创建项目，你可以自由删除。'),
                 'personal' => 1,
             ], $user->userid);
+        }
+        //
+        // 日常处理项目
+        $project = Project::whereName('日常处理')->whereIsFixed(1)->first();
+        if (!$project) {
+            $project = Project::createProject([
+                'name' => Doo::translate('日常处理'),
+                'desc' => Doo::translate('系统自动创建项目，处理公司日常任务'),
+                'is_fixed' => 1,
+            ], 1);
+            $project = $project['data'] ? $project['data'] : [];
+            $userids = User::where('userid', '>=', 1)->whereBot(0)->pluck('userid')->toArray();
+            $project = Project::updateProjectUser($project, $userids);
+        }else{
+            $projectUser = ProjectUser::whereProjectId($project->id)->whereUserid($user->userid)->first();
+            if(!$projectUser){
+                $project = Project::updateProjectUser($project, [$user->userid]);
+            }
         }
         //
         return Base::retSuccess($type == 'reg' ? "注册成功" : "登录成功", $user);

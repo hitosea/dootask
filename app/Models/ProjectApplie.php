@@ -5,6 +5,38 @@ namespace App\Models;
 use Illuminate\Support\Carbon;
 use App\Exceptions\ApiException;
 
+/**
+ * App\Models\ProjectApplie
+ *
+ * @property int $id
+ * @property int|null $project_id 项目ID
+ * @property int|null $task_id 任务ID
+ * @property int|null $userid 用户ID
+ * @property string|null $msg_id 消息ID
+ * @property int|null $days 申请天数
+ * @property string|null $reason 申请理由
+ * @property int|null $audit_userid 审核人
+ * @property string|null $status_reason 状态原因
+ * @property int|null $status 状态 [0-待审核,1-通过,2-拒绝]
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie query()
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereAuditUserid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereDays($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereMsgId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereProjectId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereStatusReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereTaskId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereUserid($value)
+ * @mixin \Eloquent
+ */
 class ProjectApplie extends AbstractModel
 {
     /**
@@ -38,7 +70,6 @@ class ProjectApplie extends AbstractModel
      */
     public function appliesPush($type, $action = '', $applies, $userids)
     {
-        info($userids);
         $botUser = User::botGetOrCreate('approval-alert');
         $toUsers = User::whereIn('userid', $userids)->get()->toArray();
         foreach ($toUsers as $toUser) {
@@ -52,16 +83,15 @@ class ProjectApplie extends AbstractModel
     public function applyMsg($type, $action = '', $applies, $dialog, $botUser, $toUser)
     {
         $project = Project::find($applies->project_id);
-        info($project);
-        info($applies);
         $data = [
+            'id' => $applies->id,
+            'task_id' => $applies->task_id,
             'nickname' => User::userid2nickname($applies->userid),
             'project_name' => $project->name,
             'days' => $applies->days, //申请天数
             'reason' => $applies->reason, //原因说明
             'created_at' => $applies->created_at,
         ];
-        info($data);
         $text = preg_replace("/\n\x20+/", "\n", preg_replace("/^\x20+/", "", view('push.bot', ['type' => $type, 'action' => $action, 'data' => (object)$data])->render()));
         $msg_action = null;
         if ($action == 'pass' || $action == 'refuse') {
@@ -69,7 +99,6 @@ class ProjectApplie extends AbstractModel
             // if($action == 'pass'){
             //     $text = preg_replace("/\n\x20+/", "\n", preg_replace("/^\x20+/", "", view('push.bot', ['type' => $type, 'action' => $action, 'data' => (object)$data])->render()));
             // }
-            info($msg_action);
             // 查找最后一条消息msg_id
             $msg_id = trim($applies->msg_id, ',');
             $msg_id = explode(',', $msg_id);

@@ -34,6 +34,7 @@ use Request;
  * @property-read int|null $project_log_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectUser> $projectUser
  * @property-read int|null $project_user_count
+ * @property int|null $is_fixed 是否固定
  * @method static \Illuminate\Database\Eloquent\Builder|Project allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|Project authData($userid = null, $owner = null)
  * @method static \Illuminate\Database\Eloquent\Builder|Project depData($userids = [])
@@ -53,8 +54,12 @@ use Request;
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereUserSimple($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereUserid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Project whereIsFixed($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project withTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder|Project withoutTrashed()
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectColumn> $projectColumn
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectLog> $projectLog
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectUser> $projectUser
  * @mixin \Eloquent
  */
 class Project extends AbstractModel
@@ -516,6 +521,7 @@ class Project extends AbstractModel
         $flow = trim(Arr::get($params, 'flow', 'close'));
         $autoAddTask = trim(Arr::get($params, 'auto_add_task', 'close'));
         $isPersonal = intval(Arr::get($params, 'personal'));
+        $isFixed = intval(Arr::get($params, 'is_fixed'));
         if (mb_strlen($name) < 2) {
             return Base::retError('项目名称不可以少于2个字');
         } elseif (mb_strlen($name) > 32) {
@@ -558,6 +564,9 @@ class Project extends AbstractModel
             }
             $project->personal = 1;
         }
+        if ($isFixed) {
+            $project->is_fixed = 1;
+        }
         AbstractModel::transaction(function() use ($flow, $autoAddTask, $insertColumns, $project, $userid) {
             $project->save();
             ProjectUser::createInstance([
@@ -565,21 +574,21 @@ class Project extends AbstractModel
                 'userid' => $project->userid,
                 'owner' => 1,
             ])->save();
-            
+
             // 添加工作流
             if ($flow == 'open') {
                 $project->addFlow(Base::json2array('[{"id":-10,"name":"待处理","status":"start","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-11,"name":"进行中","status":"progress","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-12,"name":"待测试","status":"test","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-13,"name":"已完成","status":"end","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0},{"id":-14,"name":"已取消","status":"end","turns":[-10,-11,-12,-13,-14],"userids":[],"usertype":"add","userlimit":0}]'));
             }
 
-            // 
+            //
             $day = 0;
             $endTime = "";
             foreach ($insertColumns AS $column) {
                 // 处理时间
                 preg_match('/\d+D/', $column['name'], $matches);
                 if($matches[0]){
-                    $column['name'] = preg_replace('/\d+D/', '', $column['name']); 
-                    $day = $day + preg_replace('/\D/', '', $matches[0]);  
+                    $column['name'] = preg_replace('/\d+D/', '', $column['name']);
+                    $day = $day + preg_replace('/\D/', '', $matches[0]);
                 }else{
                     $day = $day + 1;
                 }
@@ -608,7 +617,7 @@ class Project extends AbstractModel
                     ]);
                 }
             }
-            // 
+            //
             $dialog = WebSocketDialog::createGroup($project->name, $project->userid, 'project');
             if (empty($dialog)) {
                 throw new ApiException('创建项目聊天室失败');
@@ -630,7 +639,7 @@ class Project extends AbstractModel
      * @param null|bool $mustOwner true:仅限项目负责人, false:仅限非项目负责人, null:不限制
      * @return self
      */
-    public static function userProject($project_id, $archived = true, $mustOwner = null)
+    public static function userProject($project_id, $archived = true, $mustOwner = null, $isFixed = false)
     {
         $user = User::auth();
         $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::depData() : self::authData());
@@ -650,6 +659,43 @@ class Project extends AbstractModel
         if ($mustOwner === false && $project->owner) {
             throw new ApiException('禁止项目负责人操作', [ 'project_id' => $project_id ]);
         }
+        if ($isFixed === true && $project->is_fixed == 1) {
+            throw new ApiException('项目为固定项目不允许该操作', [ 'project_id' => $project_id ]);
+        }
+        return $project;
+    }
+
+    /**
+     * 更新项目用户
+     *
+     * @param [type] $project
+     * @param [type] $userid
+     * @return object
+     */
+    public static function updateProjectUser($project, $userid)
+    {
+        //
+        $deleteUser = AbstractModel::transaction(function() use ($project, $userid) {
+            $array = [];
+            foreach ($userid as $uid) {
+                if ($project->joinProject($uid)) {
+                    $array[] = $uid;
+                }
+            }
+            $deleteRows = ProjectUser::whereProjectId($project->id)->whereNotIn('userid', $array)->get();
+            $deleteUser = $deleteRows->pluck('userid');
+            foreach ($deleteRows as $row) {
+                $row->exitProject();
+            }
+            $project->syncDialogUser();
+            $project->addLog("修改项目成员");
+            $project->user_simple = count($array) . "|" . implode(",", array_slice($array, 0, 3));
+            $project->save();
+            return $deleteUser->toArray();
+        });
+        //
+        $project->pushMsg('delete', null, $deleteUser);
+        $project->pushMsg('detail');
         return $project;
     }
 }
