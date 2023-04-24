@@ -52,6 +52,24 @@
                 <div>{{$L('正在上传文件...')}}</div>
             </Spin>
         </Modal>
+
+        <Modal
+            v-model="insertTaskModelShow"
+            :title="$L('添加关联任务')"
+            transfer>
+            <Select
+                v-model="todayTask"
+                filterable
+                :remote-method="remoteMethod"
+                @on-query-change="remoteMethodClear"
+                :loading="loadIng > 0">
+                <Option v-for="(option, index) in todayTaskList" :value="option.id" :key="index">{{option.name}}</Option>
+            </Select>
+            <div slot="footer" class="adaption">
+                <Button type="default" @click="insertTaskModelShow=false">{{$L('取消')}}</Button>
+                <Button type="primary" @click="insertTask()">{{$L('插入')}}</Button>
+            </div>
+        </Modal>
     </div>
 </template>
 
@@ -148,7 +166,33 @@
                 uploadIng: 0,
                 uploadFormat: ['jpg', 'jpeg', 'webp', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'esp', 'pdf', 'rar', 'zip', 'gz', 'ai', 'avi', 'bmp', 'cdr', 'eps', 'mov', 'mp3', 'mp4', 'pr', 'psd', 'svg', 'tif'],
                 actionUrl: $A.apiUrl('system/fileupload'),
-                maxSize: 10240
+                maxSize: 10240,
+
+                insertTaskModelShow : false,
+                todayTaskColumns: [
+                    {
+                        title:this.$L(' 任务名'),
+                        key: 'name',
+                        // minWidth: 180,
+                        // render: (h, {row}) => {
+                        //     return h('AutoTip', {
+                        //         style: {
+                        //             color: '#2D8CF0',
+                        //             cursor: 'pointer'
+                        //         },
+                        //         on: {
+                        //             click: () => {
+                        //
+                        //             }
+                        //         }
+                        //     }, row.name)
+                        // }
+                    },
+                ],
+                todayTask:'',
+                todayTaskList: [],
+                todayTaskListNoText: '',
+                loadIng:0,
             };
         },
         mounted() {
@@ -253,16 +297,21 @@
                         this.$emit('editorSave', e);
                     },
                     paste_data_images: true,
+                    // menu: {
+                    //     view: {
+                    //         title: 'View',
+                    //         items: 'code | visualaid visualchars visualblocks | spellchecker | preview fullscreen screenload | showcomments'
+                    //     },
+                    //     insert: {
+                    //         title: "Insert",
+                    //         items: "image link media addcomment pageembed template codesample inserttable | charmap emoticons hr | pagebreak nonbreaking anchor toc | insertdatetime "
+                    //     },
+                    //     help: { title: '', items: 'image' }
+                    // },
                     menu: {
-                        view: {
-                            title: 'View',
-                            items: 'code | visualaid visualchars visualblocks | spellchecker | preview fullscreen screenload | showcomments'
-                        },
-                        insert: {
-                            title: "Insert",
-                            items: "image link media addcomment pageembed template codesample inserttable | charmap emoticons hr | pagebreak nonbreaking anchor toc | insertdatetime | uploadImages | uploadFiles"
-                        }
+                        task: { title: '今日关联任务', items: 'selectTask' }
                     },
+                    menubar: 'file edit insert view format table tools task',
                     codesample_languages: [
                         {text:"HTML/VUE/XML",value:"markup"},
                         {text:"JavaScript",value:"javascript"},
@@ -280,7 +329,14 @@
                     convert_urls:false,
                     toolbar_mode: 'sliding',
                     content_css: this.themeIsDark ? 'dark' : 'default',
+
                     setup: (editor) => {
+                        editor.on('click',  (e) => {
+                            if ($(e.target).is(".task-open")){
+                                this.openTask($(e.target).data('id'))
+                            }
+                        });
+
                         editor.ui.registry.addMenuButton('uploadImages', {
                             text: this.$L('图片'),
                             tooltip: this.$L('上传/浏览 图片'),
@@ -301,41 +357,23 @@
                                 callback(items);
                             }
                         });
-                        editor.ui.registry.addNestedMenuItem('uploadImages', {
-                            icon: 'image',
-                            text: this.$L('上传图片'),
-                            getSubmenuItems: () => {
-                                return [{
-                                    type: 'menuitem',
-                                    text: this.$L('上传本地图片'),
-                                    onAction: () => {
-                                        this.$refs.myUpload.handleClick();
-                                    }
-                                }, {
-                                    type: 'menuitem',
-                                    text: this.$L('浏览已上传图片'),
-                                    onAction: () => {
-                                        this.$refs.myUpload.browsePicture();
-                                    }
-                                }];
-                            }
-                        });
-                        editor.ui.registry.addMenuItem('imagePreview', {
-                            text: this.$L('预览图片'),
-                            onAction: () => {
-                                const array = this.getValueImages();
-                                if (array.length === 0) {
-                                    $A.messageWarning("没有可预览的图片")
-                                    return;
-                                }
-                                let index = 0;
-                                const imgElm = editor.selection.getNode();
-                                if (imgElm && imgElm.nodeName === "IMG") {
-                                    index = array.findIndex(item => item.src === imgElm.getAttribute("src"));
-                                }
-                                this.$store.dispatch("previewImage", {index, list: array})
-                            }
-                        });
+
+                        // editor.ui.registry.addMenuItem('imagePreview', {
+                        //     text: this.$L('预览图片'),
+                        //     onAction: () => {
+                        //         const array = this.getValueImages();
+                        //         if (array.length === 0) {
+                        //             $A.messageWarning("没有可预览的图片")
+                        //             return;
+                        //         }
+                        //         let index = 0;
+                        //         const imgElm = editor.selection.getNode();
+                        //         if (imgElm && imgElm.nodeName === "IMG") {
+                        //             index = array.findIndex(item => item.src === imgElm.getAttribute("src"));
+                        //         }
+                        //         this.$store.dispatch("previewImage", {index, list: array})
+                        //     }
+                        // });
                         editor.ui.registry.addButton('uploadFiles', {
                             text: this.$L('文件'),
                             tooltip: this.$L('上传文件'),
@@ -345,12 +383,13 @@
                                 }
                             }
                         });
-                        editor.ui.registry.addMenuItem('uploadFiles', {
-                            text: this.$L('上传文件'),
+
+                        editor.ui.registry.addMenuItem('selectTask', {
+                            text: this.$L('插入...'),
                             onAction: () => {
-                                if (this.handleBeforeUpload()) {
-                                    this.$refs.fileUpload.handleClick();
-                                }
+                                this.selectTask();
+                                // const editor = tinymce.activeEditor;
+                                // editor.insertContent('<strong>Custom content here</strong>');
                             }
                         });
                         if (isFull) {
@@ -611,6 +650,90 @@
                 //上传前判断
                 return true;
             },
+
+            remoteMethod (query) {
+                if (query !== '') {
+                    this.loadIng++;
+                    this.$store.dispatch("call", {
+                        url: 'project/task/correlation',
+                        data: {
+                            keyword:query,
+                            page: 1,
+                            pagesize: Math.max($A.runNum(this.pageSize), 10),
+                        },
+                    }).then(({data}) => {
+                        this.loadIng--;
+                        this.todayTaskList = data.data;
+                        this.todayTaskListNoText = '没有相关的数据';
+                    }).catch(() => {
+                        this.loadIng--;
+                        this.noText = '数据加载失败';
+                    })
+                } else {
+                    this.todayTask = '';
+                }
+            },
+
+            remoteMethodClear(query){
+                if (query==''){
+                    this.loadIng++;
+                    this.$store.dispatch("call", {
+                        url: 'project/task/correlation',
+                        data: {
+                            keyword:query,
+                            page: 1,
+                            pagesize: Math.max($A.runNum(this.pageSize), 10),
+                        },
+                    }).then(({data}) => {
+                        this.loadIng--;
+                        this.todayTaskList = data.data;
+                        this.todayTaskListNoText = '没有相关的数据';
+                    }).catch(() => {
+                        this.loadIng--;
+                        this.noText = '数据加载失败';
+                    })
+                }
+            },
+
+            // 查找关联任务
+            selectTask() {
+                this.loadIng++;
+                this.$store.dispatch("call", {
+                    url: 'project/task/correlation',
+                    data: {
+                        page: 1,
+                        pagesize: Math.max($A.runNum(this.pageSize), 10),
+                    },
+                }).then(({data}) => {
+                    this.loadIng--;
+                    this.todayTaskList = data.data;
+                    this.insertTaskModelShow = true;
+                    this.todayTaskListNoText = '没有相关的数据';
+                }).catch(() => {
+                    this.loadIng--;
+                    this.noText = '数据加载失败';
+                })
+            },
+
+            // 插入关联任务
+            insertTask() {
+                let editor = tinymce.activeEditor;
+                let id = this.todayTask;
+                let name = '';
+                this.todayTaskList.forEach(item=>{
+                    if (item.id == this.todayTask){
+                        name = item.name
+                    }
+                })
+                let  text = `<a class='task-open' style='cursor: pointer;color:#8bcf70;' data-id='${id}'>[${name}]</a>`
+                editor.execCommand('mceInsertContent',true,text);
+                this.insertTaskModelShow = false;
+            },
+
+            openTask(task) {
+                this.$store.dispatch("openTask", task)
+            },
         }
     }
 </script>
+
