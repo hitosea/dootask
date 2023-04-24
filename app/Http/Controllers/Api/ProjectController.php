@@ -2174,7 +2174,23 @@ class ProjectController extends AbstractController
             'days'  => $days,
             'reason'  => $reason,
         ]);
-        // 
+        //
         return Base::retSuccess('操作成功');
+    }
+
+    // 今日关联任务
+    public function task__correlation()
+    {
+        $user = User::auth();
+        //
+        $project_id = intval(Request::input('project_id'));
+        $task_id = intval(Request::input('task_id'));
+        //
+        $builder = ProjectTask::select(["*"]);
+        $builder->whereUserid($user->userid);
+        //
+        $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
+        //
+        return Base::retSuccess('success', $list);
     }
 }
