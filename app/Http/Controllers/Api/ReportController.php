@@ -7,6 +7,7 @@ use App\Models\AbstractModel;
 use App\Models\ProjectTask;
 use App\Models\Report;
 use App\Models\ReportReceive;
+use App\Models\ReportTask;
 use App\Models\User;
 use App\Module\Base;
 use App\Module\Doo;
@@ -209,6 +210,19 @@ class ReportController extends AbstractController
                 ]);
             }
             $report->save();
+
+            // 更新日报任务关联关系
+            if ($input["task_ids"]) {
+                ReportTask::whereReportId($report->id)->delete();
+                $inArr = [];
+                foreach ($input["task_ids"] as $task_id) {
+                    $inArr[] = [
+                        'task_id' => $task_id,
+                        'report_id' => $report->id,
+                    ];
+                }
+                ReportTask::insert($inArr);
+            }
 
             // 删除关联
             $report->Receives()->delete();

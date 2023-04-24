@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Report;
+use App\Models\ReportTask;
 use Request;
 use Session;
 use Redirect;
@@ -2190,16 +2192,57 @@ class ProjectController extends AbstractController
         return Base::retSuccess('操作成功');
     }
 
-    // 今日关联任务
+    /**
+     * @api {get} api/project/task/correlation          日报今日关联任务
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup project
+     * @apiName task__correlation
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
     public function task__correlation()
     {
         $user = User::auth();
         //
-        $project_id = intval(Request::input('project_id'));
-        $task_id = intval(Request::input('task_id'));
+        $keyword = intval(Request::input('keyword'));
         //
         $builder = ProjectTask::select(["*"]);
         $builder->whereUserid($user->userid);
+        if ($keyword) {
+            $builder->where("email", "like", "%{$keyword}%");
+        }
+        //
+        $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
+        //
+        return Base::retSuccess('success', $list);
+    }
+
+    /**
+     * @api {get} api/project/task/reports          任务相关日报
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup project
+     * @apiName task__reports
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function task__reports()
+    {
+        $user = User::auth();
+        //
+        $task_id = intval(Request::input('task_id'));
+        //
+        $reportIds = ReportTask::whereTaskId($task_id)->pluck('report_id');
+
+        $builder = Report::select(["*"]);
+        $builder->whereIn('id', $reportIds);
         //
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
         //
