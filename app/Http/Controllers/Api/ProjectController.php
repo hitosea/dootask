@@ -2166,7 +2166,7 @@ class ProjectController extends AbstractController
      * @apiName task__delayApprove
      *
      * @apiParam {Number} id                    审批ID
-     * @apiParam {Number} pass                  是否通过
+     * @apiParam {String} pass                  是否通过 [通过-true、不通过-false]
      * @apiParam {String} reason                原因
      *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
@@ -2175,10 +2175,10 @@ class ProjectController extends AbstractController
      */
     public function task__delayApprove()
     {
-        User::auth();
+        $user = User::auth();
         //
         $id = intval(Request::input('id'));
-        $pass = intval(Request::input('pass', true));
+        $pass = Request::input('pass', true);
         $reason = Request::input('reason', '');
         //
         $applie = ProjectApplie::find($id);
@@ -2187,7 +2187,7 @@ class ProjectController extends AbstractController
             return Base::retError('无申请记录');
         }
         //
-        $applie->updateStatus($pass ? 1 : 2, $reason);
+        $applie->updateStatus($user, $pass == 'true' ? 1 : 2, $reason);
         //
         return Base::retSuccess('操作成功');
     }

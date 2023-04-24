@@ -109,7 +109,7 @@
 @elseif ($type === 'notice')
     {{$notice}}
 @elseif ($type === 'project_reviewer')
-    <span class="open-review-details" data-id="{{$data->id}}"><b>提交的延期任务「<span data-id="{{$data->task_id}}" class="mention task">{{$data->task_name}}</span>」待你审批</b>
+    <span class="open-review-details" data-id="{{$data->id}}"><b>{{$data->nickname}}提交的延期任务「<span data-id="{{$data->task_id}}" class="mention task">{{$data->task_name}}</span>」待你审批</b>
     <div class="cause"><span>申请人：<span style="color:#84c56a">{{$data->nickname}}</span></span>
         <b>审批事由</b>
         <span>申请天数：<span style="color:#84c56a">{{$data->days}}天</span></span>

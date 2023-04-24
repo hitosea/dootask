@@ -97,20 +97,15 @@ class ProjectApplie extends AbstractModel
         $text = preg_replace("/\n\x20+/", "\n", preg_replace("/^\x20+/", "", view('push.bot', ['type' => $type, 'action' => $action, 'data' => (object)$data])->render()));
         $msg_action = null;
         if ($action == 'pass' || $action == 'refuse') {
-            // 任务完成，给发起人发送消息
-            // if($action == 'pass'){
-            //     $text = preg_replace("/\n\x20+/", "\n", preg_replace("/^\x20+/", "", view('push.bot', ['type' => $type, 'action' => $action, 'data' => (object)$data])->render()));
-            // }
-            // 查找最后一条消息msg_id
-            $msg_id = trim($applies->msg_id, ',');
-            $msg_id = explode(',', $msg_id);
+            // 审核人即是负责人，更新推送
+            $msg_id = array_filter(explode(',', $applies->msg_id));
             if (is_array($msg_id)) {
                 foreach ($msg_id as $key => $value) {
+                    $msg_action = 'update-'.$value;
                     $msg = WebSocketDialogMsg::sendMsg($msg_action, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
                 }
-                return true;
             }
-            $msg_action = 'update-'.$msg_id;
+            return true;
         }
         $msg = WebSocketDialogMsg::sendMsg($msg_action, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
         // 保存会话关联信息
@@ -124,19 +119,17 @@ class ProjectApplie extends AbstractModel
 
     /**
      * 更新状态
+     * @param User $user
      * @param $id
      * @param $status 状态 [1-通过,2-拒绝]
      * @param $reason 原因
      * @return void
      */
-    public function updateStatus(int $status,$reason='')
+    public function updateStatus(User $user, int $status, $reason='')
     {
         $this->status = $status;
         $this->status_reason = $reason;
         $res = $this->save();
-        // 推送提醒
-        $toUser = [$this->userid];
-        $this->appliesPush('project_reviewer', 'pass', $res, $toUser);
         // 更新任务时间
         if($res && $status == 1){
             $tasks = ProjectTask::where("project_id",$this->project_id)->where("is_default",1)->get();
@@ -171,5 +164,12 @@ class ProjectApplie extends AbstractModel
                 }
             }
         }
+        // 审核人即是负责人，推送提醒
+        $applies = $this;
+        $updateUser = [$user->userid];
+        $this->appliesPush('project_submitter', $status == 1 ? 'pass' : 'refuse', $applies, $updateUser);
+        // 给发起人推送提醒
+        $toUser = [$this->userid];
+        $this->appliesPush('project_submitter', '', $applies, $toUser);
     }
 }

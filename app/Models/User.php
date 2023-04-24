@@ -617,6 +617,9 @@ class User extends AbstractModel
                 case 'bot-manager':
                     $update['nickname'] = '机器人管理';
                     break;
+                case 'approval-alert':
+                    $update['nickname'] = '审批机器人';
+                    break;
             }
         }
         if ($update) {
