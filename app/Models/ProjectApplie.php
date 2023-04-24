@@ -49,14 +49,15 @@ class ProjectApplie extends AbstractModel
         if(self::where('task_id',$data['task_id'])->where('status',0)->exists()){
             throw new ApiException('已存在待处理的申请');
         }
+        $depOwner = $user->getDepOwner();
+        $depOwner = $depOwner->pluck('userid')->toArray();
+        $data['audit_userid'] = implode(',', $depOwner);
         $applies = self::createInstance($data);
         $applies->save();
         // 推送提醒
-        $depOwner = $user->getDepOwner();
-        if( empty($depOwner->toArray()) ){
-            $applies->updateStatus(1,"无部门负责人,自动通过");
+        if( empty($depOwner) ){
+            $applies->updateStatus($user, 1, "无部门负责人,自动通过");
         }else{
-            $depOwner = $depOwner->pluck('userid')->toArray();
             $applies->appliesPush('project_reviewer', 'start', $applies, $depOwner);
         }
         //
