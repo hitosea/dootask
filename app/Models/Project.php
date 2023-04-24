@@ -128,8 +128,13 @@ class Project extends AbstractModel
             ])
             ->leftJoin('project_users', function ($leftJoin) use ($userid) {
                 $leftJoin
+
                     ->on('project_users.userid', '=', DB::raw($userid))
                     ->on('projects.id', '=', 'project_users.project_id');
+            })
+            // 过滤掉部门下用户的个人项目
+            ->where(function ($query) use ($userid){
+                $query->where('projects.personal', 0)->orWhere('projects.userid', $userid);
             });
         return $query;
     }
@@ -168,21 +173,28 @@ class Project extends AbstractModel
     {
         $userid = User::userid();
         $depIds = UserDepartment::where('owner_userid', $userid)->pluck('id')->toArray(); // 获取用户所有的部门id
-        $depIds = implode(',', $depIds);
-        $userids = User::whereRaw("FIND_IN_SET(department,'$depIds')")->pluck('userid')->toArray(); // 查询所有部门下的用户
-        $userids = array_merge($userids, [$userid]);
+
+        // 查询所有部门下的用户
+        $userids = User::where(function ($query) use ($depIds) {
+            foreach ($depIds as $depId) {
+                $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
+            }
+        })->pluck('userid')->toArray();
+
+        $userids = array_unique(array_merge($userids, [$userid]));
         $query
             ->select([
                 'projects.*',
-                'project_users.owner',
+                // 'project_users.owner',
                 'project_users.top_at',
             ])
             ->join('project_users', 'projects.id', '=', 'project_users.project_id')
             // 过滤掉部门下用户的个人项目
-            ->where(function ($query) use ($userid){
+            ->where(function ($query) use ($userid) {
                 $query->where('projects.personal', 0)->orWhere('projects.userid', $userid);
             })
             ->whereIn('project_users.userid', $userids);
+
         return $query;
     }
 
@@ -199,8 +211,7 @@ class Project extends AbstractModel
         $array['task_complete'] = $builder->whereNotNull('complete_at')->count();
         $array['task_percent'] = $array['task_num'] ? intval($array['task_complete'] / $array['task_num'] * 100) : 0;
         //
-        $user = User::auth();
-        $builder = $user->isAdmin() ? ProjectTask::allData() : ($user->isDepOwner() ? ProjectTask::depData() : ProjectTask::authData());
+        $builder = ProjectTask::authData($userid, 1)->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
         $builder = $builder->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
         $array['task_my_num'] = $builder->count();
         $array['task_my_complete'] = $builder->whereNotNull('project_tasks.complete_at')->count();
