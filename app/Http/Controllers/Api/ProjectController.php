@@ -2200,18 +2200,51 @@ class ProjectController extends AbstractController
      * @apiGroup project
      * @apiName task__correlation
      *
+     * @apiParam {String} keyword                关键字
+     *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
      * @apiSuccess {Object} data    返回数据
      */
     public function task__correlation()
     {
-//        $user = User::auth();
+        $user = User::auth();
         //
         $keyword = trim(Request::input('keyword'));
         //
-        $builder = ProjectTask::select(["*"]);
-//        $builder->whereUserid($user->userid);
+        $builder = ProjectTask::select(["*"])->with(['project']);
+        $builder->whereUserid($user->userid);
+        if ($keyword) {
+            $builder->where("name", "like", "%{$keyword}%");
+        }
+        //
+        $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
+        //
+        return Base::retSuccess('success', $list);
+    }
+
+    /**
+     * @api {get} api/project/personal/list          个人项目列表
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup project
+     * @apiName personal__list
+     *
+     * @apiParam {String} keyword                关键字
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function personal__list()
+    {
+        $user = User::auth();
+        //
+        $keyword = trim(Request::input('keyword'));
+        //
+        $builder = Project::select(["*"]);
+        $builder->whereUserid($user->userid);
         if ($keyword) {
             $builder->where("name", "like", "%{$keyword}%");
         }
