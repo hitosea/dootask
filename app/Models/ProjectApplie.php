@@ -5,6 +5,38 @@ namespace App\Models;
 use Illuminate\Support\Carbon;
 use App\Exceptions\ApiException;
 
+/**
+ * App\Models\ProjectApplie
+ *
+ * @property int $id
+ * @property int|null $project_id 项目ID
+ * @property int|null $task_id 任务ID
+ * @property int|null $userid 用户ID
+ * @property string|null $msg_id 消息ID
+ * @property int|null $days 申请天数
+ * @property string|null $reason 申请理由
+ * @property int|null $audit_userid 审核人
+ * @property string|null $status_reason 状态原因
+ * @property int|null $status 状态 [0-待审核,1-通过,2-拒绝]
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie query()
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereAuditUserid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereDays($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereMsgId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereProjectId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereStatusReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereTaskId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectApplie whereUserid($value)
+ * @mixin \Eloquent
+ */
 class ProjectApplie extends AbstractModel
 {
     /**
