@@ -2239,6 +2239,10 @@ class ProjectController extends AbstractController
         if (!$applie) {
             return Base::retError('无申请记录');
         }
+        // 如果已审批
+        if ($applie->status > 0) {
+            return Base::retError('已审批');
+        }
         //
         $applie->updateStatus($user, $pass == 'true' ? 1 : 2, $reason);
         //
