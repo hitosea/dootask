@@ -313,6 +313,8 @@ class ReportController extends AbstractController
         // 已完成的任务
         $completeContent = "";
         $complete_task = ProjectTask::query()
+            ->whereParentId(0)
+            ->whereNotNull("complete_at")
             ->whereNotNull("complete_at")
             ->whereBetween("complete_at", [$start_time->toDateTimeString(), $end_time->toDateTimeString()])
             ->whereHas("taskUser", function ($query) use ($user) {
@@ -325,7 +327,7 @@ class ReportController extends AbstractController
                 $complete_at = Carbon::parse($task->complete_at);
                 $pre = $type == Report::WEEKLY ? ('<span>[' . Doo::translate('周' . ['日', '一', '二', '三', '四', '五', '六'][$complete_at->dayOfWeek]) . ']</span>&nbsp;') : '';
 //                $completeContent .= "<li>{$pre}[{$task->project->name}] {$task->name}</li>";
-                $completeContent .= "<li>{$pre}[{$task->project->name}] {$task->name}------<a contenteditable='false' class='task-open' style='cursor: pointer;color:#8bcf70;' data-id='{$task->id}'>[{$task->name}]</a></li>";
+                $completeContent .= "<li>{$pre}[{$task->project->name}] {$task->name}------<a contenteditable='false' class='task-open' style='cursor: pointer;color:#8bcf70;' data-id='{$task->id}'>[{$task->project->name}-{$task->name}]</a></li>";
 
             }
         } else {
@@ -335,6 +337,7 @@ class ReportController extends AbstractController
         // 未完成的任务
         $unfinishedContent = "";
         $unfinished_task = ProjectTask::query()
+            ->whereParentId(0)
             ->whereNull("complete_at")
             ->whereNotNull("start_at")
             ->where("end_at", "<", $end_time->toDateTimeString())
