@@ -2117,7 +2117,7 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/task/delay          32. 任务延期
+     * @api {get} api/project/task/delay          41. 任务延期
      *
      * @apiDescription 需要token身份（限：项目、任务负责人）
      * @apiVersion 1.0.0
@@ -2158,7 +2158,28 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/task/delayApprove          32. 任务延期 - 审批
+     * @api {get} api/project/task/applyList          42. 审批列表
+     *
+     * @apiDescription 需要token身份（限：项目、任务负责人）
+     * @apiVersion 1.0.0
+     * @apiGroup project
+     * @apiName task__applyList
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function task__applyList()
+    {
+        $user = User::auth();
+        //
+        $list = ProjectApplie::whereAuditUserid($user->userid)->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
+        //
+        return Base::retSuccess('操作成功', $list);
+    }
+
+    /**
+     * @api {get} api/project/task/delayApprove          43. 任务延期 - 审批
      *
      * @apiDescription 需要token身份（限：项目、任务负责人）
      * @apiVersion 1.0.0
@@ -2193,7 +2214,7 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/task/correlation          日报今日关联任务
+     * @api {get} api/project/task/correlation          44. 日报今日关联任务
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -2224,7 +2245,7 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/personal/list          个人项目列表
+     * @api {get} api/project/personal/list          45. 个人项目列表
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -2255,7 +2276,7 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/task/reports          任务相关日报
+     * @api {get} api/project/task/reports          46. 任务相关日报
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
