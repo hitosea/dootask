@@ -95,7 +95,7 @@ class ProjectApplie extends AbstractModel
         $applies = self::createInstance($data);
         $applies->save();
         // 推送提醒
-        if(empty($depOwner)){
+        if(empty($depOwner) || $user->userid == $data['audit_userid']){
             $applies->updateStatus($user, 1, "无部门负责人,自动通过");
         }else{
             $applies->appliesPush('project_reviewer', 'start', $applies, $depOwner);
