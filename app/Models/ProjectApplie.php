@@ -40,6 +40,46 @@ use App\Exceptions\ApiException;
 class ProjectApplie extends AbstractModel
 {
     /**
+     * 关联用户
+     *
+     * @return object
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'userid', 'userid')->select(['userid', 'nickname', 'email']);
+    }
+
+    /**
+     * 关联项目
+     *
+     * @return object
+     */
+    public function project()
+    {
+        return $this->belongsTo(Project::class, 'project_id', 'id')->select(['id', 'name']);
+    }
+
+    /**
+     * 关联任务
+     *
+     * @return object
+     */
+    public function projectTask()
+    {
+        return $this->belongsTo(ProjectTask::class, 'task_id', 'id')->select(['id', 'name']);
+    }
+
+    /**
+     * 关联审核人
+     *
+     * @return object
+     */
+    public function auditUser()
+    {
+        return $this->belongsTo(User::class, 'audit_userid', 'userid')->select(['userid', 'nickname', 'email']);
+    }
+
+    /**
      * 添加申请
      * @param $data
      * @return self
