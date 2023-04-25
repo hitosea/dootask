@@ -2165,6 +2165,14 @@ class ProjectController extends AbstractController
      * @apiGroup project
      * @apiName task__applyList
      *
+     * @apiParam {String} project_name                   项目名称
+     * @apiParam {String} task_name                      任务名称
+     * @apiParam {String} nickname                       用户昵称
+     * @apiParam {Number} [status]                       状态（0待审批、1已通过、2已拒绝）
+     *
+     * @apiParam {Number} [page]        当前页，默认:1
+     * @apiParam {Number} [pagesize]    每页显示数量，默认:50，最大:100
+     *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
      * @apiSuccess {Object} data    返回数据
@@ -2173,7 +2181,31 @@ class ProjectController extends AbstractController
     {
         $user = User::auth();
         //
-        $list = ProjectApplie::with(['user', 'project', 'projectTask', 'auditUser'])->whereAuditUserid($user->userid)->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
+        $nickname = trim(Request::input('nickname'));
+        $project_name = trim(Request::input('project_name'));
+        $task_name = trim(Request::input('task_name'));
+        $status = Request::input('status');
+        //
+        $builder = ProjectApplie::select(["*"])->with(['user', 'project', 'projectTask', 'auditUser']);
+        if ($nickname) {
+            $builder->whereHas("user", function ($query) use ($nickname) {
+                $query->where("nickname", "like", "%{$nickname}%");
+            });
+        }
+        if ($project_name) {
+            $builder->whereHas("project", function ($query) use ($project_name) {
+                $query->where("name", "like", "%{$project_name}%");
+            });
+        }
+        if ($task_name) {
+            $builder->whereHas("projectTask", function ($query) use ($task_name) {
+                $query->where("name", "like", "%{$task_name}%");
+            });
+        }
+        if ($status !== null) {
+            $builder->whereStatus($status);
+        }
+        $list = $builder->whereAuditUserid($user->userid)->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
         //
         return Base::retSuccess('操作成功', $list);
     }
