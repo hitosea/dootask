@@ -2173,7 +2173,7 @@ class ProjectController extends AbstractController
     {
         $user = User::auth();
         //
-        $list = ProjectApplie::whereAuditUserid($user->userid)->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
+        $list = ProjectApplie::with(['user', 'project', 'projectTask', 'auditUser'])->whereAuditUserid($user->userid)->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
         //
         return Base::retSuccess('操作成功', $list);
     }

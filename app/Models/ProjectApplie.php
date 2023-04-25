@@ -40,6 +40,46 @@ use App\Exceptions\ApiException;
 class ProjectApplie extends AbstractModel
 {
     /**
+     * 关联用户
+     *
+     * @return object
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'userid', 'userid')->select(['userid', 'nickname', 'email']);
+    }
+
+    /**
+     * 关联项目
+     *
+     * @return object
+     */
+    public function project()
+    {
+        return $this->belongsTo(Project::class, 'project_id', 'id')->select(['id', 'name']);
+    }
+
+    /**
+     * 关联任务
+     *
+     * @return object
+     */
+    public function projectTask()
+    {
+        return $this->belongsTo(ProjectTask::class, 'task_id', 'id')->select(['id', 'name']);
+    }
+
+    /**
+     * 关联审核人
+     *
+     * @return object
+     */
+    public function auditUser()
+    {
+        return $this->belongsTo(User::class, 'audit_userid', 'userid')->select(['userid', 'nickname', 'email']);
+    }
+
+    /**
      * 添加申请
      * @param $data
      * @return self
@@ -50,12 +90,12 @@ class ProjectApplie extends AbstractModel
             throw new ApiException('已存在待处理的申请');
         }
         $depOwner = $user->getDepOwner();
-        $depOwner = $depOwner->pluck('userid')->toArray();
-        $data['audit_userid'] = implode(',', $depOwner);
+        $depOwner = $depOwner->pluck('userid')->toArray(); //部门负责人单一
+        $data['audit_userid'] = empty($depOwner) ? $user->userid : implode(',', $depOwner);
         $applies = self::createInstance($data);
         $applies->save();
         // 推送提醒
-        if( empty($depOwner) ){
+        if(empty($depOwner) || $user->userid == $data['audit_userid']){
             $applies->updateStatus($user, 1, "无部门负责人,自动通过");
         }else{
             $applies->appliesPush('project_reviewer', 'start', $applies, $depOwner);
