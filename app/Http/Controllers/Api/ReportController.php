@@ -146,6 +146,7 @@ class ReportController extends AbstractController
             "receive" => Request::input("receive"),
             // 以当前日期为基础的周期偏移量。例如选择了上一周那么就是 -1，上一天同理。
             "offset" => Request::input("offset", 0),
+            "task_ids" => Request::input("task_ids"),
         ];
         $validator = Validator::make($input, [
             'id' => 'numeric',
@@ -212,9 +213,9 @@ class ReportController extends AbstractController
             $report->save();
 
             // 更新日报任务关联关系
+            ReportTask::whereReportId($report->id)->delete();
             if ($input["task_ids"]) {
                 $taskIds = array_unique($input["task_ids"]);
-                ReportTask::whereReportId($report->id)->delete();
                 $inArr = [];
                 foreach ($taskIds as $task_id) {
                     $inArr[] = [
