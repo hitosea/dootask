@@ -2221,7 +2221,8 @@ class ProjectController extends AbstractController
      * @apiGroup project
      * @apiName task__correlation
      *
-     * @apiParam {String} keyword                关键字
+     * @apiParam {String} keyword                   关键字
+     * @apiParam {Number} project_id                项目id
      *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -2232,11 +2233,15 @@ class ProjectController extends AbstractController
         $user = User::auth();
         //
         $keyword = trim(Request::input('keyword'));
+        $project_id = trim(Request::input('project_id'));
         //
         $builder = ProjectTask::select(["*"])->with(['project']);
         $builder->whereUserid($user->userid);
         if ($keyword) {
             $builder->where("name", "like", "%{$keyword}%");
+        }
+        if ($project_id) {
+            $builder->whereProjectId($project_id);
         }
         //
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
