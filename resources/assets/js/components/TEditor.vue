@@ -56,15 +56,45 @@
         <Modal
             v-model="insertTaskModelShow"
             :title="$L('添加关联任务')"
+            width="640"
             transfer>
-            <Select
-                v-model="todayTask"
-                filterable
-                :remote-method="remoteMethod"
-                @on-query-change="remoteMethodClear"
-                :loading="loadIng > 0">
-                <Option v-for="(option, index) in todayTaskList" :value="option.id" :key="index">{{option.name}}</Option>
-            </Select>
+            <div style="display: flex;gap: 6px;">
+                <Select
+                    v-model="project"
+                    filterable
+                    clearable
+                    :remote-method="remoteMethod"
+                    @on-query-change="remoteMethodClear"
+                    :loading="loadIng > 0">
+                    <Option v-for="(option, index) in projectList" :value="option.id" :key="index">{{option.name}}</Option>
+                    <div v-if="next_page_url!=null" @click="moreProject" style="text-align: center;padding: 8px 0;cursor: pointer;color:#8bcf70;" slot="drop-append">{{$L('点击查看更多')}}</div>
+                </Select>
+                <Input v-model="keyword" @on-change="selectTask"></Input>
+            </div>
+
+            <Table
+                style="margin-top: 12px;"
+                height="300"
+                :columns="todayTaskColumns"
+                :data="todayTaskList"
+                @on-select="selectChange"
+                @on-select-all-cancel="selectChange"
+                @on-select-all="selectChange"
+                :loading="loadIng > 0"
+                :no-data-text="todayTaskListNoText"
+                highlight-row
+                stripe/>
+            <div style="margin-top: 12px;display: flex;justify-content: center">
+                <Page
+                    :total="total"
+                    :current="page"
+                    :page-size="pageSize"
+                    :disabled="loadIng > 0"
+                    :simple="true"
+                    @on-change="setPage"
+                    @on-page-size-change="setPageSize"/>
+            </div>
+
             <div slot="footer" class="adaption">
                 <Button type="default" @click="insertTaskModelShow=false">{{$L('取消')}}</Button>
                 <Button type="primary" @click="insertTask()">{{$L('插入')}}</Button>
@@ -171,28 +201,32 @@
                 insertTaskModelShow : false,
                 todayTaskColumns: [
                     {
+                        type: 'selection',
+                        width: 60,
+                        align: 'center'
+                    },
+                    {
+                        title:this.$L(' 项目名'),
+                        key: 'name',
+                    },
+                    {
                         title:this.$L(' 任务名'),
                         key: 'name',
-                        // minWidth: 180,
-                        // render: (h, {row}) => {
-                        //     return h('AutoTip', {
-                        //         style: {
-                        //             color: '#2D8CF0',
-                        //             cursor: 'pointer'
-                        //         },
-                        //         on: {
-                        //             click: () => {
-                        //
-                        //             }
-                        //         }
-                        //     }, row.name)
-                        // }
                     },
                 ],
-                todayTask:'',
+                todayTask:[],
                 todayTaskList: [],
                 todayTaskListNoText: '',
                 loadIng:0,
+                total:0,
+                page:1,
+                pageSize:10,
+                keyword:'',
+
+                projectPage:1,
+                project:"",
+                projectList:[],
+                next_page_url:null,
             };
         },
         mounted() {
@@ -398,6 +432,7 @@
                             text: this.$L('插入...'),
                             onAction: () => {
                                 this.selectTask();
+                                this.remoteMethod();
                                 // const editor = tinymce.activeEditor;
                                 // editor.insertContent('<strong>Custom content here</strong>');
                             }
@@ -661,49 +696,6 @@
                 return true;
             },
 
-            remoteMethod (query) {
-                if (query !== '') {
-                    this.loadIng++;
-                    this.$store.dispatch("call", {
-                        url: 'project/task/correlation',
-                        data: {
-                            keyword:query,
-                            page: 1,
-                            pagesize: Math.max($A.runNum(this.pageSize), 10),
-                        },
-                    }).then(({data}) => {
-                        this.loadIng--;
-                        this.todayTaskList = data.data;
-                        this.todayTaskListNoText = '没有相关的数据';
-                    }).catch(() => {
-                        this.loadIng--;
-                        this.noText = '数据加载失败';
-                    })
-                } else {
-                    this.todayTask = '';
-                }
-            },
-
-            remoteMethodClear(query){
-                if (query==''){
-                    this.loadIng++;
-                    this.$store.dispatch("call", {
-                        url: 'project/task/correlation',
-                        data: {
-                            keyword:query,
-                            page: 1,
-                            pagesize: Math.max($A.runNum(this.pageSize), 10),
-                        },
-                    }).then(({data}) => {
-                        this.loadIng--;
-                        this.todayTaskList = data.data;
-                        this.todayTaskListNoText = '没有相关的数据';
-                    }).catch(() => {
-                        this.loadIng--;
-                        this.noText = '数据加载失败';
-                    })
-                }
-            },
 
             // 查找关联任务
             selectTask() {
@@ -711,13 +703,15 @@
                 this.$store.dispatch("call", {
                     url: 'project/task/correlation',
                     data: {
-                        page: 1,
+                        keyword:this.keyword,
+                        page: this.page,
                         pagesize: Math.max($A.runNum(this.pageSize), 10),
                     },
                 }).then(({data}) => {
                     this.loadIng--;
                     this.todayTaskList = data.data;
                     this.insertTaskModelShow = true;
+                    this.total = data.total;
                     this.todayTaskListNoText = '没有相关的数据';
                 }).catch(() => {
                     this.loadIng--;
@@ -725,18 +719,96 @@
                 })
             },
 
+            remoteMethod (query) {
+                if (query !== '') {
+                    this.loadIng++;
+                    this.projectPage = 1;
+                    this.$store.dispatch("call", {
+                        url: 'project/personal/list',
+                        data: {
+                            keyword:query,
+                            page: this.projectPage,
+                            pagesize: 20,
+                        },
+                    }).then(({data}) => {
+                        this.loadIng--;
+                        this.projectList = data.data;
+                        this.next_page_url = data.next_page_url;
+                    }).catch(() => {
+                        this.loadIng--;
+                    })
+                } else {
+                    this.project = '';
+                }
+            },
+
+            remoteMethodClear(query){
+                if (query==''){
+                    this.loadIng++;
+                    this.projectPage = 1;
+                    this.$store.dispatch("call", {
+                        url: 'project/personal/list',
+                        data: {
+                            keyword:query,
+                            page: this.projectPage,
+                            pagesize: 20,
+                        },
+                    }).then(({data}) => {
+                        this.loadIng--;
+                        this.projectList = data.data;
+                        this.next_page_url = data.next_page_url;
+                    }).catch(() => {
+                        this.loadIng--;
+                    })
+                }
+            },
+
+            moreProject(){
+                this.loadIng++;
+                this.projectPage++;
+                this.$store.dispatch("call", {
+                    url: 'project/personal/list',
+                    data: {
+                        page: this.projectPage,
+                        pagesize: 20,
+                    },
+                }).then(({data}) => {
+                    this.loadIng--;
+                    data.data.forEach(item=>{
+                        this.projectList.push(item);
+                    })
+                    this.next_page_url = data.next_page_url;
+                }).catch(() => {
+                    this.loadIng--;
+                })
+            },
+
+            setPage(e){
+                this.page = e;
+                this.selectTask();
+            },
+            setPageSize(e){
+                this.pageSize = e;
+                console.log(e)
+            },
+
+
             // 插入关联任务
+            selectChange(e){
+                this.todayTask = [];
+                e.forEach(item=>{
+                    this.todayTask.push(item)
+                })
+            },
+
             insertTask() {
                 let editor = tinymce.activeEditor;
-                let id = this.todayTask;
-                let name = '';
-                this.todayTaskList.forEach(item=>{
-                    if (item.id == this.todayTask){
-                        name = item.name
-                    }
+                let  text = '';
+                this.todayTask.forEach(item=>{
+                    text = text + ` <a class='task-open' contenteditable='false' style='cursor: pointer;color:#8bcf70;' data-id='${item.id}'>[${item.name}]</a>`
                 })
-                let  text = `<a class='task-open' style='cursor: pointer;color:#8bcf70;' data-id='${id}'>[${name}]</a>`
                 editor.execCommand('mceInsertContent',true,text);
+                this.todayTask = [];
                 this.insertTaskModelShow = false;
             },
 

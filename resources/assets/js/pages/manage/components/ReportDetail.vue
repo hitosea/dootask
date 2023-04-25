@@ -19,7 +19,7 @@
             </Form>
             <Form class="report-form" label-width="auto">
                 <FormItem :label="$L('汇报内容')">
-                    <div class="report-content" v-html="data.content"></div>
+                    <div class="report-content" v-html="data.content" @click="clickTask"></div>
                 </FormItem>
             </Form>
         </div>
@@ -62,6 +62,14 @@ export default {
             }).finally(_ => {
                 this.loadIng--;
             });
+        },
+        clickTask(e){
+            if ($(e.target).is(".task-open")){
+                this.openTask($(e.target).data('id'))
+            }
+        },
+        openTask(task) {
+            this.$store.dispatch("openTask", task)
         },
     }
 }

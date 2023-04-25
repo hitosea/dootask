@@ -404,6 +404,7 @@
                                 <Loading v-if="logLoadIng"/>
                                 <Icon v-else type="ios-refresh" @click="getLogLists"></Icon>
                             </div>
+
                         </div>
                     </div>
                 </DialogWrapper>
@@ -419,6 +420,7 @@
                             <Loading v-if="logLoadIng"/>
                             <Icon v-else type="ios-refresh" @click="getLogLists"></Icon>
                         </div>
+                        <p :class="{active:navActive=='daily'}" @click="navActive='daily'">{{$L('任务相关日报')}}</p>
                     </div>
                     <div class="menu">
                         <div v-if="navActive=='dialog' && taskDetail.msg_num > 0" class="menu-item" @click.stop="onSend('open')">
@@ -430,7 +432,7 @@
                     </div>
                 </div>
                 <ProjectLog v-if="navActive=='log' && taskId > 0" ref="log" :task-id="taskDetail.id" :show-load="false" @on-load-change="logLoadChange"/>
-                <div v-else class="no-dialog"
+                <div v-if="navActive=='dialog' " class="no-dialog"
                      @drop.prevent="taskPasteDrag($event, 'drag')"
                      @dragover.prevent="taskDragOver(true, $event)"
                      @dragleave.prevent="taskDragOver(false, $event)">
@@ -452,6 +454,7 @@
                         <div class="drag-text">{{$L('拖动到这里发送')}}</div>
                     </div>
                 </div>
+                <RelevantDaily v-if="navActive=='daily' && taskId > 0" :taskId="taskId"></RelevantDaily>
             </div>
         </div>
         <div v-if="!taskDetail.id" class="task-load"><Loading/></div>
@@ -490,10 +493,10 @@ import ProjectLog from "./ProjectLog";
 import {Store} from "le5le-store";
 import TaskMenu from "./TaskMenu";
 import ChatInput from "./ChatInput";
-
+import RelevantDaily from "./RelevantDaily";
 export default {
     name: "TaskDetail",
-    components: {ChatInput, TaskMenu, ProjectLog, DialogWrapper, TaskUpload, UserInput, TaskPriority, TEditor},
+    components: {ChatInput, TaskMenu, ProjectLog, DialogWrapper, TaskUpload, UserInput, TaskPriority, TEditor,RelevantDaily},
     props: {
         taskId: {
             type: Number,

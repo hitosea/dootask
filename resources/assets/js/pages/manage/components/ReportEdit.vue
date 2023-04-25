@@ -118,6 +118,14 @@ export default {
         },
 
         doSubmit() {
+            let $temp = $('<div>').html(this.reportData.content);
+            let $elements = $temp.find('[data-id]');
+            let dataIds = []
+            $elements.each(function () {
+                dataIds.push($(this).data('id'));
+            });
+            dataIds =[...new Set(dataIds)];
+            this.reportData.task_ids = dataIds;
             this.loadIng++;
             this.$store.dispatch("call", {
                 url: 'report/store',
