@@ -213,9 +213,10 @@ class ReportController extends AbstractController
 
             // 更新日报任务关联关系
             if ($input["task_ids"]) {
+                $taskIds = array_unique($input["task_ids"]);
                 ReportTask::whereReportId($report->id)->delete();
                 $inArr = [];
-                foreach ($input["task_ids"] as $task_id) {
+                foreach ($taskIds as $task_id) {
                     $inArr[] = [
                         'task_id' => $task_id,
                         'report_id' => $report->id,
@@ -322,7 +323,9 @@ class ReportController extends AbstractController
             foreach ($complete_task as $task) {
                 $complete_at = Carbon::parse($task->complete_at);
                 $pre = $type == Report::WEEKLY ? ('<span>[' . Doo::translate('周' . ['日', '一', '二', '三', '四', '五', '六'][$complete_at->dayOfWeek]) . ']</span>&nbsp;') : '';
-                $completeContent .= "<li>{$pre}[{$task->project->name}] {$task->name}</li>";
+//                $completeContent .= "<li>{$pre}[{$task->project->name}] {$task->name}</li>";
+                $completeContent .= "<li>{$pre}[{$task->project->name}] {$task->name}------<a contenteditable='false' class='task-open' style='cursor: pointer;color:#8bcf70;' data-id='{$task->id}'>[{$task->name}]</a></li>";
+
             }
         } else {
             $completeContent = '<li>&nbsp;</li>';
