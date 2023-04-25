@@ -2223,6 +2223,8 @@ class ProjectController extends AbstractController
      *
      * @apiParam {String} keyword                   关键字
      * @apiParam {Number} project_id                项目id
+     * @apiParam {Number} [page]                    当前页，默认:1
+     * @apiParam {Number} [pagesize]                每页显示数量，默认:50，最大:100
      *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -2243,7 +2245,6 @@ class ProjectController extends AbstractController
         if ($project_id) {
             $builder->whereProjectId($project_id);
         }
-        //
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
         //
         return Base::retSuccess('success', $list);
@@ -2258,6 +2259,8 @@ class ProjectController extends AbstractController
      * @apiName personal__list
      *
      * @apiParam {String} keyword                关键字
+     * @apiParam {Number} [page]        当前页，默认:1
+     * @apiParam {Number} [pagesize]    每页显示数量，默认:50，最大:100
      *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -2266,7 +2269,6 @@ class ProjectController extends AbstractController
     public function personal__list()
     {
         $user = User::auth();
-        //
         $keyword = trim(Request::input('keyword'));
         //
         $builder = Project::select(["*"]);
@@ -2274,9 +2276,8 @@ class ProjectController extends AbstractController
         if ($keyword) {
             $builder->where("name", "like", "%{$keyword}%");
         }
-        //
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
-        //
+
         return Base::retSuccess('success', $list);
     }
 
@@ -2288,6 +2289,10 @@ class ProjectController extends AbstractController
      * @apiGroup project
      * @apiName task__reports
      *
+     * @apiParam {Number} task_id       任务id
+     * @apiParam {Number} [page]        当前页，默认:1
+     * @apiParam {Number} [pagesize]    每页显示数量，默认:50，最大:100
+     *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
      * @apiSuccess {Object} data    返回数据
@@ -2295,16 +2300,13 @@ class ProjectController extends AbstractController
     public function task__reports()
     {
         $user = User::auth();
-        //
         $task_id = intval(Request::input('task_id'));
-        //
         $reportIds = ReportTask::whereTaskId($task_id)->pluck('report_id');
 
         $builder = Report::select(["*"]);
-        $builder->whereIn('id', $reportIds);
-        //
+        $builder->whereUserid($user->userid)->whereIn('id', $reportIds);
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
-        //
+
         return Base::retSuccess('success', $list);
     }
 }
