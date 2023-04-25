@@ -350,7 +350,8 @@ class ReportController extends AbstractController
             foreach ($unfinished_task as $task) {
                 empty($task->end_at) || $end_at = Carbon::parse($task->end_at);
                 $pre = (!empty($end_at) && $end_at->lt($now_dt)) ? '<span style="color:#ff0000;">[' . Doo::translate('超期') . ']</span>&nbsp;' : '';
-                $unfinishedContent .= "<li>{$pre}[{$task->project->name}] {$task->name}</li>";
+//                $unfinishedContent .= "<li>{$pre}[{$task->project->name}] {$task->name}</li>";
+                $unfinishedContent .= "<li>{$pre}[{$task->project->name}] {$task->name}------<a contenteditable='false' class='task-open' style='cursor: pointer;color:#8bcf70;' data-id='{$task->id}'>[{$task->project->name}-{$task->name}]</a></li>";
             }
         } else {
             $unfinishedContent = '<li>&nbsp;</li>';
