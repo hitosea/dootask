@@ -97,7 +97,7 @@ class ProjectApplie extends AbstractModel
         ];
         $text = preg_replace("/\n\x20+/", "\n", preg_replace("/^\x20+/", "", view('push.bot', ['type' => $type, 'action' => $action, 'data' => (object)$data])->render()));
         $msg_action = null;
-        if ($action == 'pass' || $action == 'refuse') {
+        if ($type == 'project_reviewer' && ($action == 'pass' || $action == 'refuse')) {
             // 审核人即是负责人，更新推送
             $msg_id = array_filter(explode(',', $applies->msg_id));
             if (is_array($msg_id)) {
@@ -168,9 +168,10 @@ class ProjectApplie extends AbstractModel
         // 审核人即是负责人，推送提醒
         $applies = $this;
         $updateUser = [$user->userid];
-        $this->appliesPush('project_submitter', $status == 1 ? 'pass' : 'refuse', $applies, $updateUser);
+        $action = $status == 1 ? 'pass' : 'refuse';
+        $this->appliesPush('project_reviewer', $action, $applies, $updateUser);
         // 给发起人推送提醒
         $toUser = [$this->userid];
-        $this->appliesPush('project_submitter', '', $applies, $toUser);
+        $this->appliesPush('project_submitter', $action, $applies, $toUser);
     }
 }
