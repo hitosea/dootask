@@ -171,8 +171,10 @@ class ProjectApplie extends AbstractModel
         $this->status = $status;
         $this->status_reason = $reason;
         $res = $this->save();
-        // 更新任务时间
+        // 更新任务时间 
         if($res && $status == 1){
+
+            // 1 - 自动生成的任务
             $tasks = ProjectTask::where("project_id",$this->project_id)->where("is_default",1)->get();
             $columnIds = ProjectColumn::whereIn("id", array_column($tasks->toArray(),'column_id') )->orderBy("sort")->pluck("id");
             // 排序
@@ -188,11 +190,11 @@ class ProjectApplie extends AbstractModel
             $open = false;
             $ontask = null;
             foreach($arrTasks as $task){
-                if($open || $task->id ==  $this->task_id){
-                    if($task->id == $this->task_id){
-                        $open = true;
-                        $ontask = $task;
-                    }
+                if($task->id == $this->task_id){
+                    $open = true;
+                    $ontask = $task;
+                }
+                if($open){
                     $task->end_at = Carbon::parse($task->end_at)->addDays($this->days)->toDateTimeString();
                     if($task->id != $this->task_id){
                         $task->start_at = Carbon::parse($task->start_at)->addDays($this->days)->toDateTimeString();
@@ -204,7 +206,18 @@ class ProjectApplie extends AbstractModel
                     ]);
                 }
             }
+
+            // 2 - 非自动生成的任务
+            $task = ProjectTask::whereId($this->task_id)->where("is_default",0)->first();
+            if($task){
+                $task->end_at = Carbon::parse($task->end_at)->addDays($this->days)->toDateTimeString();
+                $task->updateTask([
+                    'task_id'=>$task->id,
+                    'times'=>[ $task->start_at, $task->end_at, "申请延期" ]
+                ]);
+            }
         }
+       
         // 审核人即是负责人，推送提醒
         $applies = $this;
         $updateUser = [$user->userid];

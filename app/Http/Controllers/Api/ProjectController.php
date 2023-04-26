@@ -570,6 +570,14 @@ class ProjectController extends AbstractController
                 if (!is_array($item['task'])) continue;
                 $index = 0;
                 foreach ($item['task'] as $task_id) {
+                    $task = ProjectTask::whereId($task_id)->where('is_default',1)->first();
+                    if($task && $task->is_default == 1 && $task->sort != $index){
+                        throw new ApiException("自动生成的任务不允许该操作");
+                    }
+                    $index++;
+                }
+                $index = 0;
+                foreach ($item['task'] as $task_id) {
                     if (ProjectTask::whereId($task_id)->whereProjectId($project->id)->whereCompleteAt(null)->change([
                         'column_id' => $item['id'],
                         'sort' => $index

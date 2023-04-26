@@ -446,3 +446,6 @@ Api接口文档
 终端MAC与License不匹配
 终端用户数超过License限制
 终端License已过期
+
+
+自动生成的任务不允许该操作
