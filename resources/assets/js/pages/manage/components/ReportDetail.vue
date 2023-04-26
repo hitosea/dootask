@@ -70,6 +70,7 @@ export default {
         },
         openTask(task) {
             this.$store.dispatch("openTask", task)
+            this.$emit('clickTask')
         },
     }
 }

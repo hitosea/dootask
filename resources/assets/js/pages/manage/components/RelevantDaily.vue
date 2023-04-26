@@ -25,7 +25,7 @@
         placement="right"
         :size="950"
         transfer>
-        <ReportDetail v-if="showDetailDrawer" :data="detailData"/>
+        <ReportDetail v-if="showDetailDrawer"  @clickTask="clickTask" :data="detailData"/>
     </DrawerOverlay>
 </div>
 </template>
@@ -151,6 +151,13 @@ export default {
             }).catch(() => {
                 this.loadIng--;
                 this.noDataText = '数据加载失败';
+            })
+        },
+
+        clickTask(){
+            this.showDetailDrawer = false;
+            this.$nextTick(()=>{
+                this.getLists();
             })
         },
 

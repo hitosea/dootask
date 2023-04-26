@@ -454,7 +454,7 @@
                         <div class="drag-text">{{$L('拖动到这里发送')}}</div>
                     </div>
                 </div>
-                <RelevantDaily v-if="navActive=='daily' && taskId > 0" :taskId="taskId"></RelevantDaily>
+                <RelevantDaily v-if="navActive=='daily' && taskId > 0" :taskId="taskId" ></RelevantDaily>
             </div>
         </div>
         <div v-if="!taskDetail.id" class="task-load"><Loading/></div>
