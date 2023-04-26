@@ -130,12 +130,13 @@
                             :key="key"
                             :class="classNameProject(item)"
                             :data-id="item.id"
+                            :data-fixed="item.is_fixed"
                             @click="toggleRoute('project', {projectId: item.id})"
                             v-longpress="handleLongpress">
                             <div class="project-h1">
                                 <em @click.stop="toggleOpenMenu(item.id)"></em>
                                 <div class="title">{{item.name}}</div>
-                                <div v-if="item.top_at" class="icon-top"></div>
+                                <div v-if="item.top_at && item.is_fixed!='1'" class="icon-top"></div>
                                 <div v-if="item.task_my_num - item.task_my_complete > 0" class="num">{{item.task_my_num - item.task_my_complete}}</div>
                             </div>
                             <div class="project-h2">
@@ -1023,8 +1024,9 @@ export default {
 
         handleLongpress(event, el) {
             const projectId = $A.getAttr(el, 'data-id')
+            const projectFixed = $A.getAttr(el, 'data-fixed')
             const projectItem = this.projectLists.find(item => item.id == projectId)
-            if (!projectItem) {
+            if (!projectItem || projectFixed=='1') {
                 return
             }
             this.operateVisible = false;
