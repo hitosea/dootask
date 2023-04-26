@@ -65,13 +65,13 @@
                     clearable
                     :remote-method="remoteMethod"
                     @on-query-change="remoteMethodClear"
-                    @on-change="selectTask"
+                    @on-change="selectTask('search')"
                     :placeholder="$L('请选择项目名称')"
                     :loading="loadIng > 0">
                     <Option v-for="(option, index) in projectList" :value="option.id" :key="index">{{option.name}}</Option>
                     <div v-if="next_page_url!=null" @click="moreProject" style="text-align: center;padding: 8px 0;cursor: pointer;color:#8bcf70;" slot="drop-append">{{$L('点击查看更多')}}</div>
                 </Select>
-                <Input v-model="keyword" :placeholder="$L('请输入任务名称')" suffix="ios-search" @on-change="selectTask"></Input>
+                <Input v-model="keyword" :placeholder="$L('请输入任务名称')" suffix="ios-search" @on-change="selectTask('search')"></Input>
             </div>
 
             <Table
@@ -347,7 +347,7 @@
                     //     help: { title: '', items: 'image' }
                     // },
                     menu: {
-                        task: { title: '今日关联任务', items: 'selectTask' }
+                        task: { title: this.$L('今日关联任务'), items: 'selectTask' }
                     },
                     menubar: 'file edit insert view format table tools task',
                     codesample_languages: [
@@ -702,8 +702,10 @@
 
 
             // 查找关联任务
-            selectTask() {
-                console.log(this.keyword,this.project)
+            selectTask(type) {
+                if (type=='search'){
+                    this.page = 1;
+                }
                 this.loadIng++;
                 this.$store.dispatch("call", {
                     url: 'project/task/correlation',
@@ -811,7 +813,7 @@
                 let editor = tinymce.activeEditor;
                 let  text = '';
                 this.todayTask.forEach(item=>{
-                    text = text + ` <a class='task-open' contenteditable='false' style='cursor: pointer;color:#8bcf70;' data-id='${item.id}'>[${item.name}]</a>`
+                    text = text + ` <a class='task-open' contenteditable='false' style='cursor: pointer;color:#8bcf70;' data-id='${item.id}'>[${item.project.name}-${item.name}]</a>`
                 })
                 editor.execCommand('mceInsertContent',true,text);
                 this.todayTask = [];
