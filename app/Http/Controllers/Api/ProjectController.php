@@ -2201,7 +2201,11 @@ class ProjectController extends AbstractController
         if ($status !== null) {
             $builder->whereStatus($status);
         }
-        $list = $builder->whereAuditUserid($user->userid)->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
+        $userid = $user->userid;
+        $builder->where(function ($query) use ($userid) {
+            $query->where("userid", $userid)->orWhere("audit_userid", $userid);
+        });
+        $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
         //
         return Base::retSuccess('操作成功', $list);
     }
