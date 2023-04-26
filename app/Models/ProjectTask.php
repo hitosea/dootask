@@ -32,6 +32,7 @@ use Request;
  * @property int|null $archived_follow 跟随项目归档（项目取消归档时任务也取消归档）
  * @property string|null $complete_at 完成时间
  * @property int|null $userid 创建人
+ * @property int|null $is_default 是否默认任务
  * @property int|null $p_level 优先级
  * @property string|null $p_name 优先级名称
  * @property string|null $p_color 优先级颜色
@@ -60,7 +61,6 @@ use Request;
  * @property-read int|null $task_user_count
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask authData($userid = null, $owner = null)
- * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask depData($userids = [])
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask betweenTime($start, $end, $type = 'taskTime')
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newQuery()
@@ -81,6 +81,7 @@ use Request;
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereFlowItemId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereFlowItemName($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereIsDefault($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereLoop($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereLoopAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereName($value)

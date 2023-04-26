@@ -24,6 +24,7 @@ use Request;
  * @property int|null $dialog_id 聊天会话ID
  * @property string|null $archived_at 归档时间
  * @property int|null $archived_userid 归档会员
+ * @property int|null $is_fixed 是否固定
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -34,7 +35,6 @@ use Request;
  * @property-read int|null $project_log_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectUser> $projectUser
  * @property-read int|null $project_user_count
- * @property int|null $is_fixed 是否固定
  * @method static \Illuminate\Database\Eloquent\Builder|Project allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|Project authData($userid = null, $owner = null)
  * @method static \Illuminate\Database\Eloquent\Builder|Project depData($userids = [])
@@ -49,17 +49,14 @@ use Request;
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereDesc($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereDialogId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Project whereIsFixed($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project wherePersonal($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereUserSimple($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project whereUserid($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Project whereIsFixed($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Project withTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder|Project withoutTrashed()
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectColumn> $projectColumn
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectLog> $projectLog
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectUser> $projectUser
  * @mixin \Eloquent
  */
 class Project extends AbstractModel
