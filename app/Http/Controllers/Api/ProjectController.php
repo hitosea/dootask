@@ -2165,9 +2165,9 @@ class ProjectController extends AbstractController
      * @apiGroup project
      * @apiName task__applyList
      *
-     * @apiParam {String} project_name                   项目名称
+     * @apiParam {Number} userid                         发起人用户ID
+     * @apiParam {Number} project_id                     项目ID
      * @apiParam {String} task_name                      任务名称
-     * @apiParam {String} nickname                       用户昵称
      * @apiParam {Number} [status]                       状态（0待审批、1已通过、2已拒绝）
      *
      * @apiParam {Number} [page]        当前页，默认:1
@@ -2181,21 +2181,17 @@ class ProjectController extends AbstractController
     {
         $user = User::auth();
         //
-        $nickname = trim(Request::input('nickname'));
-        $project_name = trim(Request::input('project_name'));
+        $userid = intval(Request::input('userid'));
+        $project_id = intval(Request::input('project_id'));
         $task_name = trim(Request::input('task_name'));
         $status = Request::input('status');
         //
         $builder = ProjectApplie::select(["*"])->with(['user', 'project', 'projectTask', 'auditUser']);
-        if ($nickname) {
-            $builder->whereHas("user", function ($query) use ($nickname) {
-                $query->where("nickname", "like", "%{$nickname}%");
-            });
+        if ($userid) {
+            $builder->whereUserid($userid);
         }
-        if ($project_name) {
-            $builder->whereHas("project", function ($query) use ($project_name) {
-                $query->where("name", "like", "%{$project_name}%");
-            });
+        if ($project_id) {
+            $builder->whereProjectId($project_id);
         }
         if ($task_name) {
             $builder->whereHas("projectTask", function ($query) use ($task_name) {
@@ -2238,6 +2234,10 @@ class ProjectController extends AbstractController
         //
         if (!$applie) {
             return Base::retError('无申请记录');
+        }
+        // 如果已审批
+        if ($applie->status > 0) {
+            return Base::retError('已审批');
         }
         //
         $applie->updateStatus($user, $pass == 'true' ? 1 : 2, $reason);
