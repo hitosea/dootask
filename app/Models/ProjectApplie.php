@@ -168,6 +168,10 @@ class ProjectApplie extends AbstractModel
      */
     public function updateStatus(User $user, int $status, $reason='')
     {
+        // 操作用户是否为审核人
+        if($user->userid != $this->audit_userid){
+            throw new ApiException('无权限操作');
+        }
         $this->status = $status;
         $this->status_reason = $reason;
         $res = $this->save();
