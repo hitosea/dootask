@@ -165,7 +165,8 @@ class ProjectController extends AbstractController
             $builder->where('projects.updated_at', '>', $timerange->updated);
         }
         //
-        $builder->selectRaw("IF(is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
+        $pre = env('DB_PREFIX', '');
+        $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
         $list = $builder->clone()->orderByDesc('projects.id')->paginate(Base::getPaginate(100, 50));
         $list->transform(function (Project $project) use ($user) {
             return array_merge($project->toArray(), $project->getTaskStatistics($user->userid));
