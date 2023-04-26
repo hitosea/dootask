@@ -116,6 +116,11 @@
                     <i class="taskfont">&#xe6f3;</i>
                     <div class="menu-title">{{$L('文件')}}</div>
                 </li>
+                <li @click="toggleRoute('approve')" :class="classNameRoute('approve')">
+                    <i class="taskfont">&#xe72c;</i>
+                    <div class="menu-title">{{$L('审批')}}</div>
+                </li>
+
                 <li ref="menuProject" class="menu-project">
                     <ul :class="listClassName" @scroll="operateVisible = false">
                         <li

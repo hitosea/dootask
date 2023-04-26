@@ -30,6 +30,11 @@ export default [
                 component: () => import('./pages/manage/messenger.vue'),
             },
             {
+                name: 'manage-approve',
+                path: 'approve',
+                component: () => import('./pages/manage/approve.vue'),
+            },
+            {
                 name: 'manage-setting',
                 path: 'setting',
                 component: () => import('./pages/manage/setting/index.vue'),

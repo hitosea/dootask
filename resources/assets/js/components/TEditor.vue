@@ -65,11 +65,13 @@
                     clearable
                     :remote-method="remoteMethod"
                     @on-query-change="remoteMethodClear"
+                    @on-change="selectTask"
+                    :placeholder="$L('请选择项目名称')"
                     :loading="loadIng > 0">
                     <Option v-for="(option, index) in projectList" :value="option.id" :key="index">{{option.name}}</Option>
                     <div v-if="next_page_url!=null" @click="moreProject" style="text-align: center;padding: 8px 0;cursor: pointer;color:#8bcf70;" slot="drop-append">{{$L('点击查看更多')}}</div>
                 </Select>
-                <Input v-model="keyword" @on-change="selectTask"></Input>
+                <Input v-model="keyword" :placeholder="$L('请输入任务名称')" suffix="ios-search" @on-change="selectTask"></Input>
             </div>
 
             <Table
@@ -207,7 +209,9 @@
                     },
                     {
                         title:this.$L(' 项目名'),
-                        key: 'name',
+                        render: (h, {row}) => {
+                            return h('span',row.project?.name )
+                        }
                     },
                     {
                         title:this.$L(' 任务名'),
@@ -699,11 +703,13 @@
 
             // 查找关联任务
             selectTask() {
+                console.log(this.keyword,this.project)
                 this.loadIng++;
                 this.$store.dispatch("call", {
                     url: 'project/task/correlation',
                     data: {
                         keyword:this.keyword,
+                        project_id:this.project,
                         page: this.page,
                         pagesize: Math.max($A.runNum(this.pageSize), 10),
                     },

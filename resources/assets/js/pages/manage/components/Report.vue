@@ -112,6 +112,7 @@ export default {
                     config
                 });
             }else{
+                console.log(321321)
                 this.showDetailDrawer = true;
             }
         },
