@@ -15728,5 +15728,170 @@
         "de": "Die datei (*) ist nicht korrekt. Bitte hochladen sie bilder im (*) format",
         "fr": "Le format du fichier (*) est incorrect. Veuillez télécharger une image au format (*).",
         "id": "Berkas (*) tidak memiliki format yang benar, silakan unggah (*) format gambar."
+    },
+    {
+        "key": "自动生成的任务不允许该操作",
+        "zh": "",
+        "zh-CHT": "自動生成的任務不允許該操作",
+        "en": "This operation is not allowed for automatically generated tasks",
+        "ko": "이 작업은 자동으로 생성된 작업에서 허용되지 않습니다",
+        "ja": "自動生成されたタスクは、その動作を許可しません。",
+        "de": "Die selbstgenerierte aufgabe erlaubt diese operation nicht",
+        "fr": "La tâche générée automatiquement ne permet pas cette action",
+        "id": "Misi yang dibuat secara otomatis tidak memungkinkan operasi ini"
+    },
+    {
+        "key": "审批",
+        "zh": "",
+        "zh-CHT": "審批",
+        "en": "Examine and approve",
+        "ko": "심사 비준",
+        "ja": "承認します",
+        "de": "Liste?",
+        "fr": "La réception",
+        "id": "Persetujuan"
+    },
+    {
+        "key": "请输入审批意见",
+        "zh": "",
+        "zh-CHT": "請輸入審批意見",
+        "en": "Please enter approval comments",
+        "ko": "심사 의견을 입력해 주세요",
+        "ja": "決裁意見の入力をお願いします。",
+        "de": "Bitte geben sie ein gutachten zur genehmigung ein",
+        "fr": "Veuillez entrer les commentaires d’approbation",
+        "id": "Mohon masukkan pendapat"
+    },
+    {
+        "key": "拒绝",
+        "zh": "",
+        "zh-CHT": "拒絕",
+        "en": "Refuse",
+        "ko": "거부",
+        "ja": "お断りします",
+        "de": "Wie? - nein!",
+        "fr": "Le refus",
+        "id": "Menolak"
+    },
+    {
+        "key": "今日关联任务",
+        "zh": "",
+        "zh-CHT": "今日關聯任務",
+        "en": "Today associated task",
+        "ko": "오늘의 연결된 작업",
+        "ja": "本日の関連タスクです",
+        "de": "Heute ist ein verbindet mission.",
+        "fr": "Tâches associées aujourd’hui",
+        "id": "Tugas terkait hari ini"
+    },
+    {
+        "key": "插入...",
+        "zh": "",
+        "zh-CHT": "插入...",
+        "en": "Insert...",
+        "ko": "삽입...",
+        "ja": "差し込みます…",
+        "de": "Ist es",
+        "fr": "Insertion de...",
+        "id": "Masukkan …"
+    },
+    {
+        "key": "插入",
+        "zh": "",
+        "zh-CHT": "插入",
+        "en": "Insert",
+        "ko": "삽입",
+        "ja": "挿入します",
+        "de": "Versetzen.",
+        "fr": "Insérer le nom",
+        "id": "Masukkan"
+    },
+    {
+        "key": "添加关联任务",
+        "zh": "",
+        "zh-CHT": "添加關聯任務",
+        "en": "Add associated task",
+        "ko": "연결된 작업 추가",
+        "ja": "関連タスクを追加します",
+        "de": "Hinzufügen der abhängigen mission.",
+        "fr": "Ajouter une tâche associée",
+        "id": "Tambahkan tugas yang terkait"
+    },
+    {
+        "key": "请选择项目名称",
+        "zh": "",
+        "zh-CHT": "請選擇項目名稱",
+        "en": "Please select a project name",
+        "ko": "항목명을 선택하십시오",
+        "ja": "項目名をお願いします。",
+        "de": "Bitte wählen sie den namen des eintrags",
+        "fr": "Veuillez sélectionner le nom du projet",
+        "id": "Silahkan pilih nama item"
+    },
+    {
+        "key": "请输入任务名称",
+        "zh": "",
+        "zh-CHT": "請輸入任務名稱",
+        "en": "Please enter a task name",
+        "ko": "작업 이름을 입력하십시오",
+        "ja": "タスク名を入力します。",
+        "de": "Bitte geben sie den namen der mission ein",
+        "fr": "Veuillez entrer un nom de tâche",
+        "id": "Silakan masukkan nama misi"
+    },
+    {
+        "key": "点击查看更多",
+        "zh": "",
+        "zh-CHT": "點擊查看更多",
+        "en": "Click for more",
+        "ko": "더 보려면 클릭하십시오.",
+        "ja": "クリックしてみます",
+        "de": "Klick mehr nach.",
+        "fr": "Cliquez pour voir plus",
+        "id": "Klik untuk melihat lebih banyak"
+    },
+    {
+        "key": "任务相关日报",
+        "zh": "",
+        "zh-CHT": "任務相關日報",
+        "en": "Task-related daily",
+        "ko": "미션 관련일보",
+        "ja": "任務に関する日刊紙です",
+        "de": "Journal of the mission.",
+        "fr": "Quotidiens liés à la mission",
+        "id": "Misi terkait harian"
+    },
+    {
+        "key": "申请延期",
+        "zh": "",
+        "zh-CHT": "申請延期",
+        "en": "Apply for extension",
+        "ko": "연기 신청",
+        "ja": "延期を申しあげます",
+        "de": "Antrag auf vertagung.",
+        "fr": "Demande de prorogation",
+        "id": "Berlaku untuk perpanjangan"
+    },
+    {
+        "key": "延期天数",
+        "zh": "",
+        "zh-CHT": "延期天數",
+        "en": "Days of delay",
+        "ko": "날짜를 연기하다",
+        "ja": "延期します日数",
+        "de": "Wir können nicht alles verschieben.",
+        "fr": "Jours de prorogation",
+        "id": "Hari ditangguhkan"
+    },
+    {
+        "key": "延期原因",
+        "zh": "",
+        "zh-CHT": "延期原因",
+        "en": "Reason for delay",
+        "ko": "연기 사유",
+        "ja": "延期の理由です",
+        "de": "Gründe verschieben.",
+        "fr": "Raison de l’extension",
+        "id": "Alasan penundaan"
     }
 ]
