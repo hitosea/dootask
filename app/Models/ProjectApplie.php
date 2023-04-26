@@ -127,6 +127,19 @@ class ProjectApplie extends AbstractModel
     {
         $project = Project::find($applies->project_id);
         $projectTask = ProjectTask::find($applies->task_id);
+        // 更新审批 未读数量
+        if($toUser['userid']){
+            $params = [
+                'userid' => [ $toUser['userid'], User::auth()->userid() ],
+                'msg' => [
+                    'type' => 'approve',
+                    'action' => 'backlog',
+                    'userid' => $toUser['userid'],
+                ]
+            ];
+            Task::deliver(new PushTask($params, false));
+        }
+        // 发送消息
         $data = [
             'id' => $applies->id,
             'task_id' => $applies->task_id,
@@ -157,18 +170,6 @@ class ProjectApplie extends AbstractModel
             $applies->msg_id = $applies->msg_id . $msg['data']->id . ',';
             $applies->save();
         }
-        // 更新工作报告 未读数量
-        if($type == 'project_reviewer' && $toUser['userid']){
-            $params = [
-                'userid' => [ $toUser['userid'], User::auth()->userid() ],
-                'msg' => [
-                    'type' => 'approve',
-                    'action' => 'backlog',
-                    'userid' => $toUser['userid'],
-                ]
-            ];
-            Task::deliver(new PushTask($params, false));
-        }
         return true;
     }
 
@@ -189,7 +190,7 @@ class ProjectApplie extends AbstractModel
         $this->status = $status;
         $this->status_reason = $reason;
         $res = $this->save();
-        // 更新任务时间 
+        // 更新任务时间
         if($res && $status == 1){
 
             // 1 - 自动生成的任务
@@ -235,7 +236,7 @@ class ProjectApplie extends AbstractModel
                 ]);
             }
         }
-       
+
         // 审核人即是负责人，推送提醒
         $applies = $this;
         $updateUser = [$user->userid];
