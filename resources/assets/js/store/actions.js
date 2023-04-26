@@ -507,7 +507,6 @@ export default {
                         page_size: 500,
                     }
                 }).then(({data}) => {
-                    console.log(data)
                     state.backlogUnreadNumber = data.total || 0;
                 }).catch(_ => {});
             }

@@ -68,8 +68,13 @@
 </template>
 
 <script>
+import {mapState} from "vuex";
+
 export default {
     name: "approve",
+    computed:{
+        ...mapState(['userId']),
+    },
     data(){
         return{
             searchKey:'',
@@ -139,41 +144,53 @@ export default {
                 align: 'center',
                 width: 100,
                 minWidth: 100,
-                render: (h, {column, row}) => {
-                    return h('TableAction', {
-                        style:{
-                            color:row.status!='0'? '#6b6e72' : '',
-                            opacity:'0.3',
-                            cursor:'not-allowed'
-                        },
-                        props: {
-                            column,
-                            menu: [
-                                {
-                                    icon: "md-checkmark-circle",
-                                    action: "pass",
-                                },
-                                {
-                                    icon: "md-close-circle",
-                                    action: "refuse",
-                                }
-                            ]
-                        },
-                        on: {
-                            action: (name) => {
-                                if (row.status!='0') {
-                                    return null;
-                                }
-                                if (name === 'pass') {
+                render: (h, {row}) => {
+                    let arr = []
+                    arr.push(
+                        h('Icon', {
+                            props:{
+                                type: 'md-checkmark-circle',
+                            },
+                            style:{
+                                color:row.status!='0'|| row.audit_userid != this.userId? '#6b6e72' : '#84c56a',
+                                opacity:row.status!='0'|| row.audit_userid != this.userId? '0.3' : '',
+                                cursor:row.status!='0'|| row.audit_userid != this.userId? 'not-allowed' : 'pointer',
+                                marginRight:'12px',
+                                fontSize:'18px',
+                            },
+                            on: {
+                                click: () => {
+                                    if (row.status!='0' || row.audit_userid != this.userId) {
+                                        return null;
+                                    }
                                     this.pass(row);
                                 }
-                                else if(name === 'refuse'){
+                            }
+                        }, )
+                    )
+                    arr.push(
+                        h('Icon', {
+                            props:{
+                                type: 'md-close-circle',
+                            },
+                            style:{
+                                color:row.status!='0'|| row.audit_userid != this.userId? '#6b6e72' : '#ed4014',
+                                opacity:row.status!='0'|| row.audit_userid != this.userId? '0.3' : '',
+                                cursor:row.status!='0'|| row.audit_userid != this.userId? 'not-allowed' : 'pointer',
+                                fontSize:'18px',
+                            },
+                            on: {
+                                click: () => {
+                                    if (row.status!='0'|| row.audit_userid != this.userId) {
+                                        return null;
+                                    }
                                     this.refuseId = row.id;
                                     this.refuseShow = true;
                                 }
                             }
-                        }
-                    });
+                        }, )
+                    )
+                    return h('div',arr);
                 },
             }],
             loadIng:0,

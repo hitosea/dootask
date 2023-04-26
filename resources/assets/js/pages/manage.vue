@@ -119,7 +119,7 @@
                 <li @click="toggleRoute('approve')" :class="classNameRoute('approve')">
                     <i class="taskfont">&#xe72c;</i>
                     <div class="menu-title">{{$L('审批')}}</div>
-                    <Badge class="menu-badge" :overflow-count="999" :text="backlogUnreadNumber"/>
+                    <Badge class="menu-badge" :overflow-count="999" v-if="backlogUnreadNumber > 0" :text="backlogUnreadNumber.toString()"/>
                 </li>
 
                 <li ref="menuProject" class="menu-project">
