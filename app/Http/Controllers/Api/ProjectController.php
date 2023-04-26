@@ -2177,6 +2177,7 @@ class ProjectController extends AbstractController
      * @apiParam {Number} project_id                     项目ID
      * @apiParam {String} task_name                      任务名称
      * @apiParam {Number} [status]                       状态（0待审批、1已通过、2已拒绝）
+     * @apiParam {Number} [unread]                       未读（0否、1是）
      *
      * @apiParam {Number} [page]        当前页，默认:1
      * @apiParam {Number} [pagesize]    每页显示数量，默认:50，最大:100
@@ -2193,6 +2194,7 @@ class ProjectController extends AbstractController
         $project_id = intval(Request::input('project_id'));
         $task_name = trim(Request::input('task_name'));
         $status = Request::input('status');
+        $unread = intval(Request::input('unread', 0)); // 未读
         //
         $builder = ProjectApplie::select(["*"])->with(['user', 'project', 'projectTask', 'auditUser']);
         if ($userid) {
@@ -2210,8 +2212,11 @@ class ProjectController extends AbstractController
             $builder->whereStatus($status);
         }
         $userid = $user->userid;
-        $builder->where(function ($query) use ($userid) {
-            $query->where("userid", $userid)->orWhere("audit_userid", $userid);
+        $builder->where(function ($query) use ($userid, $unread) {
+            $query->where("audit_userid", $userid);
+            if ($unread == 0) {
+                $query->orWhere("userid", $userid);
+            }
         });
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
         //

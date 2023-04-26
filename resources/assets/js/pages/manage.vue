@@ -119,6 +119,7 @@
                 <li @click="toggleRoute('approve')" :class="classNameRoute('approve')">
                     <i class="taskfont">&#xe72c;</i>
                     <div class="menu-title">{{$L('审批')}}</div>
+                    <Badge class="menu-badge" :overflow-count="999" :text="backlogUnreadNumber"/>
                 </li>
 
                 <li ref="menuProject" class="menu-project">
@@ -408,6 +409,7 @@ export default {
         this.$store.dispatch("getUserInfo").catch(_ => {})
         this.$store.dispatch("getTaskPriority").catch(_ => {})
         this.$store.dispatch("getReportUnread", 0)
+        this.$store.dispatch("getBacklogUnread", 0)
         //
         this.$store.dispatch("needHome").then(_ => {
             this.needStartHome = true
@@ -453,6 +455,7 @@ export default {
             'dialogIns',
 
             'reportUnreadNumber',
+            'backlogUnreadNumber',
         ]),
 
         ...mapGetters(['dashboardTask']),
@@ -695,6 +698,11 @@ export default {
                     case 'report':
                         if (action == 'unreadUpdate') {
                             this.$store.dispatch("getReportUnread", 1000)
+                        }
+                        break;
+                    case 'approve':
+                        if (action == 'backlog') {
+                            this.$store.dispatch("getBacklogUnread", 1000)
                         }
                         break;
                 }

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Tasks\PushTask;
 use Illuminate\Support\Carbon;
 use App\Exceptions\ApiException;
+use Hhxsv5\LaravelS\Swoole\Task\Task;
 
 /**
  * App\Models\ProjectApplie
@@ -154,6 +156,18 @@ class ProjectApplie extends AbstractModel
             // 在msg_id字段往后追加,逗号分隔
             $applies->msg_id = $applies->msg_id . $msg['data']->id . ',';
             $applies->save();
+        }
+        // 更新工作报告 未读数量
+        if($type == 'project_reviewer' && $toUser['userid']){
+            $params = [
+                'userid' => [ $toUser['userid'], User::auth()->userid() ],
+                'msg' => [
+                    'type' => 'approve',
+                    'action' => 'backlog',
+                    'userid' => $toUser['userid'],
+                ]
+            ];
+            Task::deliver(new PushTask($params, false));
         }
         return true;
     }
