@@ -73,7 +73,7 @@ import {mapState} from "vuex";
 export default {
     name: "approve",
     computed:{
-        ...mapState(['userId']),
+        ...mapState(['userId','wsMsg']),
     },
     data(){
         return{
@@ -218,6 +218,21 @@ export default {
             next_page_url:null,
         }
     },
+    watch:{
+        wsMsg: {
+            handler(info) {
+                const {type, action} = info;
+                switch (type) {
+                    case 'approve':
+                        if (action == 'backlog') {
+                            this.getLists();
+                        }
+                        break;
+                }
+            },
+            deep: true,
+        },
+    },
     activated() {
         this.getLists();
         this.remoteMethodClear('');
@@ -260,7 +275,6 @@ export default {
                     }).then(({msg}) => {
                         this.loadIng--;
                         $A.messageSuccess(msg);
-                        this.getLists();
                     }).catch(({msg}) => {
                         $A.messageError(msg);
                         this.loadIng--;
@@ -290,7 +304,6 @@ export default {
             }).then(({msg}) => {
                 $A.messageSuccess(msg);
                 this.loadIng--;
-                this.getLists();
                 this.cancel();
             }).catch(({msg}) => {
                 $A.messageError(msg);
