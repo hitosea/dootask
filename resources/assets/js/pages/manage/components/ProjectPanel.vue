@@ -804,7 +804,7 @@ export default {
                     value: item1.id,
                     label: item1.name,
                     status: item1.status,
-                    children: item1.project_flow_item.map(item2 => {
+                    children: (item1.project_flow_item || []).map(item2 => {
                         const length = allTask.filter(({flow_item_id}) => {
                             return flow_item_id == item2.id;
                         }).length
@@ -824,7 +824,7 @@ export default {
             }
             //
             const {project_user} = this.projectData;
-            const userItems = project_user.map((item, index) => {
+            const userItems = (project_user || []).map((item, index) => {
                 const userInfo = cacheUserBasic.find(({userid}) => userid === item.userid) || {}
                 const length = allTask.filter(({task_user, complete_at}) => {
                     if (!this.projectData.cacheParameter.completedTask) {

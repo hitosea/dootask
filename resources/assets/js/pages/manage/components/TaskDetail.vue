@@ -1577,8 +1577,7 @@ export default {
                         $A.messageSuccess(msg);
                         this.delayShow = false;
                         this.$refs.addDelay.resetFields();
-                        // this.$store.dispatch("saveProject", data);
-                        // this.toggleRoute('project', {projectId: data.id})
+                        this.$store.dispatch("getTaskForProject", this.taskDetail.project_id).catch(() => {})
                     }).catch(({msg}) => {
                         $A.modalError(msg);
                     }).finally(_ => {
