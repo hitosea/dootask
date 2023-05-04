@@ -157,7 +157,13 @@ class ProjectController extends AbstractController
                 $builder->where("projects.name", "like", "%{$keys['name']}%");
             }
             if ($keys['principal']) {
-                $builder->where("projects.userid", "like", "%{$keys['principal']}%");
+                $builder->where(function($q) use($keys) {
+                    $q->where("projects.userid", $keys['principal']);
+                    $q->orWhere(function($q) use($keys) {
+                        $q->orWhere("project_users.owner",1);
+                        $q->where("project_users.userid", $keys['principal']);
+                    });
+                });
             }
         }
         //
