@@ -2363,7 +2363,7 @@ class ProjectController extends AbstractController
         $reportIds = ReportTask::whereTaskId($task_id)->pluck('report_id');
 
         $builder = Report::select(["*"]);
-        $builder->whereUserid($user->userid)->whereIn('id', $reportIds);
+        $builder->whereIn('id', $reportIds);
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
 
         return Base::retSuccess('success', $list);
