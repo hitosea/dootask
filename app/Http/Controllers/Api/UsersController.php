@@ -143,7 +143,6 @@ class UsersController extends AbstractController
                 'personal' => 1,
             ], $user->userid);
         }
-        //
         // 日常处理项目
         $project = Project::whereName('日常处理')->whereIsFixed(1)->first();
         if (!$project) {
@@ -158,7 +157,10 @@ class UsersController extends AbstractController
         }else{
             $projectUser = ProjectUser::whereProjectId($project->id)->whereUserid($user->userid)->first();
             if(!$projectUser){
-                $project = Project::updateProjectUser($project, [$user->userid]);
+                // 在原来的基础上加上他自己
+                $userids = User::where('userid', '>=', 1)->whereBot(0)->pluck('userid')->toArray();
+                $userids = array_merge($userids, [$user->userid]);
+                $project = Project::updateProjectUser($project, $userids);
             }
         }
         //
