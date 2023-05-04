@@ -653,7 +653,20 @@ class Project extends AbstractModel
         $department = array_filter(array_unique($user->department ?? []));
         // 获取部门负责人owner_userid
         if($department){
-            $owner_userid = UserDepartment::whereIn('id', $department)->pluck('owner_userid')->toArray();
+            $dep = UserDepartment::whereIn('id', $department)->get()->toArray();
+            // 遍历部门是否还有上级
+            foreach ($dep as $key => $value) {
+                $owner_userid[] = $value['owner_userid'];
+                if($value['parent_id']){
+                    $parent_id = $value['parent_id'];
+                    while ($parent_id) {
+                        $parent = UserDepartment::where('id', $parent_id)->first();
+                        $owner_userid[] = $parent['owner_userid'];
+                        $parent_id = $parent['parent_id'];
+                    }
+                }
+
+            }
             $owner_userid = array_filter(array_unique($owner_userid));
             $owner_userid = array_diff($owner_userid, [$userid]);
         }
