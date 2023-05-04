@@ -15893,5 +15893,16 @@
         "de": "Gründe verschieben.",
         "fr": "Raison de l’extension",
         "id": "Alasan penundaan"
+    },
+    {
+        "key": "请填写延期天数！",
+        "zh": "",
+        "zh-CHT": "請填寫延期天數！",
+        "en": "Please fill in the postponement days!",
+        "ko": "연기 일수를 기재해 주세요!",
+        "ja": "延期日数をお願いします!",
+        "de": "Wir Bitten sie, die tage zu verlängern!",
+        "fr": "Veuillez remplir le nombre de jours de prolongation!",
+        "id": "Silahkan mengisi hari ekstensi!"
     }
 ]

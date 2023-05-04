@@ -468,7 +468,7 @@
                     v-model="delayData.days"
                     :min="1"
                     :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                    :parser="value => value.replace(/\$\s?|(,*)/g, '')"></InputNumber>
+                    :parser="value => value.replace(/\$\s?|(,*\.)/g, '')"></InputNumber>
                 </FormItem>
                 <FormItem prop="reason" :label="$L('延期原因')" style="margin-bottom:10px;">
                     <Input type="textarea" v-model="delayData.reason"></Input>
@@ -609,7 +609,7 @@ export default {
             },
             delayRule: {
                 days: [
-                    { type: 'number', required: true, trigger: 'change' },
+                    { type: 'number',message: this.$L('请填写延期天数！'), required: true, trigger: 'change' },
                 ],
                 reason: [
                     { required: true, message: this.$L('请填写延期原因！'), trigger: 'change' },
