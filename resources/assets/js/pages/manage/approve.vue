@@ -346,6 +346,7 @@ export default {
                 this.$store.dispatch("call", {
                     url: 'project/personal/list',
                     data: {
+                        type:'all',
                         keyword:query,
                         page: this.projectPage,
                         pagesize: 20,
@@ -369,6 +370,7 @@ export default {
                 this.$store.dispatch("call", {
                     url: 'project/personal/list',
                     data: {
+                        type:'all',
                         keyword:query,
                         page: this.projectPage,
                         pagesize: 20,
@@ -389,6 +391,7 @@ export default {
             this.$store.dispatch("call", {
                 url: 'project/personal/list',
                 data: {
+                    type:'all',
                     page: this.projectPage,
                     pagesize: 20,
                 },

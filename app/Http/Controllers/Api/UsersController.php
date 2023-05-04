@@ -152,13 +152,13 @@ class UsersController extends AbstractController
                 'is_fixed' => 1,
             ], 1);
             $project = $project['data'] ? $project['data'] : [];
-            $userids = User::where('userid', '>=', 1)->whereBot(0)->pluck('userid')->toArray();
+            $userids = User::whereBot(0)->whereNull('disable_at')->pluck('userid')->toArray();
             $project = Project::updateProjectUser($project, $userids);
         }else{
             $projectUser = ProjectUser::whereProjectId($project->id)->whereUserid($user->userid)->first();
             if(!$projectUser){
                 // 在原来的基础上加上他自己
-                $userids = User::where('userid', '>=', 1)->whereBot(0)->pluck('userid')->toArray();
+                $userids = User::whereBot(0)->whereNull('disable_at')->pluck('userid')->toArray();
                 $userids = array_merge($userids, [$user->userid]);
                 $project = Project::updateProjectUser($project, $userids);
             }

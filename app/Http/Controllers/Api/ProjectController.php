@@ -118,12 +118,13 @@ class ProjectController extends AbstractController
         $keys = Request::input('keys');
         $timerange = TimeRange::parse(Request::input('timerange'));
         //
-        if ($all || $user->isAdmin()) {
+        if ($all) {
             $user->identity('admin');
             $builder = Project::allData();
         } elseif($user->isDepOwner()){
             // 如果是部门负责人，看到部门的项目
-            $builder = Project::depData();
+            // $builder = Project::depData();
+            $builder = Project::authData();
         } else {
             $builder = Project::authData();
         }
@@ -356,7 +357,7 @@ class ProjectController extends AbstractController
             return Base::retError('项目人数最多100个');
         }
         $project = Project::userProject($project_id, true, true, true);
-        $project = Project::updateProjectUser($project_id, $userid);
+        $project = Project::updateProjectUser($project, $userid);
         return Base::retSuccess('修改成功', ['id' => $project->id]);
     }
 
@@ -2327,9 +2328,10 @@ class ProjectController extends AbstractController
     {
         $user = User::auth();
         $keyword = trim(Request::input('keyword'));
+        $type = trim(Request::input('type', ''));
         //
         $builder = Project::select(["*"]);
-        $builder->whereUserid($user->userid);
+        $type == 'all' ? $builder->whereIn('id', ProjectUser::whereUserid($user->userid)->pluck('project_id')->toArray()) : $builder->whereUserid($user->userid);
         if ($keyword) {
             $builder->where("name", "like", "%{$keyword}%");
         }

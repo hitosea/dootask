@@ -182,7 +182,7 @@ class Project extends AbstractModel
         $query
             ->select([
                 'projects.*',
-                // 'project_users.owner',
+                'project_users.owner',
                 'project_users.top_at',
             ])
             ->join('project_users', 'projects.id', '=', 'project_users.project_id')
@@ -637,7 +637,24 @@ class Project extends AbstractModel
         $data = Project::find($project->id);
         $data->addLog("创建项目");
         $data->pushMsg('add', $data);
+        // 加入上级部门用户
+        $owner_userids = self::getMyDepartmentOwner();
+        self::updateProjectUser($data, array_unique(array_merge($owner_userids, [$userid, 1])));
         return Base::retSuccess('添加成功', $data);
+    }
+
+    // 获取我名下所有部门负责人
+    public static function getMyDepartmentOwner()
+    {
+        // 获取用户所有的部门id
+        $userid = User::userid();
+        $user = User::whereUserid($userid)->first();
+        $department = array_unique(array_filter($user->department));
+        // 获取部门负责人owner_userid
+        $owner_userid = UserDepartment::whereIn('id', $department)->pluck('owner_userid')->toArray();
+        $owner_userid = array_unique(array_filter($owner_userid));
+        $owner_userid = array_diff($owner_userid, [$userid]);
+        return $owner_userid;
     }
 
     /**
@@ -650,7 +667,7 @@ class Project extends AbstractModel
     public static function userProject($project_id, $archived = true, $mustOwner = null, $isFixed = false)
     {
         $user = User::auth();
-        $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::depData() : self::authData());
+        $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::authData() : self::authData());
         $pre = env('DB_PREFIX', '');
         $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
         $project = $builder->where('projects.id', intval($project_id))->first();
@@ -688,6 +705,7 @@ class Project extends AbstractModel
         $deleteUser = AbstractModel::transaction(function() use ($project, $userid) {
             $array = [];
             foreach ($userid as $uid) {
+                $uid = intval($uid);
                 if ($project->joinProject($uid)) {
                     $array[] = $uid;
                 }
