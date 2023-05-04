@@ -2296,12 +2296,15 @@ class ProjectController extends AbstractController
         $project_id = trim(Request::input('project_id'));
         //
         $builder = ProjectTask::select(["*"])->with(['project']);
-        $builder->whereUserid($user->userid);
+//        $builder->whereUserid($user->userid);
+
         if ($keyword) {
             $builder->where("name", "like", "%{$keyword}%");
         }
         if ($project_id) {
             $builder->whereProjectId($project_id);
+        } else {
+            $builder->whereIn('project_id', ProjectUser::whereUserid($user->userid)->pluck('project_id')->toArray());
         }
         $list = $builder->orderByDesc('created_at')->paginate(Base::getPaginate(100, 20));
         //
