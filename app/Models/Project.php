@@ -646,14 +646,17 @@ class Project extends AbstractModel
     // 获取我名下所有部门负责人
     public static function getMyDepartmentOwner()
     {
+        $owner_userid = [];
         // 获取用户所有的部门id
         $userid = User::userid();
         $user = User::whereUserid($userid)->first();
-        $department = array_unique(array_filter($user->department));
+        $department = array_filter(array_unique($user->department ?? []));
         // 获取部门负责人owner_userid
-        $owner_userid = UserDepartment::whereIn('id', $department)->pluck('owner_userid')->toArray();
-        $owner_userid = array_unique(array_filter($owner_userid));
-        $owner_userid = array_diff($owner_userid, [$userid]);
+        if($department){
+            $owner_userid = UserDepartment::whereIn('id', $department)->pluck('owner_userid')->toArray();
+            $owner_userid = array_filter(array_unique($owner_userid));
+            $owner_userid = array_diff($owner_userid, [$userid]);
+        }
         return $owner_userid;
     }
 
@@ -666,8 +669,9 @@ class Project extends AbstractModel
      */
     public static function userProject($project_id, $archived = true, $mustOwner = null, $isFixed = false)
     {
-        $user = User::auth();
-        $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::authData() : self::authData());
+        // $user = User::auth();
+        // $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::depData() : self::authData());
+        $builder = self::authData();
         $pre = env('DB_PREFIX', '');
         $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
         $project = $builder->where('projects.id', intval($project_id))->first();
