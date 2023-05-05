@@ -96,15 +96,26 @@ class ProjectApplie extends AbstractModel
             throw new ApiException('已存在待处理的申请');
         }
         $depOwner = $user->getDepOwner();
-        $depOwner = $depOwner->pluck('userid')->toArray(); //部门负责人单一
-        $data['audit_userid'] = empty($depOwner) ? $user->userid : implode(',', $depOwner);
+        $depOwner = $depOwner->pluck('userid')->toArray() ?? [];
+        // 优先原则，如果部门负责人有多个，有自己，优先自己，如果没有自己，随机取一个
+        if(in_array($user->userid, $depOwner)){
+            $depOwner = $user->userid;
+            //如果自己的部门还有上级部门，则要取上级部门的负责人
+            $parent = UserDepartment::whereOwnerUserid($depOwner)->where('parent_id','>',0)->value('parent_id');
+            if($parent){
+                $depOwner = UserDepartment::whereId($parent)->value('owner_userid');
+            }
+        }else{
+            $depOwner = $depOwner ? $depOwner[array_rand($depOwner)] : $depOwner;
+        }
+        $data['audit_userid'] = empty($depOwner) ? $user->userid : $depOwner; //部门负责人单一
         $applies = self::createInstance($data);
         $applies->save();
         // 推送提醒
         if(empty($depOwner) || $user->userid == $data['audit_userid']){
             $applies->updateStatus($user, 1, "无部门负责人,自动通过");
         }else{
-            $applies->appliesPush('project_reviewer', 'start', $applies, $depOwner);
+            $applies->appliesPush('project_reviewer', 'start', $applies, [$depOwner]);
         }
         //
         return $applies;
@@ -148,7 +159,8 @@ class ProjectApplie extends AbstractModel
             'id' => $applies->id,
             'task_id' => $applies->task_id,
             'task_name' => $projectTask->name,
-            'nickname' => User::userid2nickname($type == 'project_submitter' ? $applies->audit_userid : $applies->userid),
+            'auditor' => User::userid2nickname($applies->audit_userid), //审核人
+            'applicant' => User::userid2nickname($applies->userid),     //申请人
             'project_name' => $project->name,
             'days' => $applies->days, //申请天数
             'reason' => $applies->reason, //原因说明

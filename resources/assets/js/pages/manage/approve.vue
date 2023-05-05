@@ -225,7 +225,10 @@ export default {
                 switch (type) {
                     case 'approve':
                         if (action == 'backlog') {
-                            this.getLists();
+                            clearInterval(this.setTimeoutbacklogIndex || 0);
+                            this.setTimeoutbacklogIndex = setTimeout(()=>{
+                                this.getLists();
+                            },500)
                         }
                         break;
                 }
