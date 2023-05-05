@@ -159,7 +159,8 @@ class ProjectApplie extends AbstractModel
             'id' => $applies->id,
             'task_id' => $applies->task_id,
             'task_name' => $projectTask->name,
-            'nickname' => User::userid2nickname($type == 'project_submitter' ? $applies->audit_userid : $applies->userid),
+            'auditor' => User::userid2nickname($applies->audit_userid), //审核人
+            'applicant' => User::userid2nickname($applies->userid),     //申请人
             'project_name' => $project->name,
             'days' => $applies->days, //申请天数
             'reason' => $applies->reason, //原因说明
