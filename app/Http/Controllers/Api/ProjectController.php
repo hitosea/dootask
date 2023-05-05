@@ -751,7 +751,7 @@ class ProjectController extends AbstractController
         $project_id = intval(Request::input('project_id'));
         $name = trim(Request::input('name'));
         // 项目
-        $project = Project::userProject($project_id, true, true);
+        $project = Project::userProject($project_id);
         //
         if (empty($name)) {
             return Base::retError('列表名称不能为空');
@@ -802,7 +802,7 @@ class ProjectController extends AbstractController
             return Base::retError('列表不存在');
         }
         // 项目
-        Project::userProject($column->project_id, true, true);
+        Project::userProject($column->project_id);
         //
         if (Arr::exists($data, 'name') && $column->name != $data['name']) {
             $column->addLog("修改列表名称：{$column->name} => {$data['name']}");
@@ -1709,7 +1709,7 @@ class ProjectController extends AbstractController
         //
         $task_id = intval(Request::input('task_id'));
         //
-        $task = ProjectTask::userTask($task_id, true, true, true);
+        $task = ProjectTask::userTask($task_id);
         //
         if ($task->parent_id > 0) {
             return Base::retError('子任务不支持此功能');
@@ -2157,7 +2157,7 @@ class ProjectController extends AbstractController
         $days = intval(Request::input('days', 1));
         $reason = Request::input('reason', '');
         //
-        $task = ProjectTask::userTask($task_id, true, true, true);
+        $task = ProjectTask::userTask($task_id, true, true);
         //
         if ($task->parent_id > 0) {
             return Base::retError('子任务不支持此功能');
