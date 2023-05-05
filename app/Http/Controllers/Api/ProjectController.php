@@ -2334,7 +2334,8 @@ class ProjectController extends AbstractController
         $type = trim(Request::input('type', ''));
         //
         $builder = Project::select(["*"]);
-        $type == 'all' ? $builder->whereIn('id', ProjectUser::whereUserid($user->userid)->pluck('project_id')->toArray()) : $builder->whereUserid($user->userid);
+//        $type == 'all' ? $builder->whereIn('id', ProjectUser::whereUserid($user->userid)->pluck('project_id')->toArray()) : $builder->whereUserid($user->userid);
+        $builder->whereIn('id', ProjectUser::whereUserid($user->userid)->pluck('project_id')->toArray());
         if ($keyword) {
             $builder->where("name", "like", "%{$keyword}%");
         }
