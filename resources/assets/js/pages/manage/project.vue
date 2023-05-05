@@ -21,7 +21,7 @@ export default {
     },
 
     computed: {
-        ...mapState(['cacheProjects', 'wsOpenNum']),
+        ...mapState(['cacheProjects', 'wsOpenNum', 'wsMsg']),
 
         projectId() {
             const {projectId} = this.$route.params;
@@ -30,6 +30,23 @@ export default {
     },
 
     watch: {
+        wsMsg: {
+            handler(info) {
+                const {type, action} = info;
+                switch (type) {
+                    case 'approve':
+                        if (action == 'backlog') {
+                            clearInterval(this.setTimeoutbacklogIndex || 0);
+                            this.setTimeoutbacklogIndex = setTimeout(()=>{
+                                this.getProjectData();
+                            },500)
+                        }
+                        break;
+                }
+            },
+            deep: true,
+        },
+        
         projectId: {
             handler() {
                 this.getProjectData();
