@@ -2157,7 +2157,7 @@ class ProjectController extends AbstractController
         $days = intval(Request::input('days', 1));
         $reason = Request::input('reason', '');
         //
-        $task = ProjectTask::userTask($task_id, true, true);
+        $task = ProjectTask::userTask($task_id, true, true, true);
         //
         if ($task->parent_id > 0) {
             return Base::retError('子任务不支持此功能');
