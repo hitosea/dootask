@@ -289,23 +289,21 @@ class ProjectTask extends AbstractModel
                 $leftJoin->on('project_tasks.id', '=', 'project_task_users.task_id');
             })
             ->where(function($q) use($user,$userid) {
-                $q->where('project_task_users.userid', $userid);
-                //
-                if ($user->isAdmin()) {
-                    // 如果是超管, 查看所有超期的任务
-                    $q->orWhere('project_tasks.end_at', '<', Carbon::now()->toDateTimeString());
-                }elseif($user->isDepOwner()){
-                    $depIds = UserDepartment::getOwnerDepIds($user);
-                    // 查询所有部门下的用户
-                    $userids = User::where(function ($query) use ($depIds) {
-                        foreach ($depIds as $depId) {
-                            $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
-                        }
-                    })->pluck('userid')->toArray();
-                    // 只查询部门用户下任务超期的记录
-                    $q->orWhere(function ($query) use ($userids) {
-                        $query->whereIn('project_tasks.userid', $userids);
-                    });
+                if (!$user->isAdmin()) {
+                    $q->where('project_task_users.userid', $userid);
+                    if($user->isDepOwner()){
+                        $depIds = UserDepartment::getOwnerDepIds($user);
+                        // 查询所有部门下的用户
+                        $userids = User::where(function ($query) use ($depIds) {
+                            foreach ($depIds as $depId) {
+                                $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
+                            }
+                        })->pluck('userid')->toArray();
+                        // 只查询部门用户下任务超期的记录
+                        $q->orWhere(function ($query) use ($userids) {
+                            $query->whereIn('project_tasks.userid', $userids);
+                        });
+                    }
                 }
             });
         return $query;
@@ -330,23 +328,21 @@ class ProjectTask extends AbstractModel
             ->selectRaw("1 AS assist")
             ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
             ->where(function($q) use($user,$userid) {
-                $q->where('project_task_users.userid', $userid);
-                //
-                if ($user->isAdmin()) {
-                    // 如果是超管, 查看所有超期的任务s
-                    $q->orWhere('project_tasks.end_at', '<', Carbon::now()->toDateTimeString());
-                }elseif($user->isDepOwner()){
-                    $depIds = UserDepartment::getOwnerDepIds($user);
-                    // 查询所有部门下的用户
-                    $userids = User::where(function ($query) use ($depIds) {
-                        foreach ($depIds as $depId) {
-                            $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
-                        }
-                    })->pluck('userid')->toArray();
-                    // 只查询部门用户下任务超期的记录
-                    $q->orWhere(function ($query) use ($userids) {
-                        $query->whereIn('project_tasks.userid', $userids);
-                    });
+                if (!$user->isAdmin()) {
+                    $q->where('project_task_users.userid', $userid);
+                    if($user->isDepOwner()){
+                        $depIds = UserDepartment::getOwnerDepIds($user);
+                        // 查询所有部门下的用户
+                        $userids = User::where(function ($query) use ($depIds) {
+                            foreach ($depIds as $depId) {
+                                $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
+                            }
+                        })->pluck('userid')->toArray();
+                        // 只查询部门用户下任务超期的记录
+                        $q->orWhere(function ($query) use ($userids) {
+                            $query->whereIn('project_tasks.userid', $userids);
+                        });
+                    }
                 }
             });
         if ($owner !== null) {

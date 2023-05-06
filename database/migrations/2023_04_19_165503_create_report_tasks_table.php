@@ -13,12 +13,14 @@ class CreateReportTasksTable extends Migration
      */
     public function up()
     {
-        Schema::create('report_tasks', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->bigInteger('task_id')->nullable()->default(0)->comment('任务ID');
-            $table->bigInteger('report_id')->nullable()->default(0)->comment('日报ID');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('report_tasks')) {
+            Schema::create('report_tasks', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->bigInteger('task_id')->nullable()->default(0)->comment('任务ID');
+                $table->bigInteger('report_id')->nullable()->default(0)->comment('日报ID');
+                $table->timestamps();
+            });
+        }
     }
 
     /**
