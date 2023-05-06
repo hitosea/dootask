@@ -728,7 +728,16 @@ class UsersController extends AbstractController
                         $query->where("department", "")->orWhere("department", ",,");
                     });
                 } else {
-                    $builder->where("department", "like", "%,{$keys['department']},%");
+                    // 关联user_departments表中owner_userid查询出负责人，重新排序，部门负责人始终在前面
+                    $builder->where(function($query) use ($keys) {
+                        $query->where("department", "like", "%,{$keys['department']},%");
+                        $query->orWhereIn('userid', function ($query) use ($keys) {
+                            $query->select('owner_userid')->from('user_departments')->where("id", "=", trim($keys['department'], ','));
+                        });
+                    });
+                    $prefix = \DB::getTablePrefix();
+                    $builder->selectRaw("if(EXISTS(select id from {$prefix}user_departments where owner_userid = userid and id={$keys['department']}),1,0) as is_principal");
+                    $builder->orderBy("is_principal","desc");
                 }
             }
             if ($getCheckinMac && isset($keys['checkin_mac'])) {
