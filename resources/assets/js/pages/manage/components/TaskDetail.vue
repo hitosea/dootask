@@ -623,10 +623,9 @@ export default {
         if (['dialog', 'log'].includes(navActive)) {
             this.navActive = navActive;
         }
-
-        if( (this.userInfo?.identity || []).indexOf("admin") !== -1 ){
-            this.isShowExtension = false;
-        }
+        // if( (this.userInfo?.identity || []).indexOf("admin") !== -1 ){
+        //     this.isShowExtension = false;
+        // }
     },
 
     mounted() {

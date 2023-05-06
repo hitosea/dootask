@@ -90,7 +90,7 @@ class ProjectApplie extends AbstractModel
      * @param $data
      * @return self
      */
-    public static function add($user,$data)
+    public static function add(User $user,$data)
     {
         if(self::where('task_id',$data['task_id'])->where('status',0)->exists()){
             throw new ApiException('已存在待处理的申请');
@@ -111,8 +111,9 @@ class ProjectApplie extends AbstractModel
         $data['audit_userid'] = empty($depOwner) ? $user->userid : $depOwner; //部门负责人单一
         $applies = self::createInstance($data);
         $applies->save();
+
         // 推送提醒
-        if(empty($depOwner) || $user->userid == $data['audit_userid']){
+        if($user->isAdmin() || empty($depOwner) || $user->userid == $data['audit_userid']){
             $applies->updateStatus($user, 1, "无部门负责人,自动通过");
         }else{
             $applies->appliesPush('project_reviewer', 'start', $applies, [$depOwner]);
