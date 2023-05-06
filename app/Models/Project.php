@@ -153,7 +153,11 @@ class Project extends AbstractModel
                 'project_users.top_at',
             ])
             ->join('project_users', 'projects.id', '=', 'project_users.project_id')
-            ->where('project_users.userid', $userid);
+            ->where('project_users.userid', $userid)
+            // 过滤掉部门下用户的个人项目
+            ->where(function ($query) use ($userid){
+                $query->where('projects.personal', 0)->orWhere('projects.userid', $userid);
+            });
         if ($owner !== null) {
             $query->where('project_users.owner', $owner);
         }
