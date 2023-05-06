@@ -205,4 +205,16 @@ class UserDepartment extends AbstractModel
         }
         return false;
     }
+
+    // 如果我是负责人，获取我所在的部门以及子部门
+    public static function getOwnerDepIds(User $user) {
+        $department = [];
+        $dep = self::whereOwnerUserid($user->userid)->get()->toArray();
+        foreach ($dep as $key => $value) {
+            $department[] = $value['id'];
+            // 获取下面的子部门
+            $department = array_merge($department, self::whereParentId($value['id'])->pluck('id')->toArray());
+        }
+        return $department;
+    }
 }

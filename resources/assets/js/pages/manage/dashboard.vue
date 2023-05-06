@@ -125,6 +125,13 @@ export default {
             const list = [];
             ['today', 'overdue', 'all'].some(type => {
                 let data = this.transforTasks(this.dashboardTask[type]);
+                if(type == 'all'){
+                    data = $.map(data,(h)=>{
+                        if( $.map(h.task_user,(k)=>{ return h.userid }).indexOf(this.userId) !== -1){
+                            return h
+                        }
+                    })
+                }
                 list.push({
                     type,
                     title: this.getTitle(type),
@@ -136,9 +143,13 @@ export default {
             list.push({
                 type: 'assist',
                 title: this.getTitle('assist'),
-                list: this.assistTask.sort((a, b) => {
-                    return $A.Date(a.end_at || "2099-12-31 23:59:59") - $A.Date(b.end_at || "2099-12-31 23:59:59");
-                })
+                list: $.map(this.assistTask,(h)=>{
+                        if( $.map(h.task_user,(k)=>{ return h.userid }).indexOf(this.userId) !== -1){
+                            return h
+                        }
+                    }).sort((a, b) => {
+                        return $A.Date(a.end_at || "2099-12-31 23:59:59") - $A.Date(b.end_at || "2099-12-31 23:59:59");
+                    })
             })
             return list;
         },

@@ -61,6 +61,7 @@ use Request;
  * @property-read int|null $task_user_count
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask authData($userid = null, $owner = null)
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask AllAdminData()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask betweenTime($start, $end, $type = 'taskTime')
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newQuery()
@@ -277,16 +278,35 @@ class ProjectTask extends AbstractModel
      */
     public function scopeAllData($query, $userid = null)
     {
+        $user = User::auth();
         $userid = $userid ?: User::userid();
         $query
             ->select([
                 'project_tasks.*',
                 'project_task_users.owner'
             ])
-            ->leftJoin('project_task_users', function ($leftJoin) use ($userid) {
-                $leftJoin
-                    ->on('project_task_users.userid', '=', DB::raw($userid))
-                    ->on('project_tasks.id', '=', 'project_task_users.task_id');
+            ->leftJoin('project_task_users', function ($leftJoin) {
+                $leftJoin->on('project_tasks.id', '=', 'project_task_users.task_id');
+            })
+            ->where(function($q) use($user,$userid) {
+                $q->where('project_task_users.userid', $userid);
+                //
+                if ($user->isAdmin()) {
+                    // 如果是超管, 查看所有超期的任务
+                    $q->orWhere('project_tasks.end_at', '<', Carbon::now()->toDateTimeString());
+                }elseif($user->isDepOwner()){
+                    $depIds = UserDepartment::getOwnerDepIds($user);
+                    // 查询所有部门下的用户
+                    $userids = User::where(function ($query) use ($depIds) {
+                        foreach ($depIds as $depId) {
+                            $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
+                        }
+                    })->pluck('userid')->toArray();
+                    // 只查询部门用户下任务超期的记录
+                    $q->orWhere(function ($query) use ($userids) {
+                        $query->whereIn('project_tasks.userid', $userids);
+                    });
+                }
             });
         return $query;
     }
@@ -300,6 +320,49 @@ class ProjectTask extends AbstractModel
      */
     public function scopeAuthData($query, $userid = null, $owner = null)
     {
+        $user = User::auth();
+        $userid = $userid ?: User::userid();
+        $query
+            ->select([
+                'project_tasks.*',
+                'project_task_users.owner'
+            ])
+            ->selectRaw("1 AS assist")
+            ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
+            ->where(function($q) use($user,$userid) {
+                $q->where('project_task_users.userid', $userid);
+                //
+                if ($user->isAdmin()) {
+                    // 如果是超管, 查看所有超期的任务s
+                    $q->orWhere('project_tasks.end_at', '<', Carbon::now()->toDateTimeString());
+                }elseif($user->isDepOwner()){
+                    $depIds = UserDepartment::getOwnerDepIds($user);
+                    // 查询所有部门下的用户
+                    $userids = User::where(function ($query) use ($depIds) {
+                        foreach ($depIds as $depId) {
+                            $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
+                        }
+                    })->pluck('userid')->toArray();
+                    // 只查询部门用户下任务超期的记录
+                    $q->orWhere(function ($query) use ($userids) {
+                        $query->whereIn('project_tasks.userid', $userids);
+                    });
+                }
+            });
+        if ($owner !== null) {
+            $query->where('project_task_users.owner', $owner);
+        }
+        return $query;
+    }
+    /**
+     * 超管查询所有任务
+     *
+     * @param [type] $query
+     * @param [type] $userid
+     * @return void
+     */
+    public function scopeAllAdminData($query, $userid = null)
+    {
         $userid = $userid ?: User::userid();
         $query
             ->select([
@@ -309,9 +372,7 @@ class ProjectTask extends AbstractModel
             ->selectRaw("1 AS assist")
             ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
             ->where('project_task_users.userid', $userid);
-        if ($owner !== null) {
-            $query->where('project_task_users.owner', $owner);
-        }
+
         return $query;
     }
 
