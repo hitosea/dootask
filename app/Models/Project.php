@@ -682,17 +682,13 @@ class Project extends AbstractModel
      */
     public static function userProject($project_id, $archived = true, $mustOwner = null, $isFixed = false)
     {
-        $user = User::auth();
         // $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::depData() : self::authData());
-        // 如果是管理员或者部门负责人，可以修改所有项目
-        $depOwners = UserDepartment::whereIn('id', $user->department)->pluck('owner_userid')->toArray();
-        if ($user->isAdmin() || in_array($user->userid, $depOwners)) {
-            $mustOwner = null;
-        }
         $builder = self::authData();
         $pre = env('DB_PREFIX', '');
         $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
         $project = $builder->where('projects.id', intval($project_id))->first();
+        // 如果操作人是管理员或者部门负责人，有修改权限
+        $mustOwner = UserDepartment::getOwnerUseridStatus(User::auth(), $project_id) ? null : $mustOwner;
         if (empty($project)) {
             throw new ApiException('项目不存在或不在成员列表内', [ 'project_id' => $project_id ], -4001);
         }

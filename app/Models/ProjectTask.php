@@ -533,13 +533,11 @@ class ProjectTask extends AbstractModel
      */
     public function updateTask($data, &$updateMarking = [])
     {
-        $user = User::auth();
-        $mustOwner = false;
-        $depOwners = UserDepartment::whereIn('id', $user->department)->pluck('owner_userid')->toArray();
-        if ($user->isAdmin() || in_array($user->userid, $depOwners)) {
-            $mustOwner = true;
-        }
-        AbstractModel::transaction(function () use ($data, &$updateMarking, $mustOwner) {
+
+        AbstractModel::transaction(function () use ($data, &$updateMarking) {
+             // 如果操作人是管理员或者部门负责人，有修改权限
+            $mustOwner = false;
+            $mustOwner = UserDepartment::getOwnerUseridStatus(User::auth(), $this->project_id) ? true : $mustOwner;
             // 主任务
             $mainTask = $this->parent_id > 0 ? self::find($this->parent_id) : null;
             // 工作流
@@ -1528,11 +1526,6 @@ class ProjectTask extends AbstractModel
      */
     public static function userTask($task_id, $archived = true, $trashed = true, $permission = false, $with = [])
     {
-        $user = User::auth();
-        $depOwners = UserDepartment::whereIn('id', $user->department)->pluck('owner_userid')->toArray();
-        if ($user->isAdmin() || in_array($user->userid, $depOwners)) {
-            $permission = false;
-        }
         $builder = self::with($with)->allData()->where("project_tasks.id", intval($task_id));
         if ($trashed === false) {
             $builder->onlyTrashed();
@@ -1540,6 +1533,8 @@ class ProjectTask extends AbstractModel
             $builder->withTrashed();
         }
         $task = $builder->first();
+        // 如果操作人是管理员或者部门负责人，有修改权限
+        $permission = UserDepartment::getOwnerUseridStatus(User::auth(), $task->project_id) ? false : $permission;
         //
         if (empty($task)) {
             throw new ApiException('任务不存在', ['task_id' => $task_id], -4002);

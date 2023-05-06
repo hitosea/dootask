@@ -168,4 +168,41 @@ class UserDepartment extends AbstractModel
     public static function isOwnerByUserid($userid) {
         return self::whereOwnerUserid($userid)->count() > 0;
     }
+
+    /**
+     * 获取所在部门负责人及上级部门负责人
+     *
+     * @param User $user
+     * @param [type] $userid
+     * @return bool
+     */
+    public static function getOwnerUseridStatus(User $user, $project_id) {
+        // 获取项目归属
+        $owner_userid = [];
+        $project = Project::find($project_id);
+        if($project){
+            // 获取项目创建用户
+            $project_user = User::find($project->userid);
+            if($project_user->department){
+                $dep = UserDepartment::whereIn('id', $project_user->department)->get()->toArray();
+                foreach ($dep as $key => $value) {
+                    $owner_userid[] = $value['owner_userid'];
+                    if($value['parent_id']){
+                        $parent_id = $value['parent_id'];
+                        while ($parent_id) {
+                            $parent = UserDepartment::where('id', $parent_id)->first();
+                            $owner_userid[] = $parent['owner_userid'];
+                            $parent_id = $parent['parent_id'];
+                        }
+                    }
+                }
+                $owner_userid = array_filter(array_unique($owner_userid));
+            }
+            // 如果操作人是管理员或者部门负责人，有修改权限
+            if($user->isAdmin() || in_array($user->userid, $owner_userid)){
+                return true;
+            }
+        }
+        return false;
+    }
 }
