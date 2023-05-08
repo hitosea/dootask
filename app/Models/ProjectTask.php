@@ -280,34 +280,25 @@ class ProjectTask extends AbstractModel
     {
         $user = User::auth();
         $userid = $userid ?: User::userid();
-        $query
-            ->select([
+
+        $query->select([
                 'project_tasks.*',
                 'project_task_users.owner'
             ])
-            ->leftJoin('project_task_users', function ($leftJoin) use ($userid){
-                $leftJoin
-                ->on('project_task_users.userid', '=', DB::raw($userid))
-                ->on('project_tasks.id', '=', 'project_task_users.task_id');
+            ->leftJoin('project_task_users', function ($leftJoin) use ($userid, $user) {
+                $leftJoin->on('project_tasks.id', '=', 'project_task_users.task_id');
+                if(!$user->isAdmin() && !$user->isDepOwner()){
+                    $leftJoin->on('project_task_users.userid', '=', DB::raw($userid));
+                }
             })
-            ->where(function($q) use($user,$userid) {
-                if (!$user->isAdmin()) {
-                    // $q->where('project_task_users.userid', $userid);
-                    if($user->isDepOwner()){
-                        $depIds = UserDepartment::getOwnerDepIds($user);
-                        // 查询所有部门下的用户
-                        $userids = User::where(function ($query) use ($depIds) {
-                            foreach ($depIds as $depId) {
-                                $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
-                            }
-                        })->pluck('userid')->toArray();
-                        // 只查询部门用户下任务超期的记录
-                        $q->orWhere(function ($query) use ($userids) {
-                            $query->whereIn('project_tasks.userid', $userids);
-                        });
-                    }
+            ->when(!$user->isAdmin(), function ($q) use ($user, $userid) {
+                if ($user->isDepOwner()) {
+                    $depIds = UserDepartment::getOwnerDepIds($user);
+                    $userids = $this->getUserIdsByDepIds($depIds);
+                    $q->orWhereIn('project_tasks.userid', $userids);
                 }
             });
+
         return $query;
     }
 
@@ -329,22 +320,13 @@ class ProjectTask extends AbstractModel
             ])
             ->selectRaw("1 AS assist")
             ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
-            ->where(function($q) use($user,$userid) {
-                if (!$user->isAdmin()) {
-                    // $q->where('project_task_users.userid', $userid);
-                    if($user->isDepOwner()){
-                        $depIds = UserDepartment::getOwnerDepIds($user);
-                        // 查询所有部门下的用户
-                        $userids = User::where(function ($query) use ($depIds) {
-                            foreach ($depIds as $depId) {
-                                $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
-                            }
-                        })->pluck('userid')->toArray();
-                        // 只查询部门用户下任务超期的记录
-                        $q->orWhere(function ($query) use ($userids) {
-                            $query->whereIn('project_tasks.userid', $userids);
-                        });
-                    }
+            ->when(!$user->isAdmin(), function ($q) use ($user, $userid) {
+                if ($user->isDepOwner()) {
+                    $depIds = UserDepartment::getOwnerDepIds($user);
+                    $userids = $this->getUserIdsByDepIds($depIds);
+                    $q->orWhereIn('project_tasks.userid', $userids);
+                }else{
+                    $q->orWhere('project_task_users.userid', $userid);
                 }
             });
         if ($owner !== null) {
@@ -352,6 +334,22 @@ class ProjectTask extends AbstractModel
         }
         return $query;
     }
+
+    /**
+     * 获取部门全部用户
+     *
+     * @param [type] $depIds
+     * @return array
+     */
+    private function getUserIdsByDepIds($depIds)
+    {
+        return User::where(function ($query) use ($depIds) {
+                foreach ($depIds as $depId) {
+                    $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
+                }
+            })->pluck('userid')->toArray();
+    }
+
     /**
      * 超管查询所有任务
      *
