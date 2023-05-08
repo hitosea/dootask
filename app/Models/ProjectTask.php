@@ -285,12 +285,14 @@ class ProjectTask extends AbstractModel
                 'project_tasks.*',
                 'project_task_users.owner'
             ])
-            ->leftJoin('project_task_users', function ($leftJoin) {
-                $leftJoin->on('project_tasks.id', '=', 'project_task_users.task_id');
+            ->leftJoin('project_task_users', function ($leftJoin) use ($userid){
+                $leftJoin
+                ->on('project_task_users.userid', '=', DB::raw($userid))
+                ->on('project_tasks.id', '=', 'project_task_users.task_id');
             })
             ->where(function($q) use($user,$userid) {
                 if (!$user->isAdmin()) {
-                    $q->where('project_task_users.userid', $userid);
+                    // $q->where('project_task_users.userid', $userid);
                     if($user->isDepOwner()){
                         $depIds = UserDepartment::getOwnerDepIds($user);
                         // 查询所有部门下的用户
@@ -329,7 +331,7 @@ class ProjectTask extends AbstractModel
             ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
             ->where(function($q) use($user,$userid) {
                 if (!$user->isAdmin()) {
-                    $q->where('project_task_users.userid', $userid);
+                    // $q->where('project_task_users.userid', $userid);
                     if($user->isDepOwner()){
                         $depIds = UserDepartment::getOwnerDepIds($user);
                         // 查询所有部门下的用户
@@ -1168,6 +1170,7 @@ class ProjectTask extends AbstractModel
             return $this->permission(3) || $this->existDialogUser();
         }
         if ($level >= 3 && $this->isCreater()) {
+            info("返回true？？？");
             return true;
         }
         if ($level >= 2 && $this->isAssister()) {
@@ -1191,6 +1194,10 @@ class ProjectTask extends AbstractModel
      */
     public function isCreater()
     {
+        info("=======用户=====");
+        info($this->userid);
+        info(User::userid());
+        info("=======用户end=====");
         return $this->userid == User::userid();
     }
 
@@ -1213,6 +1220,7 @@ class ProjectTask extends AbstractModel
      */
     public function isOwner()
     {
+        info("测试负责人:{$this->owner}");
         if ($this->owner) {
             return true;
         }
