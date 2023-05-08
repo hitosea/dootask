@@ -1170,7 +1170,6 @@ class ProjectTask extends AbstractModel
             return $this->permission(3) || $this->existDialogUser();
         }
         if ($level >= 3 && $this->isCreater()) {
-            info("返回true？？？");
             return true;
         }
         if ($level >= 2 && $this->isAssister()) {
@@ -1194,10 +1193,6 @@ class ProjectTask extends AbstractModel
      */
     public function isCreater()
     {
-        info("=======用户=====");
-        info($this->userid);
-        info(User::userid());
-        info("=======用户end=====");
         return $this->userid == User::userid();
     }
 
@@ -1220,7 +1215,6 @@ class ProjectTask extends AbstractModel
      */
     public function isOwner()
     {
-        info("测试负责人:{$this->owner}");
         if ($this->owner) {
             return true;
         }
