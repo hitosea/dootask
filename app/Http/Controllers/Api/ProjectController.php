@@ -118,13 +118,9 @@ class ProjectController extends AbstractController
         $keys = Request::input('keys');
         $timerange = TimeRange::parse(Request::input('timerange'));
         //
-        if ($all) {
+        if ($all || $user->isAdmin()) {
             $user->identity('admin');
             $builder = Project::allData();
-        } elseif($user->isDepOwner()){
-            // 如果是部门负责人，看到部门的项目
-            // $builder = Project::depData();
-            $builder = Project::authData();
         } else {
             $builder = Project::authData();
         }

@@ -37,7 +37,6 @@ use Request;
  * @property-read int|null $project_user_count
  * @method static \Illuminate\Database\Eloquent\Builder|Project allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|Project authData($userid = null, $owner = null)
- * @method static \Illuminate\Database\Eloquent\Builder|Project depData($userids = [])
  * @method static \Illuminate\Database\Eloquent\Builder|Project newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Project newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Project onlyTrashed()
@@ -125,13 +124,13 @@ class Project extends AbstractModel
             ])
             ->leftJoin('project_users', function ($leftJoin) use ($userid) {
                 $leftJoin
-
                     ->on('project_users.userid', '=', DB::raw($userid))
                     ->on('projects.id', '=', 'project_users.project_id');
             })
-            // 过滤掉部门下用户的个人项目
-            ->where(function ($query) use ($userid){
-                $query->where('projects.personal', 0)->orWhere('projects.userid', $userid);
+            ->where(function ($query) use ($userid) {
+                $query->where('projects.personal', 0)->orWhere(function ($query) use ($userid) {
+                    $query->where('projects.personal', 1)->where('projects.userid', $userid);
+                });
             });
         return $query;
     }
@@ -145,57 +144,34 @@ class Project extends AbstractModel
      */
     public function scopeAuthData($query, $userid = null, $owner = null)
     {
+        $user = User::auth();
         $userid = $userid ?: User::userid();
         $query
-            ->select([
-                'projects.*',
-                'project_users.owner',
-                'project_users.top_at',
-            ])
-            ->join('project_users', 'projects.id', '=', 'project_users.project_id')
-            ->where('project_users.userid', $userid)
-            // 过滤掉部门下用户的个人项目
-            ->where(function ($query) use ($userid){
-                $query->where('projects.personal', 0)->orWhere('projects.userid', $userid);
-            });
+        ->select([
+        'projects.*',
+        'project_users.owner',
+        'project_users.top_at',
+        ])
+        ->join('project_users', 'projects.id', '=', 'project_users.project_id')
+        ->when(!$user->isAdmin(), function ($q) use ($user, $userid) {
+            $q->where('project_users.userid', $userid);
+            if ($user->isDepOwner()) {
+                $depIds = UserDepartment::getOwnerDepIds($user);
+                $userids = $user->getUserIdsByDepIds($depIds);
+                $q->orWhere(function($q) use ($userids){
+                $q->whereIn('projects.userid', $userids)
+                    ->where('projects.personal', 0);
+                });
+            }
+        })
+        ->where(function ($query) use ($userid, $user){
+            if($user->isAdmin() || $user->isDepOwner()){
+                $query->where('projects.personal', 0);
+            }
+        });
         if ($owner !== null) {
             $query->where('project_users.owner', $owner);
         }
-        return $query;
-    }
-
-    /**
-     * 查询自己负责部门所有任务
-     * @param self $query
-     * @param [] $userids
-     * @return self
-     */
-    public function scopeDepData($query, $userids = [])
-    {
-        $userid = User::userid();
-        $depIds = UserDepartment::where('owner_userid', $userid)->pluck('id')->toArray(); // 获取用户所有的部门id
-
-        // 查询所有部门下的用户
-        $userids = User::where(function ($query) use ($depIds) {
-            foreach ($depIds as $depId) {
-                $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
-            }
-        })->pluck('userid')->toArray();
-
-        $userids = array_unique(array_merge($userids, [$userid]));
-        $query
-            ->select([
-                'projects.*',
-                'project_users.owner',
-                'project_users.top_at',
-            ])
-            ->join('project_users', 'projects.id', '=', 'project_users.project_id')
-            // 过滤掉部门下用户的个人项目
-            ->where(function ($query) use ($userid) {
-                $query->where('projects.personal', 0)->orWhere('projects.userid', $userid);
-            })
-            ->whereIn('project_users.userid', $userids);
-
         return $query;
     }
 
@@ -212,7 +188,7 @@ class Project extends AbstractModel
         $array['task_complete'] = $builder->whereNotNull('complete_at')->count();
         $array['task_percent'] = $array['task_num'] ? intval($array['task_complete'] / $array['task_num'] * 100) : 0;
         //
-        $builder = ProjectTask::authData($userid, 1)->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
+        $builder = ProjectTask::numData($userid, 1)->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
         $builder = $builder->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
         $array['task_my_num'] = $builder->count();
         $array['task_my_complete'] = $builder->whereNotNull('project_tasks.complete_at')->count();
@@ -686,8 +662,7 @@ class Project extends AbstractModel
      */
     public static function userProject($project_id, $archived = true, $mustOwner = null, $isFixed = false)
     {
-        // $builder = $user->isAdmin() ? self::allData() : ($user->isDepOwner() ? self::depData() : self::authData());
-        $builder = self::authData();
+        $builder = User::auth()->isAdmin() ? self::allData() : self::authData();
         $pre = env('DB_PREFIX', '');
         $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
         $project = $builder->where('projects.id', intval($project_id))->first();

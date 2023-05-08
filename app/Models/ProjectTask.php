@@ -61,7 +61,7 @@ use Request;
  * @property-read int|null $task_user_count
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask authData($userid = null, $owner = null)
- * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask AllAdminData()
+ * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask numData($userid = null, $owner = null)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask betweenTime($start, $end, $type = 'taskTime')
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newQuery()
@@ -294,7 +294,7 @@ class ProjectTask extends AbstractModel
             ->when(!$user->isAdmin(), function ($q) use ($user, $userid) {
                 if ($user->isDepOwner()) {
                     $depIds = UserDepartment::getOwnerDepIds($user);
-                    $userids = $this->getUserIdsByDepIds($depIds);
+                    $userids = $user->getUserIdsByDepIds($depIds);
                     $q->orWhereIn('project_tasks.userid', $userids);
                 }
             });
@@ -323,7 +323,7 @@ class ProjectTask extends AbstractModel
             ->when(!$user->isAdmin(), function ($q) use ($user, $userid) {
                 if ($user->isDepOwner()) {
                     $depIds = UserDepartment::getOwnerDepIds($user);
-                    $userids = $this->getUserIdsByDepIds($depIds);
+                    $userids = $user->getUserIdsByDepIds($depIds);
                     $q->orWhereIn('project_tasks.userid', $userids);
                 }else{
                     $q->orWhere('project_task_users.userid', $userid);
@@ -335,19 +335,21 @@ class ProjectTask extends AbstractModel
         return $query;
     }
 
-    /**
-     * 获取部门全部用户
-     *
-     * @param [type] $depIds
-     * @return array
-     */
-    private function getUserIdsByDepIds($depIds)
+    public function scopeNumData($query, $userid = null, $owner = null)
     {
-        return User::where(function ($query) use ($depIds) {
-                foreach ($depIds as $depId) {
-                    $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
-                }
-            })->pluck('userid')->toArray();
+        $userid = $userid ?: User::userid();
+        $query
+            ->select([
+                'project_tasks.*',
+                'project_task_users.owner'
+            ])
+            ->selectRaw("1 AS assist")
+            ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
+            ->where('project_task_users.userid', $userid);
+        if ($owner !== null) {
+            $query->where('project_task_users.owner', $owner);
+        }
+        return $query;
     }
 
     /**
@@ -484,7 +486,7 @@ class ProjectTask extends AbstractModel
         foreach ($owner as $uid) {
             if (intval($uid) == 0) continue;
             if (!ProjectUser::whereProjectId($project_id)->whereUserid($uid)->exists()) {
-                throw new ApiException("仅限{$retPre}负责人操作");
+                // throw new ApiException("仅限{$retPre}负责人操作");
             }
             if (ProjectTask::authData($uid)
                     ->whereNull('project_tasks.complete_at')

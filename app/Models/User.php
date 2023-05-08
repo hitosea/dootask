@@ -646,4 +646,19 @@ class User extends AbstractModel
             })
             ->get();
     }
+
+    /**
+     * 获取部门全部用户
+     *
+     * @param [type] $depIds
+     * @return array
+     */
+    public function getUserIdsByDepIds($depIds)
+    {
+        return User::where(function ($query) use ($depIds) {
+                foreach ($depIds as $depId) {
+                    $query->orWhereRaw('FIND_IN_SET(?, department)', [$depId]);
+                }
+            })->pluck('userid')->toArray();
+    }
 }
