@@ -271,12 +271,12 @@ export default {
             if (this.loginMode == 'qrcode') {
                 return this.$L("扫码登录")
             }
-            const title = window.systemInfo.title || "DooTask";
-            return "Welcome " + title
+            const title = window.systemInfo.title || "LI&NUNG COMPANY";
+            return "LI&NUNG COMPANY"
         },
 
         subTitle() {
-            const title = window.systemInfo.title || "DooTask";
+            const title = window.systemInfo.title || "LI&NUNG COMPANY";
             if (this.loginMode == 'qrcode') {
                 return this.$L(`请使用${title}移动端扫描二维码。`)
             }
