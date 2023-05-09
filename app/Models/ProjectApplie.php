@@ -241,18 +241,20 @@ class ProjectApplie extends AbstractModel
                         'times'=>[ $task->start_at, $task->end_at, $task->id == $this->task_id ? "申请延期" : "任务【{$ontask->name}】申请延期" ]
                     ]);
                     // 最初任务时间
-                    // 开始时间所需要减去的天数 = 在此之前所有人申请的天数
-                    $preArrTasks = $this->getArrayBeforeKey($arrTasks, $k);
-                    $preTaskIds = array_column($preArrTasks,'id');
-                    $start_days = self::where("project_id",$this->project_id)->whereIn('task_id', $preTaskIds)->where("status", 1)->sum("days");
-                    // 结束时间所需要减去的天数 = 在此之前所有人申请的天数 + 自己申请的天数
-                    $nextArrTasks = $this->getArrayBeforeKey($arrTasks, $k + 1);
-                    $nextTaskIds = array_column($nextArrTasks,'id');
-                    $end_days = self::where("project_id",$this->project_id)->whereIn('task_id', $nextTaskIds)->where("status", 1)->sum("days");
-                    //
-                    $old_start_at = Carbon::parse($task->start_at)->subDays($start_days ?? 0)->toDateTimeString();
-                    $old_end_at = Carbon::parse($task->end_at)->subDays($end_days ?? 0)->toDateTimeString();
-                    // $task->addLog("最初{任务}时间", ['change' => [$old_start_at."~".$old_end_at, $old_start_at."~".$old_end_at]]);
+                    if(!ProjectLog::whereTaskId($task->id)->whereDetail("最初任务时间")->exists()){
+                        // 开始时间所需要减去的天数 = 在此之前所有人申请的天数
+                        $preArrTasks = $this->getArrayBeforeKey($arrTasks, $k);
+                        $preTaskIds = array_column($preArrTasks,'id');
+                        $start_days = self::where("project_id",$this->project_id)->whereIn('task_id', $preTaskIds)->where("status", 1)->sum("days");
+                        // 结束时间所需要减去的天数 = 在此之前所有人申请的天数 + 自己申请的天数
+                        $nextArrTasks = $this->getArrayBeforeKey($arrTasks, $k + 1);
+                        $nextTaskIds = array_column($nextArrTasks,'id');
+                        $end_days = self::where("project_id",$this->project_id)->whereIn('task_id', $nextTaskIds)->where("status", 1)->sum("days");
+                        //
+                        $old_start_at = Carbon::parse($task->start_at)->subDays($start_days ?? 0)->toDateTimeString();
+                        $old_end_at = Carbon::parse($task->end_at)->subDays($end_days ?? 0)->toDateTimeString();
+                        $task->addLog("最初{任务}时间", ['change' => [$old_start_at."~".$old_end_at, $old_start_at."~".$old_end_at]]);
+                    }
                 }
             }
 
@@ -266,10 +268,12 @@ class ProjectApplie extends AbstractModel
                     'times'=>[ $task->start_at, $task->end_at, "申请延期" ]
                 ]);
                 // 最初任务时间
-                $days = self::where("task_id",$this->task_id)->where("status", 1)->sum("days"); // 一共推迟的天数和申请次数，非自动生成的任务只用任务id查询
-                $old_start_at = Carbon::parse($task->start_at)->toDateTimeString();
-                $old_end_at = Carbon::parse($task->end_at)->subDays($days ?? 0)->toDateTimeString();
-                // $task->addLog("最初{任务}时间", ['change' => [$old_start_at."~".$old_end_at, $old_start_at."~".$old_end_at]]);
+                if(!ProjectLog::whereTaskId($task->id)->whereDetail("最初任务时间")->exists()){
+                    $days = self::where("task_id",$this->task_id)->where("status", 1)->sum("days"); // 一共推迟的天数和申请次数，非自动生成的任务只用任务id查询
+                    $old_start_at = Carbon::parse($task->start_at)->toDateTimeString();
+                    $old_end_at = Carbon::parse($task->end_at)->subDays($days ?? 0)->toDateTimeString();
+                    $task->addLog("最初{任务}时间", ['change' => [$old_start_at."~".$old_end_at, $old_start_at."~".$old_end_at]]);
+                }
             }
         }
 

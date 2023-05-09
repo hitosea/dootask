@@ -575,7 +575,6 @@ class ProjectTask extends AbstractModel
                     self::addTask($subtask);
                 }
             }
-            $task->addLog("最初{任务}时间", ['change' => [$task->start_at."~".$task->end_at, $task->start_at."~".$task->end_at]]);
             $task->addLog("创建{任务}");
             return $task;
         });
