@@ -22,6 +22,8 @@
             height: 84px;
             background: url("../images/logo.png") no-repeat center center;
             background-size: contain;
+            background-color: #fff;
+            border-radius: 10px;
             &.can-click {
                 cursor: pointer;
             }
