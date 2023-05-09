@@ -2158,6 +2158,9 @@ class ProjectController extends AbstractController
         if ($task->parent_id > 0) {
             return Base::retError('子任务不支持此功能');
         }
+        if($days<0 && Carbon::parse($task->end_at)->addDays($days)->toDateTimeString() <= $task->start_at ){
+            return Base::retError('结束时间不能小于等于开始时间');
+        }
         //
         ProjectApplie::add($user,[
             'project_id'  => $task->project_id,

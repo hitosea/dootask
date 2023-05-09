@@ -225,11 +225,19 @@
                         <Radio label="close">{{$L('关闭')}}</Radio>
                     </RadioGroup>
                 </FormItem>
-                <FormItem prop="flow" :label="$L('自动生成任务')">
+                <FormItem prop="flow" :label="$L('自动生成任务')" style="margin-bottom:10px;">
                     <RadioGroup v-model="addData.auto_add_task">
                         <Radio label="open">{{$L('开启')}}</Radio>
                         <Radio label="close">{{$L('关闭')}}</Radio>
                     </RadioGroup>
+                </FormItem>
+                <FormItem v-if="addData.auto_add_task=='open'" prop="start_time" :label="$L('任务开始时间')">
+                    <DatePicker
+                    v-model="addData.start_time"
+                    type="datetime"
+                    format="yyyy-MM-dd HH:mm"
+                    style="width:100%"
+                    :placeholder="$L('请选择任务开始时间')"/>
                 </FormItem>
             </Form>
             <div slot="footer" class="adaption">
@@ -354,7 +362,8 @@ export default {
                 name: '',
                 columns: '',
                 flow: 'open',
-                auto_add_task:'open'
+                auto_add_task:'open',
+                start_time:''
             },
             addRule: {
                 name: [
@@ -404,6 +413,9 @@ export default {
         this.dialogMsgSubscribe = Store.subscribe('dialogMsgPush', this.addDialogMsg);
         //
         document.addEventListener('keydown', this.shortcutEvent);
+        this.addData.start_time = this.getCurrentDate() 
+
+        console.log( this.addData.start_time )
     },
 
     activated() {
@@ -713,6 +725,16 @@ export default {
     },
 
     methods: {
+        getCurrentDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const date = String(today.getDate()).padStart(2, '0');
+            const hour = String(today.getHours()).padStart(2, '0');
+            const minutes = String(today.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${date} ${hour}:${minutes}`;
+        },
+
         chackPass() {
             if (this.userInfo.changepass === 1) {
                 this.goForward({name: 'manage-setting-password'});

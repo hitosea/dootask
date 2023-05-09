@@ -508,6 +508,7 @@ class Project extends AbstractModel
         $desc = trim(Arr::get($params, 'desc', ''));
         $flow = trim(Arr::get($params, 'flow', 'close'));
         $autoAddTask = trim(Arr::get($params, 'auto_add_task', 'close'));
+        $startTime = trim(Arr::get($params, 'start_time'));
         $isPersonal = intval(Arr::get($params, 'personal'));
         $isFixed = intval(Arr::get($params, 'is_fixed'));
         if (mb_strlen($name) < 2) {
@@ -555,7 +556,7 @@ class Project extends AbstractModel
         if ($isFixed) {
             $project->is_fixed = 1;
         }
-        AbstractModel::transaction(function() use ($flow, $autoAddTask, $insertColumns, $project, $userid) {
+        AbstractModel::transaction(function() use ($flow, $autoAddTask, $startTime, $insertColumns, $project, $userid) {
             $project->save();
             ProjectUser::createInstance([
                 'project_id' => $project->id,
@@ -586,8 +587,8 @@ class Project extends AbstractModel
                 $column->save();
                 // 添加任务
                 if($autoAddTask == "open"){
-                    $start = $endTime ? $endTime : Carbon::now()->toDateTimeString();
-                    $endTime = Carbon::now()->addDays($day)->toDateTimeString();
+                    $start = $endTime ? $endTime : Carbon::parse($startTime)->toDateTimeString();
+                    $endTime = Carbon::parse($startTime)->addDays($day)->toDateTimeString();
                     $setting = Base::setting('priority');
                     ProjectTask::addTask([
                         'parent_id' => 0,

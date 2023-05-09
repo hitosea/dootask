@@ -272,7 +272,7 @@
                                             <Tag v-if="within24Hours(taskDetail.end_at)" color="blue"><i class="taskfont">&#xe71d;</i>{{expiresFormat(taskDetail.end_at)}}</Tag>
                                             <Tag v-if="isOverdue(taskDetail)" color="red">{{$L('超期未完成')}}</Tag>
                                         </template>
-                                        <Button v-if="isShowExtension" type="primary" size="small" @click="extension">申请延期</Button>
+                                        <Button v-if="isShowExtension" type="primary" size="small" @click="extension">申请改期</Button>
                                     </div>
                                 </DatePicker>
                             </li>
@@ -460,17 +460,17 @@
         <div v-if="!taskDetail.id" class="task-load"><Loading/></div>
 
         <!-- 申请延期 -->
-        <Modal v-model="delayShow" :title="$L('申请延期')" :mask-closable="false">
+        <Modal v-model="delayShow" :title="$L('改期')" :mask-closable="false">
             <Form ref="addDelay" :model="delayData" :rules="delayRule" label-width="auto" @submit.native.prevent>
-                <FormItem prop="days" :label="$L('延期天数')">
+                <FormItem prop="days" :label="$L('改期天数')">
                     <InputNumber
                     :max="10000"
                     v-model="delayData.days"
-                    :min="1"
+                    :min="-1000"
                     :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
                     :parser="value => value.replace(/\$\s?|(,*\.)/g, '')"></InputNumber>
                 </FormItem>
-                <FormItem prop="reason" :label="$L('延期原因')" style="margin-bottom:10px;">
+                <FormItem prop="reason" :label="$L('改期原因')" style="margin-bottom:10px;">
                     <Input type="textarea" v-model="delayData.reason"></Input>
                 </FormItem>
             </Form>
@@ -609,10 +609,10 @@ export default {
             },
             delayRule: {
                 days: [
-                    { type: 'number',message: this.$L('请填写延期天数！'), required: true, trigger: 'change' },
+                    { type: 'number',message: this.$L('请填写改期天数！'), required: true, trigger: 'change' },
                 ],
                 reason: [
-                    { required: true, message: this.$L('请填写延期原因！'), trigger: 'change' },
+                    { required: true, message: this.$L('请填写改期原因！'), trigger: 'change' },
                 ]
             },
         }
