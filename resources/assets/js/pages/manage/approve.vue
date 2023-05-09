@@ -102,7 +102,7 @@ export default {
                 },
 
             }, {
-                    title: this.$L("延期时间"),
+                    title: this.$L("改期时间"),
                     align: 'center',
                     width: 120,
                     render:(h, {row})=>{
