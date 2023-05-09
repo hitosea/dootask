@@ -81,8 +81,6 @@ class UsersController extends AbstractController
             $needCode = !Base::isError(User::needCode($email));
             if ($needCode) {
                 $code = trim(Request::input('code'));
-                info(Request::input('code'));
-                info(Request::input('code_key'));
                 $codeKey = trim(Request::input('code_key'));
                 if (empty($code)) {
                     return Base::retError('请输入验证码', ['code' => 'need']);
