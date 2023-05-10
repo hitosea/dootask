@@ -44,7 +44,8 @@ class Deleted extends AbstractModel
         } else {
             $builder = $builder->where('created_at', '>=', Carbon::parse($time))->take(500);
         }
-        return $builder->pluck('did')->toArray();
+        $user = User::whereUserid($userid)->first();
+        return ($user->isAdmin() || $user->isDepOwner()) ? [] : $builder->pluck('did')->toArray();
     }
 
     /**
