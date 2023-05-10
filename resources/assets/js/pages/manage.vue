@@ -414,8 +414,6 @@ export default {
         //
         document.addEventListener('keydown', this.shortcutEvent);
         this.addData.start_time = this.getCurrentDate() 
-
-        console.log( this.addData.start_time )
     },
 
     activated() {

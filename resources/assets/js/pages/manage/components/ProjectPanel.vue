@@ -60,13 +60,14 @@
                             <EDropdownItem command="deleted_task">{{$L('已删除任务')}}</EDropdownItem>
                             <EDropdownItem command="transfer" divided>{{$L('移交项目')}}</EDropdownItem>
                             <EDropdownItem command="archived">{{$L('归档项目')}}</EDropdownItem>
-                            <EDropdownItem command="delete" style="color:#f40">{{$L('删除项目')}}</EDropdownItem>
+                            <EDropdownItem v-if="projectData.name != '日常处理'" command="delete" style="color:#f40">{{$L('删除项目')}}</EDropdownItem>
                         </EDropdownMenu>
                         <EDropdownMenu v-else slot="dropdown">
                             <EDropdownItem command="log">{{$L('项目动态')}}</EDropdownItem>
                             <EDropdownItem command="archived_task">{{$L('已归档任务')}}</EDropdownItem>
                             <EDropdownItem command="deleted_task">{{$L('已删除任务')}}</EDropdownItem>
                             <EDropdownItem command="exit" divided style="color:#f40">{{$L('退出项目')}}</EDropdownItem>
+                            <EDropdownItem v-if="userInfo.identity.indexOf('admin') !== -1 && projectData.name != '日常处理' "  command="delete" style="color:#f40">{{$L('删除项目')}}</EDropdownItem>
                         </EDropdownMenu>
                     </EDropdown>
                 </li>
@@ -539,6 +540,7 @@ export default {
 
     computed: {
         ...mapState([
+            'userInfo',
             'cacheDialogs',
 
             'projectId',
@@ -1231,7 +1233,7 @@ export default {
                     break;
 
                 case "user":
-                    if (this.projectData.owner_userid !== this.userId) {
+                    if (this.projectData.owner_userid !== this.userId && this.userInfo.identity.indexOf('admin') === -1) {
                         return;
                     }
                     const userids = this.projectData.project_user.map(({userid}) => userid);
