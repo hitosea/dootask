@@ -14,6 +14,7 @@ use Hhxsv5\LaravelS\Swoole\Task\Task;
  * @property int|null $project_id 项目ID
  * @property int|null $task_id 任务ID
  * @property int|null $userid 用户ID
+ * @property string|null $msg_id 消息ID
  * @property int|null $days 申请天数
  * @property string|null $reason 申请理由
  * @property int|null $audit_userid 审核人
@@ -21,7 +22,6 @@ use Hhxsv5\LaravelS\Swoole\Task\Task;
  * @property int|null $status 状态 [0-待审核,1-通过,2-拒绝]
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property string|null $msg_id 消息ID
  * @property-read \App\Models\User|null $auditUser
  * @property-read \App\Models\Project|null $project
  * @property-read \App\Models\ProjectTask|null $projectTask

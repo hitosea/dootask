@@ -663,12 +663,13 @@ class Project extends AbstractModel
      */
     public static function userProject($project_id, $archived = true, $mustOwner = null, $isFixed = false)
     {
-        $builder = User::auth()->isAdmin() ? self::allData() : self::authData();
+        $user = User::auth();
+        $builder = $user->isAdmin() ? self::allData() : self::authData();
         $pre = env('DB_PREFIX', '');
         $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
         $project = $builder->where('projects.id', intval($project_id))->first();
         // 如果操作人是管理员或者部门负责人，有修改权限
-        $mustOwner = UserDepartment::getOwnerUseridStatus(User::auth(), $project_id) ? null : $mustOwner;
+        $mustOwner = UserDepartment::getOwnerUseridStatus($user, $project_id) ? null : $mustOwner;
         if (empty($project)) {
             throw new ApiException('项目不存在或不在成员列表内', [ 'project_id' => $project_id ], -4001);
         }
@@ -687,6 +688,10 @@ class Project extends AbstractModel
         if ($isFixed === true && $project->is_fixed == 1) {
             throw new ApiException('项目为固定项目不允许该操作', [ 'project_id' => $project_id ]);
         }
+
+        // 重置置顶时间
+        $top_at = $project->is_fixed == 0 ? ProjectTopAt::where('project_id', $project->id)->where('userid', $user->userid)->value('top_at') : $project->top_at;
+        $project->top_at = $top_at;
         return $project;
     }
 

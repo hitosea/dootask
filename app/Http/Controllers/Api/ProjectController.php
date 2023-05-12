@@ -35,6 +35,7 @@ use App\Models\WebSocketDialog;
 use App\Exceptions\ApiException;
 use App\Module\BillMultipleExport;
 use App\Models\ProjectTaskFlowChange;
+use App\Models\ProjectTopAt;
 use Maatwebsite\Excel\Concerns\ToArray;
 
 /**
@@ -172,7 +173,9 @@ class ProjectController extends AbstractController
         $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
         $list = $builder->clone()->orderByDesc('projects.id')->paginate(Base::getPaginate(100, 50));
         $list->transform(function (Project $project) use ($user) {
-            return array_merge($project->toArray(), $project->getTaskStatistics($user->userid));
+            // 重置置顶时间
+            $top_at = $project->is_fixed == 0 ? ProjectTopAt::where('project_id', $project->id)->where('userid', $user->userid)->value('top_at') : $project->top_at;
+            return array_merge($project->toArray(), $project->getTaskStatistics($user->userid), ['top_at'=>$top_at]);
         });
         $data = $list->toArray();
         $data['total_all'] = $totalAll ?? $data['total'];
@@ -2119,15 +2122,23 @@ class ProjectController extends AbstractController
     {
         $user = User::auth();
         $projectId = intval(Request::input('project_id'));
-        $projectUser = ProjectUser::whereUserid($user->userid)->whereProjectId($projectId)->first();
-        if (!$projectUser) {
-            return Base::retError("项目不存在");
-        }
-        $projectUser->top_at = $projectUser->top_at ? null : Carbon::now();
-        $projectUser->save();
+        // $projectUser = ProjectUser::whereUserid($user->userid)->whereProjectId($projectId)->first();
+        // if (!$projectUser) {
+        //     return Base::retError("项目不存在");
+        // }
+        // $projectUser->top_at = $projectUser->top_at ? null : Carbon::now();
+        // $projectUser->save();
+        // 保存或更新置顶时间
+        $topAt = ProjectTopAt::whereProjectId($projectId)->whereUserid($user->userid)->first();
+        $topAt = ProjectTopAt::updateInsert([
+            'project_id' => $projectId,
+            'userid' => $user->userid,
+        ], [
+            'top_at' => $topAt->top_at ? null : Carbon::now(),
+        ]);
         return Base::retSuccess("success", [
-            'id' => $projectUser->project_id,
-            'top_at' => $projectUser->top_at?->toDateTimeString(),
+            'id' => $topAt->project_id,
+            'top_at' => $topAt->top_at?->toDateTimeString(),
         ]);
     }
 
