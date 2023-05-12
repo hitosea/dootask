@@ -287,16 +287,6 @@ class ProjectTask extends AbstractModel
             ])
             ->leftJoin('project_task_users', function ($leftJoin) use ($userid, $user) {
                 $leftJoin->on('project_tasks.id', '=', 'project_task_users.task_id');
-                if(!$user->isAdmin() && !$user->isDepOwner()){
-                    $leftJoin->on('project_task_users.userid', '=', DB::raw($userid));
-                }
-            })
-            ->when(!$user->isAdmin(), function ($q) use ($user, $userid) {
-                if ($user->isDepOwner()) {
-                    $depIds = UserDepartment::getOwnerDepIds($user);
-                    $userids = $user->getUserIdsByDepIds($depIds);
-                    $q->orWhereIn('project_tasks.userid', $userids);
-                }
             });
 
         return $query;
@@ -349,28 +339,6 @@ class ProjectTask extends AbstractModel
         if ($owner !== null) {
             $query->where('project_task_users.owner', $owner);
         }
-        return $query;
-    }
-
-    /**
-     * 超管查询所有任务
-     *
-     * @param [type] $query
-     * @param [type] $userid
-     * @return void
-     */
-    public function scopeAllAdminData($query, $userid = null)
-    {
-        $userid = $userid ?: User::userid();
-        $query
-            ->select([
-                'project_tasks.*',
-                'project_task_users.owner'
-            ])
-            ->selectRaw("1 AS assist")
-            ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
-            ->where('project_task_users.userid', $userid);
-
         return $query;
     }
 

@@ -158,10 +158,13 @@ class Project extends AbstractModel
             if ($user->isDepOwner()) {
                 $depIds = UserDepartment::getOwnerDepIds($user);
                 $userids = $user->getUserIdsByDepIds($depIds);
+                // 查询部门下用户的项目
                 $q->orWhere(function($q) use ($userids){
-                $q->whereIn('projects.userid', $userids)
-                    ->where('projects.personal', 0);
+                    $q->whereIn('projects.userid', $userids)
+                        ->where('projects.personal', 0);
+
                 });
+                $q->where('project_users.owner', 1); // 只查询部门下用户创建的项目，避免重复
             }
         })
         ->where(function ($query) use ($userid, $user){
