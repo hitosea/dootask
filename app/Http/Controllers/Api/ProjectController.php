@@ -522,6 +522,8 @@ class ProjectController extends AbstractController
                 'owner' => 1,
             ]);
             $project->syncDialogUser();
+            $project->userid = $owner_userid; // 更改项目创建人
+            $project->save();
             $project->addLog("移交项目给", ['userid' => $owner_userid]);
         });
         //
