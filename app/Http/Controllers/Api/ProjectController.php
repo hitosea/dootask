@@ -171,7 +171,7 @@ class ProjectController extends AbstractController
         //
         $pre = env('DB_PREFIX', '');
         $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
-        $list = $builder->clone()->orderByDesc('projects.id')->paginate(Base::getPaginate(10000, 50));
+        $list = $builder->clone()->orderByDesc('projects.id')->paginate(Base::getPaginate(10000, 1000));
         $list->transform(function (Project $project) use ($user) {
             // 重置置顶时间
             $top_at = $project->is_fixed == 0 ? ProjectTopAt::where('project_id', $project->id)->where('userid', $user->userid)->value('top_at') : $project->top_at;
