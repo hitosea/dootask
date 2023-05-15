@@ -37,6 +37,7 @@ use App\Module\BillMultipleExport;
 use App\Models\ProjectTaskFlowChange;
 use App\Models\ProjectTopAt;
 use Maatwebsite\Excel\Concerns\ToArray;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @apiDefine project
@@ -168,14 +169,24 @@ class ProjectController extends AbstractController
         if ($timerange->updated) {
             $builder->where('projects.updated_at', '>', $timerange->updated);
         }
+
+        // 重置置顶时间关联查询
+        $pre = DB::getTablePrefix();
+        $builder->leftJoin('project_top_ats', function ($join) use ($user) {
+            $join->on('project_top_ats.project_id', '=', 'projects.id');
+            $join->where('project_top_ats.userid', '=', $user->userid);
+        });
+        $builder->select([
+            'projects.*',
+            DB::raw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 10 YEAR), {$pre}project_top_ats.top_at) AS top_at")
+        ]);
+        $list = $builder->orderBy('projects.is_fixed', 'desc')
+            ->orderBy('top_at', 'desc')
+            ->orderBy('projects.id', 'desc')
+            ->paginate(Base::getPaginate(10000, 1000));
         //
-        $pre = env('DB_PREFIX', '');
-        $builder->selectRaw("IF({$pre}projects.is_fixed=1, DATE_ADD(NOW(), INTERVAL 1 YEAR), NULL) AS top_at");
-        $list = $builder->clone()->orderByDesc('projects.id')->paginate(Base::getPaginate(10000, 1000));
         $list->transform(function (Project $project) use ($user) {
-            // 重置置顶时间
-            $top_at = $project->is_fixed == 0 ? ProjectTopAt::where('project_id', $project->id)->where('userid', $user->userid)->value('top_at') : $project->top_at;
-            return array_merge($project->toArray(), $project->getTaskStatistics($user->userid), ['top_at'=>$top_at]);
+            return array_merge($project->toArray(), $project->getTaskStatistics($user->userid));
         });
         $data = $list->toArray();
         $data['total_all'] = $totalAll ?? $data['total'];
