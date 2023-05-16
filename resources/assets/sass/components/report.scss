@@ -81,15 +81,23 @@
     }
 
     .report-form {
-        display: flex;
-        margin-bottom: 12px;
+        &.auto-form {
+            display: flex;
+            margin-bottom: 12px;
 
+            .ivu-form-item {
+                flex: 1;
+                flex-shrink: 0;
+
+                .ivu-form-item-label {
+                    padding-top: 8px;
+                }
+            }
+        }
+        
         .ivu-form-item {
-            flex: 1;
-            flex-shrink: 0;
 
             .ivu-form-item-label {
-                padding-top: 8px;
                 opacity: 0.8;
             }
 

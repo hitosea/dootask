@@ -275,7 +275,7 @@
             v-model="workReportShow"
             placement="right"
             :size="1200">
-            <Report v-if="workReportShow" :reportType="reportTabs" @on-read="$store.dispatch('getReportUnread', 1000)" />
+            <Report v-if="workReportShow" v-model="reportTabs" @on-read="$store.dispatch('getReportUnread', 1000)" />
         </DrawerOverlay>
 
         <!--查看所有团队-->
@@ -1090,6 +1090,11 @@ export default {
                 case 'addProject':
                     this.onAddShow()
                     break;
+                case 'allUser':
+                case 'workReport':
+                    this.settingRoute(act)
+                    break;
+
             }
         },
 
