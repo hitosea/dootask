@@ -59,7 +59,7 @@ export default {
     },
 
     computed: {
-        ...mapState(['userInfo', 'userIsAdmin', 'clientNewVersion']),
+        ...mapState(['userInfo', 'userIsAdmin', 'clientNewVersion','plugins']),
 
         routeName() {
             return this.$route.name
@@ -88,6 +88,22 @@ export default {
                     {path: 'privacy', name: '隐私政策', divided: true},
                     {path: 'delete', name: '删除帐号'},
                 ])
+            }
+
+            // 追加插件菜单
+            if(this.plugins.menus){
+                let pluginsMenus = [];
+                this.plugins.menus.forEach((item,key) => {
+                    if(item.enable !== false && item.position.setting){
+                        let obj = JSON.parse(JSON.stringify(item.position.setting));
+                        obj._key = key;
+                        obj.name = item.position.setting.name || item.title; 
+                        obj.path = JSON.stringify(obj); 
+                        obj.divided = pluginsMenus.length==0;
+                        pluginsMenus.push(obj)
+                    }
+                });
+                menu.push(...pluginsMenus)
             }
 
             if (this.userIsAdmin) {
@@ -136,6 +152,18 @@ export default {
 
     methods: {
         toggleRoute(path) {
+
+            // 插件拦截
+            if(path.indexOf("{") !== -1 && path.indexOf("}") !== -1){
+                let obj = JSON.parse(path);
+                let location = {path: obj.path};
+                if (obj.type != 'local'){
+                    location = {name: 'manage-plugins' , query: {index: obj._key +"",type:'setting'}};
+                }
+                this.goForward(location);
+                return;
+            }
+
             switch (path) {
                 case 'clearCache':
                     $A.IDBSet("clearCache", "handle").then(_ => {

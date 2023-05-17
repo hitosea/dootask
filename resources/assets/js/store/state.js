@@ -191,4 +191,10 @@ export default {
     apiKeyData: {},
     localKeyPair: {},
     localKeyLock: false,
+
+    // 插件
+    plugins: {
+        menus:[],
+        files:[]
+    },
 };

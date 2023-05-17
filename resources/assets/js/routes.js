@@ -101,6 +101,14 @@ export default [
                 path: 'file/:folderId?/:fileId?',
                 component: () => import('./pages/manage/file.vue'),
             },
+            {
+                name: 'manage-plugins',
+                path: 'plugins',
+                component: () => import('./pages/manage/plugins/index.vue'),
+                children: [
+                    
+                ]
+            },
         ]
     },
     {

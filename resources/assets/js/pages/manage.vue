@@ -116,6 +116,11 @@
                     <i class="taskfont">&#xe6f3;</i>
                     <div class="menu-title">{{$L('文件')}}</div>
                 </li>
+                <li v-for="(item, key) in plugins.menus" @click="togglePluginsRoute(item.position.menu,key,'menu')" :class="classPluginsRoute(item,key)" :key="key" v-if="item.enable !== false && item.position.menu">
+                    <img v-if="(item.position.menu.icon || '').indexOf('&#') == -1" :src="item.position.menu.icon" style="width: 20px;height: 20px;margin-right: 10px;">
+                    <i v-else class="taskfont" v-html="item.position.menu.icon"></i>
+                    <div class="menu-title">{{$L(item.position.menu.name || item.title)}}</div>
+                </li>
                 <li ref="menuProject" class="menu-project">
                     <ul :class="listClassName" @scroll="operateVisible = false">
                         <li
@@ -441,6 +446,7 @@ export default {
             'dialogIns',
 
             'reportUnreadNumber',
+            'plugins'
         ]),
 
         ...mapGetters(['dashboardTask']),
@@ -557,6 +563,23 @@ export default {
                     {path: 'archivedProject', name: '已归档的项目'},
                 ])
             }
+
+            // 追加插件菜单
+            if(this.plugins.menus){
+                let pluginsMenus = [];
+                this.plugins.menus.forEach((item,key) => {
+                    if(item.enable !== false && item.position.usermenu){
+                        let obj = JSON.parse(JSON.stringify(item.position.usermenu));
+                        obj._key = key;
+                        obj.name = item.position.usermenu.name || item.title; 
+                        obj.path = JSON.stringify(obj); 
+                        obj.divided = pluginsMenus.length==0;
+                        pluginsMenus.push(obj)
+                    }
+                });
+                array.push(...pluginsMenus)
+            }
+
             if (needStartHome) {
                 array.push(...[
                     {path: 'goHome', name: '打开首页', divided: true},
@@ -569,6 +592,7 @@ export default {
                     {path: 'logout', name: '退出登录', style: {color: '#f40'}}
                 ])
             }
+
             return array
         },
 
@@ -698,6 +722,24 @@ export default {
             }
         },
 
+        async togglePluginsRoute(item,key,type) {
+            this.showMobileMenu = false;
+            let location = {path: item.path , params: item || {}};
+            if (item.type != 'local'){
+                location = {name: 'manage-plugins' , params: item || {}, query: {index: key +"",type:type}};
+            }
+            this.goForward(location);
+        },
+
+        classPluginsRoute(item,key) {
+            if( this.$route.name == 'manage-plugins' && this.$route.query.index == key){
+                return {  "active": true  };
+            }
+            return {
+                "active": this.$route.path === item.path,
+            };
+        },
+
         async toggleRoute(path, params) {
             this.showMobileMenu = false;
             let location = {name: 'manage-' + path, params: params || {}};
@@ -713,6 +755,14 @@ export default {
         },
 
         settingRoute(path) {
+
+            // 插件拦截
+            if(path.indexOf("{") !== -1 && path.indexOf("}") !== -1){
+                let obj = JSON.parse(path);
+                this.togglePluginsRoute(obj,obj._key,'usermenu')
+                return;
+            }
+
             switch (path) {
                 case 'allUser':
                     this.allUserShow = true;

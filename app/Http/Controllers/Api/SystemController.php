@@ -1200,4 +1200,23 @@ class SystemController extends AbstractController
         }
         return $array;
     }
+
+    /**
+     * @api {post} api/system/plugin          10. plugin
+     *
+     * @apiDescription 获取插件配置
+     * @apiVersion 1.0.0
+     * @apiGroup system
+     * @apiName plugin
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function plugin()
+    {
+        User::auth();
+        $json = file_get_contents(base_path('plugin/plugin.conf.json'));
+        return Base::retSuccess('success', json_decode($json,true));
+    }
 }

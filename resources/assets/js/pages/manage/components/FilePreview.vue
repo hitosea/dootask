@@ -42,11 +42,11 @@
 import IFrame from "./IFrame";
 
 const MDPreview = () => import('../../../components/MDEditor/preview');
-const TEditor = () => import('../../../components/TEditor');
-const AceEditor = () => import('../../../components/AceEditor');
-const OnlyOffice = () => import('../../../components/OnlyOffice');
-const Drawio = () => import('../../../components/Drawio');
-const Minder = () => import('../../../components/Minder');
+const TEditor = () => import('../../../components/TEditor.vue');
+const AceEditor = () => import('../../../components/AceEditor.vue');
+const OnlyOffice = () => import('../../../components/OnlyOffice.vue');
+const Drawio = () => import('../../../components/Drawio.vue');
+const Minder = () => import('../../../components/Minder.vue');
 
 export default {
     name: "FilePreview",

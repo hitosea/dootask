@@ -1,0 +1,76 @@
+{
+    "menus":[
+        {
+            "title": "审批中心",
+            "authority":"*",
+            "enable":true,
+            "position":{
+                "menu":{
+                    "name": "审批中心",
+                    "type":"iframe",
+                    "path":"http://154.207.98.242:2222/manage/review",
+                    "icon": "/images/file/light/other.svg"
+                },
+                "appmore":{
+                    "name": "审批中心",
+                    "type":"iframe",
+                    "path":"http://154.207.98.242:2222/manage/review",
+                    "icon": "/images/file/light/other.svg"
+                },
+                "usermenu":{
+                    "name": "审批中心",
+                    "type":"iframe",
+                    "path":"http://154.207.98.242:2222/manage/review",
+                    "icon": "/images/file/light/other.svg"
+                },
+                "setting":{
+                    "name": "审批中心",
+                    "type":"iframe",
+                    "path":"http://154.207.98.242:2222/manage/review",
+                    "icon": "/images/file/light/other.svg"
+                }
+            }
+        }
+    ],
+    "files":[
+        {
+            "title": "图表",
+            "ext":"drawio",
+            "pathType":"local",         
+            "path": "/drawio/webapp/?title=%E5%9B%BE%E8%A1%A8&chrome=1&lightbox=0&ui=kennedy&lang=zh&offline=1&pwa=0&embed=1&noLangIcon=1&noExitBtn=1&noSaveBtn=1&saveAndExit=0&spin=1&proto=json",
+            "icon":"/images/file/light/drawio.svg"
+        },
+        {
+            "title": "思维导图",
+            "ext":"mind",
+            "pathType":"local",         
+            "path": "/minder/index.html?type=manual&readonly=no",
+            "icon":"/images/file/light/mind.svg"
+        },
+        {
+            "title": "Word 文档",
+            "ext":"docx",
+            "pathType":"local",         
+            "path": "/office/web-apps/apps/documenteditor/main/index.html?_dc=7.3.2-8&lang={.lang}&customer={.customer}&frameEditorId={.frameEditorId}&parentOrigin={.parentOrigin}&uitheme=theme-classic-light",
+            "icon":"/images/file/light/word.svg",
+            "divided": true
+        },
+        {
+            "title": "Excel 工作表",
+            "ext":"xlsx",
+            "pathType":"local",         
+            "path": "/office/web-apps/apps/documenteditor/main/index.html?_dc=7.3.2-8&lang={.lang}&customer={.customer}&frameEditorId={.frameEditorId}&parentOrigin={.parentOrigin}&uitheme=theme-classic-light",
+            "icon":"/images/file/light/excel.svg"
+        },
+        {
+            "title": "PPT 演示文稿",
+            "ext":"pptx",
+            "pathType":"local",         
+            "path": "/office/web-apps/apps/documenteditor/main/index.html?_dc=7.3.2-8&lang={.lang}&customer={.customer}&frameEditorId={.frameEditorId}&parentOrigin={.parentOrigin}&uitheme=theme-classic-light",
+            "icon":"/images/file/light/ppt.svg"
+        }
+    ],
+    "dockerCompose":[
+        
+    ]
+}

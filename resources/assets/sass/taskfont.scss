@@ -12,3 +12,16 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+img.plugins-img-icon{
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin-right:8px;
+    position: relative;
+    z-index: 1;
+}
+i.plugins-i-icon{
+    margin-right:8px;
+    font-size: 50px;
+}

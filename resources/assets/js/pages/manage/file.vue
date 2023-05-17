@@ -103,14 +103,20 @@
                                     }"
                                     :data-id="item.id"
                                     v-longpress="handleLongpress"
-                                    @click="dropFile(item, 'openCheckMenu')">
+                                    @click="dropFile(item, 'openCheckMenu')"
+                                >
                                     <div class="file-check" :class="{'file-checked':selectIds.includes(item.id)}" @click.stop="dropFile(item, 'select')">
                                         <Checkbox :value="selectIds.includes(item.id)"/>
                                     </div>
                                     <div class="file-menu" @click.stop="handleRightClick($event, item)">
                                         <Icon type="ios-more" />
                                     </div>
-                                    <div :class="`no-dark-before file-icon ${item.type}${item.share ? ' share' : ''}`">
+
+                                    <div :class="`no-dark-before file-icon ${getPluginsIcon(item) ? 'none' : ''} ${item.type}${item.share ? ' share' : ''}`" >
+                                        <template v-if="getPluginsIcon(item)">
+                                            <img class="plugins-img-icon" v-if="getPluginsIcon(item).indexOf('&#') == -1" :src="getPluginsIcon(item)" style="width:100%; height: 100%;">
+                                            <i v-else class="taskfont plugins-i-icon" v-html="getPluginsIcon(item)"></i>    
+                                        </template>
                                         <template v-if="item.share">
                                             <UserAvatar v-if="item.userid != userId" :userid="item.userid" class="share-avatar" :size="20">
                                                 <p>{{$L('共享权限')}}: {{$L(item.permission == 1 ? '读/写' : '只读')}}</p>
@@ -204,7 +210,13 @@
                                 :key="key"
                                 :divided="!!type.divided"
                                 :name="`new:${type.value}`">
-                                <div :class="`no-dark-before file-item file-icon ${type.value}`">{{$L(type.label)}}</div>
+                                <div :class="`no-dark-before ${type._source == 'plugins' ? '' : 'file-item'} file-icon ${type.value}`">
+                                    <template v-if="type._source == 'plugins'">
+                                        <img v-if="(type.icon || '').indexOf('&#') == -1" :src="type.icon" class="plugins-img-icon">
+                                        <i v-else class="taskfont plugins-i-icon" v-html="type.icon"></i>    
+                                    </template>
+                                    {{$L(type.label)}}
+                                </div>
                             </DropdownItem>
                         </template>
                     </DropdownMenu>
@@ -416,57 +428,6 @@ export default {
             loadIng: 0,
             searchKey: '',
             searchTimeout: null,
-
-            types: [
-                {
-                    "value": "folder",
-                    "label": "新建文件夹",
-                    "name": "文件夹",
-                },
-                {
-                    "value": "upload",
-                    "label": "上传文件",
-                    "name": null,
-                    "divided": true
-                },
-                {
-                    "value": "updir",
-                    "label": "上传文件夹",
-                    "name": null,
-                },
-                {
-                    "value": "document",
-                    "label": "文本",
-                    "name": "文本",
-                    "divided": true
-                },
-                {
-                    "value": "drawio",
-                    "label": "图表",
-                    "name": "图表",
-                },
-                {
-                    "value": "mind",
-                    "label": "思维导图",
-                    "name": "导图",
-                },
-                {
-                    "value": "word",
-                    "label": "Word 文档",
-                    "name": "Word",
-                    "divided": true
-                },
-                {
-                    "value": "excel",
-                    "label": "Excel 工作表",
-                    "name": "Excel",
-                },
-                {
-                    "value": "ppt",
-                    "label": "PPT 演示文稿",
-                    "name": "PPT",
-                }
-            ],
 
             tableMode: "",
             hideShared: false,
@@ -734,7 +695,48 @@ export default {
     },
 
     computed: {
-        ...mapState(['userIsAdmin', 'userInfo', 'fileLists', 'wsOpenNum']),
+        ...mapState(['userIsAdmin', 'userInfo', 'fileLists', 'wsOpenNum', 'plugins']),
+
+        types() {
+            let array = [
+                {
+                    "value": "folder",
+                    "label": "新建文件夹",
+                    "name": "文件夹",
+                },
+                {
+                    "value": "upload",
+                    "label": "上传文件",
+                    "name": null,
+                    "divided": true
+                },
+                {
+                    "value": "updir",
+                    "label": "上传文件夹",
+                    "name": null,
+                },
+                {
+                    "value": "document",
+                    "label": "文本",
+                    "name": "文本",
+                    "divided": true
+                }
+            ];
+
+            // 添加文件插件
+            array.push( ...this.plugins.files.map(h=>{
+                h._source = "plugins"
+                h.name = h.label = h.title
+                h.value = h.ext.replace('mind', 'mind')
+                    .replace('drawio', 'drawio')
+                    .replace('docx', 'word')
+                    .replace('xlsx', 'excel')
+                    .replace('pptx', 'ppt')
+                return h;
+            }))
+
+            return array
+        },
 
         pid() {
             const {folderId} = this.$route.params;
@@ -922,6 +924,17 @@ export default {
     },
 
     methods: {
+
+        getPluginsIcon(item){
+            let icon = '';
+            this.plugins.files.forEach(file => {
+                if(item.ext == file.ext){
+                    icon = file.icon
+                }
+            })
+            return icon;
+        },
+
         getFileList() {
             if (this.$route.name !== 'manage-file') {
                 return;

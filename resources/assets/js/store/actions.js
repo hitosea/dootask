@@ -27,6 +27,7 @@ export default {
             }
 
             // 读取缓存
+            state.plugins = await $A.IDBJson("cachePlugins")
             state.clientId = await $A.IDBString("clientId")
             state.cacheServerUrl = await $A.IDBString("cacheServerUrl")
             state.cacheUserBasic = await $A.IDBArray("cacheUserBasic")
@@ -443,6 +444,32 @@ export default {
     },
 
     /**
+     * 获取项目
+     * @param state
+     * @param dispatch
+     * @param getters
+     * @param requestData
+     * @returns {Promise<unknown>}
+     */
+    getPlugins({state, dispatch, getters}, requestData) {
+        return new Promise(function (resolve, reject) {
+            if (state.userId === 0) {
+                state.cachePlugins = [];
+                reject({msg: 'Parameter error'});
+                return;
+            }
+            //
+            dispatch("call", { url: 'system/plugin'}).then(({data}) => {
+                state.plugins = data;
+                $A.IDBSave("cachePlugins", data)
+                resolve(data)
+            }).catch(e => {
+                reject(e)
+            });
+        });
+    },
+
+    /**
      * 获取基本数据（项目、对话、仪表盘任务、会员基本信息）
      * @param state
      * @param dispatch
@@ -463,6 +490,7 @@ export default {
         }
         window.__getBasicDataKey = tmpKey
         //
+        dispatch("getPlugins").catch(() => {});
         dispatch("getProjects").catch(() => {});
         dispatch("getDialogs").catch(() => {});
         dispatch("getReportUnread", 1000);

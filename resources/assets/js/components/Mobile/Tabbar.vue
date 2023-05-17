@@ -8,9 +8,21 @@
             <div v-if="isMore" class="more-box">
                 <div class="tabbar-more-title">{{$L('更多')}}</div>
                 <ul v-for="list in navMore">
-                    <li v-for="item in list" @click="toggleRoute(item.name)" :class="{active: activeName === item.name}">
+                    <li v-for="item in list" @click="toggleRoute(item.name,item)" :class="{active: activeName === item.name}">
                         <div class="more-item">
-                            <i class="taskfont" v-html="item.icon"></i>
+                            <div v-if="(item.icon || '').indexOf('&#') == -1" style="
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 56px;
+                                height: 56px;
+                                color: #84C56A;
+                                background-color: rgba(132, 197, 106, 0.08);
+                                border-radius: 12px;"
+                            >
+                                <img :src="item.icon" style="width: 22px;height: 22px;">
+                            </div>
+                            <i v-else class="taskfont" v-html="item.icon"></i>
                             <div class="tabbar-title">{{$L(item.label)}}</div>
                             <Badge v-if="item.name === 'workReport'" class="tabbar-badge" :overflow-count="999" :count="reportUnreadNumber"/>
                         </div>
@@ -100,6 +112,20 @@ export default {
         if (this.userIsAdmin) {
             this.navMore[2].splice(0, 0, {icon: '&#xe63f;', name: 'allUser', label: '团队管理'})
         }
+
+        // 追加插件菜单
+        this.plugins.menus.forEach((item,key) => {
+            if(item.enable !== false && item.position.appmore){
+                item._key = key; 
+                item.name = 'plugins'; 
+                item.label = item.position.appmore.name || item.title; 
+                item.icon = item.position.appmore.icon; 
+                if( this.navMore[this.navMore.length - 1].length >= 4 ){
+                    this.navMore.push([])
+                }
+                this.navMore[this.navMore.length - 1].push(item)
+            }
+        });
     },
 
     mounted() {
@@ -111,7 +137,7 @@ export default {
     },
 
     computed: {
-        ...mapState(['userIsAdmin', 'cacheDialogs', 'reportUnreadNumber']),
+        ...mapState(['userIsAdmin', 'cacheDialogs', 'reportUnreadNumber','plugins']),
         ...mapGetters(['dashboardTask']),
 
         routeName() {
@@ -233,7 +259,7 @@ export default {
     },
 
     methods: {
-        toggleRoute(path) {
+        toggleRoute(path,item) {
             this.$emit("on-click", path)
             if (path != 'more') {
                 this.isMore = false
@@ -282,7 +308,14 @@ export default {
                 case 'contacts':
                     location = {name: 'manage-messenger', params: {dialogAction: 'contacts'}};
                     break;
-
+                
+                case 'plugins':
+                    location = {path: item.path , params: item || {}};
+                    if (item.pathType != 'local'){
+                        location = {name: 'manage-plugins' , params: item || {}, query: {index: item._key +""}};
+                    }
+                    break;
+                    
                 default:
                     location = {name: 'manage-' + path};
                     break;

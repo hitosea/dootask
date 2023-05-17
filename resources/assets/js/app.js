@@ -186,6 +186,23 @@ $A.bindScreenshotKey = (data) => {
     $A.Electron.sendMessage('bindScreenshotKey', {key});
 };
 
+// 绑定
+window.addEventListener("message",(e)=>{
+    if(e.data.instruction){
+        parent.$A.modalInput({
+            title: `修改任务时间`,
+            placeholder: `请输入修改备注`,
+            okText: "确定",
+            onOk: (desc) => {
+                if (!desc) {
+                    return `请输入修改备注`
+                }
+                return false
+            },
+        });
+    }
+});
+
 Vue.prototype.$A = $A;
 Vue.prototype.$L = $L;
 Vue.prototype.$Electron = $A.Electron;

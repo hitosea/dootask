@@ -76,3 +76,10 @@
         background-image: url("../images/file/light/wps.svg");
     }
 }
+
+
+.file-icon.none{
+    &:before {
+        background-image: none;
+    }
+} 
