@@ -123,12 +123,12 @@ export default {
         fileName() {
             return this.value.name;
         },
-
+        
         fileUrl() {
             let codeId = this.code || this.value.id;
             let fileUrl
             if ($A.leftExists(codeId, "msgFile_")) {
-                fileUrl = `dialog/msg/download/?msg_id=${$A.leftDelete(codeId, "msgFile_")}&token=${this.userToken}`;
+                fileUrl = `d.fileTypeuserToken}`;
             } else if ($A.leftExists(codeId, "taskFile_")) {
                 fileUrl = `project/task/filedown/?file_id=${$A.leftDelete(codeId, "taskFile_")}&token=${this.userToken}`;
             } else {
@@ -264,7 +264,9 @@ export default {
                         config.editorConfig.user.name = "Viewer_" + officeViewer
                     }
                 }
+                console.log(config)
                 this.$nextTick(() => {
+                    console.log(DocsAPI)
                     this.docEditor = new DocsAPI.DocEditor(this.id, config);
                 })
             })()

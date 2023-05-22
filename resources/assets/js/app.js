@@ -2,6 +2,7 @@ const isElectron = !!(window && window.process && window.process.type);
 const isEEUiApp = window && window.navigator && /eeui/i.test(window.navigator.userAgent);
 
 import {switchLanguage as $L} from "./language";
+window.$L = $L;
 
 import './functions/common'
 import './functions/eeui'

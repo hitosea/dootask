@@ -83,6 +83,8 @@ export default {
         } else {
             this.url = $A.apiUrl(`../drawio/webapp/${query}`);
         }
+        
+        console.log(this.url)
     },
     mounted() {
         window.addEventListener('message', this.handleMessage)

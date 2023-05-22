@@ -1,0 +1,199 @@
+<template>
+    <div class="plugin-content">
+        <IFrame ref="frame" class="preview-iframe" :src="iframeSrc || getIframeSrc" @on-message="onMessage"/>
+        <div v-if="loadIng" class="loading"><Loading/></div>
+    </div>
+</template>
+
+<style lang="scss" scoped>
+.plugin-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+
+    .loading{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+}
+</style>
+
+<script>
+// 只有桌面端才使用 OnlyOffice
+
+import {mapState} from "vuex";
+import IFrame from "../pages/manage/components/IFrame.vue";
+import {languageType} from "../language";
+
+export default {
+    name: "Plugin",
+    components: {IFrame},
+    props: {
+        value: {
+            type: Object,
+            default: function () {
+                return {}
+            }
+        },
+        file: {
+            type: Object,
+            default: function () {
+                return {}
+            }
+        },
+        readOnly: {
+            type: Boolean,
+            default: false
+        },
+    },
+
+    data() {
+        return {
+            loadIng: $A.isDesktop(),
+            contentDetail:"",
+            iframeSrc:''
+        }
+    },
+
+    computed: {
+        ...mapState(['userInfo', 'themeIsDark', 'plugins']),
+
+        getIframeSrc() {
+            this.documentKey().then(key=>{
+                let historyId = '';
+                let readOnly = false;
+                let conf = this.getPluginConfig();
+                let fileName = $A.strExists(this.file.name, '.') ? this.file.name : (this.file.name + '.' + this.file.ext);
+
+                let lang = languageType;
+                switch (languageType) {
+                    case 'zh-CHT':
+                        lang = 'zh-tw'
+                        break;
+                }
+
+                this.iframeSrc = conf.path + ( conf.path.indexOf("?") == -1 ? '?': '&') + `documentKey=${key}&userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
+                    + `&codeId=${this.file.id}&lang=${lang}&theme=${this.themeIsDark}&historyId=${historyId}`
+                    + `&fileType=${this.file.ext}&fileName=${fileName}&readOnly=${readOnly}&t=${$A.randNum(1000, 99999)}`
+                    + `&title=${fileName}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`
+                
+            });
+        }
+    },
+
+    watch: {
+        iframeSrc: {
+            handler() {
+                if (!$A.isDesktop()) {
+                    this.loading = true;
+                    this.updateContent();
+                }    
+            },
+            immediate: true
+        }
+    },
+
+    mounted() {
+        // //
+        // if (this.$isSubElectron) {
+        //     window.__onBeforeUnload = () => {
+        //         if (!this.equalContent) {
+        //             $A.modalConfirm({
+        //                 content: '修改的内容尚未保存，确定要放弃修改吗？',
+        //                 cancelText: '取消',
+        //                 okText: '放弃',
+        //                 onOk: () => {
+        //                     this.$Electron.sendMessage('windowDestroy');
+        //                 }
+        //             });
+        //             return true
+        //         }
+        //     }
+        // }
+    },
+
+    methods: {
+
+        // 监听消息
+        onMessage(data) {
+            switch (data.action) {
+                case 'ready':
+                    this.loadIng = false;
+                    break;
+            }
+
+            switch (data.event) {
+                case "init":
+                    this.loadIng = false;
+                    this.updateContent();
+                    break;
+
+                case "load":
+                    if (typeof this.value.xml === "undefined") {
+                        this.$refs.frame.postMessage(JSON.stringify({
+                            action: "template"
+                        }));
+                    }
+                    break;
+
+                case "autosave":
+                    const content = {
+                        xml: data.xml,
+                    }
+                    this.bakData = $A.jsonStringify(content);
+                    this.$emit('input', content);
+                    break;
+
+                case "save":
+                    this.$emit('saveData');
+                    break;
+            }
+        },
+
+        // 获取插件配置
+        getPluginConfig(){
+            let conf = {};
+            (this.plugins.files || []).forEach(item => {
+                if(item.ext == this.file.ext) {
+                    conf = item;
+                }
+            });
+            return conf;
+        },
+
+        // 获取key
+        documentKey() {
+            return new Promise(resolve => {
+                this.$store.dispatch("call", {
+                    url: 'file/content',
+                    data: {
+                        id: this.fileId,
+                        only_update_at: 'yes'
+                    },
+                }).then(({data}) => {
+                    resolve(`${data.id}-${$A.Time(data.update_at)}`)
+                }).catch(() => {
+                    resolve(0)
+                });
+            })
+        },
+
+        updateContent() {
+            this.$refs.frame.postMessage(JSON.stringify({
+                action: "load",
+                autosave: 1,
+                xml: this.value.xml,
+            }));
+        },
+    }
+}
+</script>

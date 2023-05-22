@@ -2,8 +2,7 @@
     <div v-if="ready" class="file-content">
         <IFrame v-if="isPreview" class="preview-iframe" :src="previewUrl" @on-load="onFrameLoad"/>
         <template v-else-if="contentDetail">
-            <EPopover
-                v-if="['word', 'excel', 'ppt'].includes(file.type)"
+            <EPopover v-if="['word', 'excel', 'ppt'].includes(file.type)"
                 v-model="historyShow"
                 trigger="click">
                 <div class="file-content-history">
@@ -76,10 +75,13 @@
                     <MDEditor v-if="contentDetail.type=='md'" v-model="contentDetail.content" height="100%"/>
                     <TEditor v-else v-model="contentDetail.content" height="100%" @editorSave="handleClick('saveBefore')"/>
                 </template>
-                <Drawio v-else-if="file.type=='drawio'" ref="myFlow" v-model="contentDetail" :title="file.name" @saveData="handleClick('saveBefore')"/>
-                <Minder v-else-if="file.type=='mind'" ref="myMind" v-model="contentDetail" @saveData="handleClick('saveBefore')"/>
                 <AceEditor v-else-if="['code', 'txt'].includes(file.type)" v-model="contentDetail.content" :ext="file.ext" @saveData="handleClick('saveBefore')"/>
-                <OnlyOffice v-else-if="['word', 'excel', 'ppt'].includes(file.type)" v-model="contentDetail" :documentKey="documentKey" @on-document-ready="handleClick('officeReady')"/>
+
+                <!-- <Drawio v-else-if="file.type=='drawio'" ref="myFlow" v-model="contentDetail" :title="file.name" @saveData="handleClick('saveBefore')"/> -->
+                <!-- <Minder v-else-if="file.type=='mind'" ref="myMind" v-model="contentDetail" @saveData="handleClick('saveBefore')"/> -->
+                <!-- <OnlyOffice v-else-if="['word', 'excel', 'ppt'].includes(file.type)" v-model="contentDetail" :documentKey="documentKey" @on-document-ready="handleClick('officeReady')"/> -->
+               
+                <Plugins v-else :file="file" v-model="contentDetail" />
             </div>
         </template>
         <div v-if="contentLoad" class="content-load"><Loading/></div>
@@ -120,15 +122,16 @@ import FileHistory from "./FileHistory";
 import IFrame from "./IFrame";
 
 const MDEditor = () => import('../../../components/MDEditor/index');
-const TEditor = () => import('../../../components/TEditor');
-const AceEditor = () => import('../../../components/AceEditor');
-const OnlyOffice = () => import('../../../components/OnlyOffice');
-const Drawio = () => import('../../../components/Drawio');
-const Minder = () => import('../../../components/Minder');
+const TEditor = () => import('../../../components/TEditor.vue');
+const AceEditor = () => import('../../../components/AceEditor.vue');
+const OnlyOffice = () => import('../../../components/OnlyOffice.vue');
+const Drawio = () => import('../../../components/Drawio.vue');
+const Minder = () => import('../../../components/Minder.vue');
+const Plugins = () => import('../../../components/Plugins.vue');
 
 export default {
     name: "FileContent",
-    components: {IFrame, FileHistory, AceEditor, TEditor, MDEditor, OnlyOffice, Drawio, Minder},
+    components: {IFrame, FileHistory, AceEditor, TEditor, MDEditor, OnlyOffice, Drawio, Minder, Plugins},
     props: {
         value: {
             type: Boolean,
@@ -165,6 +168,8 @@ export default {
 
             historyShow: false,
             officeReady: false,
+
+            iframeSrc:''
         }
     },
 
@@ -243,11 +248,11 @@ export default {
                 }
             },
             deep: true,
-        },
+        }
     },
 
     computed: {
-        ...mapState(['wsMsg']),
+        ...mapState(['wsMsg','userInfo','themeIsDark','plugins']),
 
         fileId() {
             return this.file.id || 0
@@ -285,6 +290,17 @@ export default {
             }
             return '';
         },
+
+        showHeader() {
+            let conf = {};
+            (this.plugins.files || []).forEach(item => {
+                if(item.ext == this.file.ext) {
+                    conf = item;
+                }
+            });
+            console.log(conf)
+            return false;
+        }
     },
 
     methods: {
@@ -292,6 +308,7 @@ export default {
             if (data.source === 'onlyoffice') {
                 switch (data.action) {
                     case 'ready':
+                        this.handleClick('officeReady')
                         source.postMessage("createMenu", "*");
                         break;
 
@@ -507,22 +524,7 @@ export default {
             this.fileExt = type
             this.$set(this.contentDetail, 'type', type)
         },
-
-        documentKey() {
-            return new Promise(resolve => {
-                this.$store.dispatch("call", {
-                    url: 'file/content',
-                    data: {
-                        id: this.fileId,
-                        only_update_at: 'yes'
-                    },
-                }).then(({data}) => {
-                    resolve(`${data.id}-${$A.Time(data.update_at)}`)
-                }).catch(() => {
-                    resolve(0)
-                });
-            })
-        },
+        
     }
 }
 </script>
