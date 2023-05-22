@@ -2224,6 +2224,7 @@ class ProjectController extends AbstractController
         //
         $userid = intval(Request::input('userid'));
         $project_id = intval(Request::input('project_id'));
+        $project_name = trim(Request::input('project_name'));
         $task_name = trim(Request::input('task_name'));
         $status = Request::input('status');
         $unread = intval(Request::input('unread', 0)); // 未读
@@ -2234,6 +2235,11 @@ class ProjectController extends AbstractController
         }
         if ($project_id) {
             $builder->whereProjectId($project_id);
+        }
+        if ($project_name) {
+            $builder->whereHas('project',function($q) use ($project_name) {
+                $q->where("name", "like", "%{$project_name}%");
+            });
         }
         if ($task_name) {
             $builder->whereHas("projectTask", function ($query) use ($task_name) {

@@ -11,7 +11,7 @@
         </div>
 
         <div class="approve-search">
-            <Select
+            <!-- <Select
                 v-model="project"
                 filterable
                 clearable
@@ -22,8 +22,9 @@
                 :loading="loadIng > 0">
                 <Option v-for="(option, index) in projectList" :value="option.id" :key="index">{{option.name}}</Option>
                 <div v-if="next_page_url!=null" @click="moreProject" style="text-align: center;padding: 8px 0;cursor: pointer;color:#8bcf70;" slot="drop-append">{{$L('点击查看更多')}}</div>
-            </Select>
+            </Select> -->
 
+            <Input v-model="project"  suffix="ios-search" @on-change="getLists" :placeholder="$L('请选择项目名称')"/>
             <Input v-model="searchKey"  suffix="ios-search" @on-change="getLists" :placeholder="$L('请输入任务名称')"/>
         </div>
 
@@ -247,7 +248,8 @@ export default {
                 url: 'project/task/applyList',
                 data: {
                     task_name:this.searchKey,
-                    project_id:this.project,
+                    // project_id:this.project,
+                    project_name:this.project,
                     page: this.listPage,
                     pagesize: this.listPageSize,
                 },
