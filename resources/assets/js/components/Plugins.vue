@@ -1,6 +1,6 @@
 <template>
     <div class="plugin-content">
-        <IFrame ref="frame" class="preview-iframe" :src="iframeSrc || getIframeSrc" @on-message="onMessage"/>
+        <IFrame ref="frame" class="preview-iframe" :src="iframeSrc" @on-message="onMessage"/>
         <div v-if="loadIng" class="loading"><Loading/></div>
     </div>
 </template>
@@ -66,31 +66,21 @@ export default {
 
     computed: {
         ...mapState(['userInfo', 'themeIsDark', 'plugins']),
-
-        getIframeSrc() {
-            this.documentKey().then(key=>{
-                let historyId = '';
-                let readOnly = false;
-                let conf = this.getPluginConfig();
-                let fileName = $A.strExists(this.file.name, '.') ? this.file.name : (this.file.name + '.' + this.file.ext);
-
-                let lang = languageType;
-                switch (languageType) {
-                    case 'zh-CHT':
-                        lang = 'zh-tw'
-                        break;
-                }
-
-                this.iframeSrc = conf.path + ( conf.path.indexOf("?") == -1 ? '?': '&') + `documentKey=${key}&userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
-                    + `&codeId=${this.file.id}&lang=${lang}&theme=${this.themeIsDark}&historyId=${historyId}`
-                    + `&fileType=${this.file.ext}&fileName=${fileName}&readOnly=${readOnly}&t=${$A.randNum(1000, 99999)}`
-                    + `&title=${fileName}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`
-                
-            });
-        }
     },
 
     watch: {
+        'file': {
+            handler(file)  {
+                if (!file.id) {
+                    return;
+                }
+                this.loading = true;
+                this.loadError = false;
+                this.documentKey();
+            },
+            deep: true
+        },
+
         iframeSrc: {
             handler() {
                 if (!$A.isDesktop()) {
@@ -103,6 +93,7 @@ export default {
     },
 
     mounted() {
+        this.documentKey();
         // //
         // if (this.$isSubElectron) {
         //     window.__onBeforeUnload = () => {
@@ -176,11 +167,29 @@ export default {
                 this.$store.dispatch("call", {
                     url: 'file/content',
                     data: {
-                        id: this.fileId,
+                        id: this.file.id,
                         only_update_at: 'yes'
                     },
                 }).then(({data}) => {
-                    resolve(`${data.id}-${$A.Time(data.update_at)}`)
+                    let key = `${data.id}-${$A.Time(data.update_at)}`;
+                    let historyId = this.value.history_id || 0;
+                    let readOnly = false;
+                    let conf = this.getPluginConfig();
+                    let fileName = $A.strExists(this.file.name, '.') ? this.file.name : (this.file.name + '.' + this.file.ext);
+
+                    let lang = languageType;
+                    switch (languageType) {
+                        case 'zh-CHT':
+                            lang = 'zh-tw'
+                            break;
+                    }
+
+                    this.iframeSrc = conf.path + (conf.path.indexOf("?") == -1 ? '?': '&') + `documentKey=${key}&userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
+                        + `&codeId=${this.file.id}&lang=${lang}&theme=${this.themeIsDark}&historyId=${historyId}`
+                        + `&fileType=${this.file.ext}&fileName=${fileName}&readOnly=${readOnly}&t=${$A.randNum(1000, 99999)}`
+                        + `&title=${fileName}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`
+
+                    resolve(key)
                 }).catch(() => {
                     resolve(0)
                 });
@@ -194,6 +203,10 @@ export default {
                 xml: this.value.xml,
             }));
         },
+
+        reload(){
+            // this.updateContent()
+        }
     }
 }
 </script>

@@ -10,7 +10,7 @@
                 </div>
                 <div slot="reference" ref="officeHeader" class="office-header"></div>
             </EPopover>
-            <div v-else class="edit-header">
+            <div v-else class="edit-header" v-if="showHeader">
                 <div class="header-title">
                     <EPopover v-if="!equalContent" v-model="unsaveTip" class="file-unsave-tip">
                         <div class="task-detail-delete-file-popover">
@@ -81,7 +81,7 @@
                 <!-- <Minder v-else-if="file.type=='mind'" ref="myMind" v-model="contentDetail" @saveData="handleClick('saveBefore')"/> -->
                 <!-- <OnlyOffice v-else-if="['word', 'excel', 'ppt'].includes(file.type)" v-model="contentDetail" :documentKey="documentKey" @on-document-ready="handleClick('officeReady')"/> -->
                
-                <Plugins v-else :file="file" v-model="contentDetail" />
+                <Plugins v-else ref="pluginsRef" :file="file" v-model="contentDetail" />
             </div>
         </template>
         <div v-if="contentLoad" class="content-load"><Loading/></div>
@@ -298,7 +298,7 @@ export default {
                     conf = item;
                 }
             });
-            console.log(conf)
+            console.log(conf);
             return false;
         }
     },
@@ -452,6 +452,8 @@ export default {
                             }
                         }).then(({msg}) => {
                             resolve(msg);
+                            this.file.history_id = item.id;
+                            this.$refs.pluginsRef.reload();
                             this.contentDetail = null;
                             this.getContent();
                         }).catch(({msg}) => {
@@ -524,7 +526,23 @@ export default {
             this.fileExt = type
             this.$set(this.contentDetail, 'type', type)
         },
-        
+
+        // 获取key
+        documentKey() {
+            return new Promise(resolve => {
+                this.$store.dispatch("call", {
+                    url: 'file/content',
+                    data: {
+                        id: this.fileId,
+                        only_update_at: 'yes'
+                    },
+                }).then(({data}) => {
+                    resolve(`${data.id}-${$A.Time(data.update_at)}`)
+                }).catch(() => {
+                    resolve(0)
+                });
+            })
+        },
     }
 }
 </script>

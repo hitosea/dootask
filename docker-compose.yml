@@ -148,6 +148,8 @@ services:
         ipv4_address: "${APP_IPPR}.10"
     restart: unless-stopped
 
+#plugin#
+
 networks:
   extnetwork:
     name: "dootask-networks-${APP_ID}"

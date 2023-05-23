@@ -266,7 +266,6 @@ export default {
                 }
                 console.log(config)
                 this.$nextTick(() => {
-                    console.log(DocsAPI)
                     this.docEditor = new DocsAPI.DocEditor(this.id, config);
                 })
             })()

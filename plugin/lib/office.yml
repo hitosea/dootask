@@ -1,0 +1,27 @@
+office:
+    container_name: "dootask-office-${APP_ID}"
+    image: "onlyoffice/documentserver:7.3.2.8"
+    volumes:
+      - ./docker/office/logs:/var/log/onlyoffice
+      - ./docker/office/data:/var/www/onlyoffice/Data
+      - ./docker/office/resources/require.js:/var/www/onlyoffice/documentserver/web-apps/vendor/requirejs/require.js
+      - ./docker/office/resources/documenteditor/main/resources/css/app.css:/var/www/onlyoffice/documentserver/web-apps/apps/documenteditor/main/resources/css/app.css
+      - ./docker/office/resources/documenteditor/mobile/css/964.css:/var/www/onlyoffice/documentserver/web-apps/apps/documenteditor/mobile/css/964.css
+      - ./docker/office/resources/presentationeditor/main/resources/css/app.css:/var/www/onlyoffice/documentserver/web-apps/apps/presentationeditor/main/resources/css/app.css
+      - ./docker/office/resources/presentationeditor/mobile/css/612.css:/var/www/onlyoffice/documentserver/web-apps/apps/presentationeditor/mobile/css/612.css
+      - ./docker/office/resources/spreadsheeteditor/main/resources/css/app.css:/var/www/onlyoffice/documentserver/web-apps/apps/spreadsheeteditor/main/resources/css/app.css
+      - ./docker/office/resources/spreadsheeteditor/mobile/css/887.css:/var/www/onlyoffice/documentserver/web-apps/apps/spreadsheeteditor/mobile/css/887.css
+    environment:
+      JWT_ENABLED: false
+    networks:
+      extnetwork:
+        ipv4_address: "${APP_IPPR}.6"
+    restart: unless-stopped
+
+  officeui:
+    container_name: "dootask-officeuid-${APP_ID}"
+    image: "hitosea2020/officeui:0.0.1"
+    networks:
+      extnetwork:
+        ipv4_address: "${APP_IPPR}.13"
+    restart: unless-stopped
