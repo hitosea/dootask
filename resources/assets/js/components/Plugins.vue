@@ -205,7 +205,8 @@ export default {
                             break;
                     }
 
-                    this.iframeSrc = conf.path + (conf.path.indexOf("?") == -1 ? '?': '&') + `documentKey=${key}&userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
+                    this.iframeSrc = conf.path + (conf.path.indexOf("?") == -1 ? '?': '&') 
+                        + `documentKey=${key}&userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
                         + `&codeId=${this.file.id}&lang=${lang}&theme=${this.themeIsDark}&historyId=${historyId}`
                         + `&fileType=${this.file.ext}&fileName=${fileName}&readOnly=${readOnly}`
                         + `&title=${title}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`

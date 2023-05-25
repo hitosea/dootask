@@ -43,7 +43,7 @@
         {
             "title": "思维导图",
             "ext": "mind",
-            "path": "/minder/index.html?type=manual&readonly=no",
+            "path": "/minder/web/index.html?type=manual",
             "icon": "/images/file/light/mind.svg",
             "showHeader": true
         },
@@ -131,7 +131,7 @@
             }
         },
         "minder":{
-            "image": "kuaifan/minder:0.1.1",
+            "image": "hitosea2020/dootask-plugin-minder:latest",
             "nginx_proxy":{
                 "enable":true,
                 "location":"/minder/",
