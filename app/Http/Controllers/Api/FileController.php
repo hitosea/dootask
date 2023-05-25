@@ -541,6 +541,8 @@ class FileController extends AbstractController
         $down = Request::input('down', 'no');
         $only_update_at = Request::input('only_update_at', 'no');
         $history_id = intval(Request::input('history_id'));
+
+        info( request()->all() );
         //
         if (Base::isNumber($id)) {
             $user = User::auth();
@@ -566,6 +568,7 @@ class FileController extends AbstractController
                 'update_at' => Carbon::parse($file->updated_at)->toDateTimeString()
             ]);
         }
+        
         //
         $builder = FileContent::whereFid($file->id);
         if ($history_id > 0) {

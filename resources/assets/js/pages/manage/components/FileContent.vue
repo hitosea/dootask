@@ -10,7 +10,7 @@
                 </div>
                 <div slot="reference" ref="officeHeader" class="office-header"></div>
             </EPopover>
-            <div v-else class="edit-header" v-if="showHeader">
+            <div v-else-if="showHeader" class="edit-header">
                 <div class="header-title">
                     <EPopover v-if="!equalContent" v-model="unsaveTip" class="file-unsave-tip">
                         <div class="task-detail-delete-file-popover">
@@ -41,11 +41,7 @@
                 <div v-if="file.type=='mind'" class="header-hint">
                     {{$L('选中节点，按enter键添加同级节点，tab键添加子节点')}}
                 </div>
-                <Dropdown v-if="file.type=='mind'"
-                          trigger="click"
-                          class="header-hint"
-                          @on-click="exportMenu"
-                          transfer>
+                <Dropdown v-if="file.type=='mind'" trigger="click" class="header-hint" @on-click="exportMenu" transfer>
                     <a href="javascript:void(0)">{{$L('导出')}}<Icon type="ios-arrow-down"></Icon></a>
                     <DropdownMenu slot="list">
                         <DropdownItem name="png">{{$L('导出PNG图片')}}</DropdownItem>
@@ -298,13 +294,13 @@ export default {
                     conf = item;
                 }
             });
-            console.log(conf);
-            return false;
+            return conf.showHeader;
         }
     },
 
     methods: {
         handleOfficeMessage({data, source}) {
+
             if (data.source === 'onlyoffice') {
                 switch (data.action) {
                     case 'ready':

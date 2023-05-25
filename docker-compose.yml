@@ -44,11 +44,8 @@ services:
         ipv4_address: "${APP_IPPR}.3"
     links:
       - php
-      - office
+#plugin-nginx-links#
       - fileview
-      - drawio-webapp
-      - drawio-export
-      - minder
     restart: unless-stopped
 
   redis:
@@ -79,26 +76,6 @@ services:
         ipv4_address: "${APP_IPPR}.5"
     restart: unless-stopped
 
-  office:
-    container_name: "dootask-office-${APP_ID}"
-    image: "onlyoffice/documentserver:7.3.2.8"
-    volumes:
-      - ./docker/office/logs:/var/log/onlyoffice
-      - ./docker/office/data:/var/www/onlyoffice/Data
-      - ./docker/office/resources/require.js:/var/www/onlyoffice/documentserver/web-apps/vendor/requirejs/require.js
-      - ./docker/office/resources/documenteditor/main/resources/css/app.css:/var/www/onlyoffice/documentserver/web-apps/apps/documenteditor/main/resources/css/app.css
-      - ./docker/office/resources/documenteditor/mobile/css/964.css:/var/www/onlyoffice/documentserver/web-apps/apps/documenteditor/mobile/css/964.css
-      - ./docker/office/resources/presentationeditor/main/resources/css/app.css:/var/www/onlyoffice/documentserver/web-apps/apps/presentationeditor/main/resources/css/app.css
-      - ./docker/office/resources/presentationeditor/mobile/css/612.css:/var/www/onlyoffice/documentserver/web-apps/apps/presentationeditor/mobile/css/612.css
-      - ./docker/office/resources/spreadsheeteditor/main/resources/css/app.css:/var/www/onlyoffice/documentserver/web-apps/apps/spreadsheeteditor/main/resources/css/app.css
-      - ./docker/office/resources/spreadsheeteditor/mobile/css/887.css:/var/www/onlyoffice/documentserver/web-apps/apps/spreadsheeteditor/mobile/css/887.css
-    environment:
-      JWT_ENABLED: false
-    networks:
-      extnetwork:
-        ipv4_address: "${APP_IPPR}.6"
-    restart: unless-stopped
-
   fileview:
     container_name: "dootask-fileview-${APP_ID}"
     image: "kuaifan/fileview:4.1.0-SNAPSHOT-RC20"
@@ -111,41 +88,6 @@ services:
     networks:
       extnetwork:
         ipv4_address: "${APP_IPPR}.7"
-    restart: unless-stopped
-
-  drawio-webapp:
-    container_name: "dootask-drawio-webapp-${APP_ID}"
-    image: "jgraph/drawio:20.8.20"
-    volumes:
-      - ./docker/drawio/webapp/index.html:/usr/local/tomcat/webapps/draw/index.html
-      - ./docker/drawio/webapp/stencils:/usr/local/tomcat/webapps/draw/stencils
-      - ./docker/drawio/webapp/js/app.min.js:/usr/local/tomcat/webapps/draw/js/app.min.js
-      - ./docker/drawio/webapp/js/croppie/croppie.min.css:/usr/local/tomcat/webapps/draw/js/croppie/croppie.min.css
-      - ./docker/drawio/webapp/js/diagramly/ElectronApp.js:/usr/local/tomcat/webapps/draw/js/diagramly/ElectronApp.js
-    networks:
-      extnetwork:
-        ipv4_address: "${APP_IPPR}.8"
-    depends_on:
-      - drawio-export
-    restart: unless-stopped
-
-  drawio-export:
-    container_name: "dootask-drawio-export-${APP_ID}"
-    image: "kuaifan/export-server:latest"
-    platform: linux/amd64
-    networks:
-      extnetwork:
-        ipv4_address: "${APP_IPPR}.9"
-    volumes:
-      - ./docker/drawio/export/fonts:/usr/share/fonts/drawio
-    restart: unless-stopped
-
-  minder:
-    container_name: "dootask-minder-${APP_ID}"
-    image: "kuaifan/minder:0.1.1"
-    networks:
-      extnetwork:
-        ipv4_address: "${APP_IPPR}.10"
     restart: unless-stopped
 
 #plugin#

@@ -1,6 +1,9 @@
 <template>
     <div class="plugin-content">
-        <IFrame ref="frame" class="preview-iframe" :src="iframeSrc" @on-message="onMessage"/>
+        <template v-if="isShow">
+            <IFrame v-if="iframeSrc" ref="frame" class="preview-iframe" :src="iframeSrc" @on-message="onMessage"/>
+        </template>
+        <IFrame v-else class="preview-iframe" :src="previewUrl" @on-load="onFrameLoad"/>
         <div v-if="loadIng" class="loading"><Loading/></div>
     </div>
 </template>
@@ -28,8 +31,6 @@
 </style>
 
 <script>
-// 只有桌面端才使用 OnlyOffice
-
 import {mapState} from "vuex";
 import IFrame from "../pages/manage/components/IFrame.vue";
 import {languageType} from "../language";
@@ -66,6 +67,36 @@ export default {
 
     computed: {
         ...mapState(['userInfo', 'themeIsDark', 'plugins']),
+
+        isShow() {
+            let conf = this.getPluginConfig();
+            if(conf.platform == "desktop"){
+                return $A.isDesktop();
+            }else{
+                return true;
+            }
+        },
+        
+
+        fileUrl() {
+            let codeId = this.file.id;
+            let fileUrl
+            if ($A.leftExists(codeId, "msgFile_")) {
+                fileUrl = `d.fileTypeuserToken}`;
+            } else if ($A.leftExists(codeId, "taskFile_")) {
+                fileUrl = `project/task/filedown/?file_id=${$A.leftDelete(codeId, "taskFile_")}&token=${this.userToken}`;
+            } else {
+                fileUrl = `file/content/?id=${codeId}&token=${this.userToken}`;
+                if (this.historyId > 0) {
+                    fileUrl += `&history_id=${this.historyId}`
+                }
+            }
+            return fileUrl;
+        },
+
+        previewUrl() {
+            return $A.apiUrl(this.fileUrl) + "&down=preview"
+        }
     },
 
     watch: {
@@ -94,28 +125,17 @@ export default {
 
     mounted() {
         this.documentKey();
-        // //
-        // if (this.$isSubElectron) {
-        //     window.__onBeforeUnload = () => {
-        //         if (!this.equalContent) {
-        //             $A.modalConfirm({
-        //                 content: '修改的内容尚未保存，确定要放弃修改吗？',
-        //                 cancelText: '取消',
-        //                 okText: '放弃',
-        //                 onOk: () => {
-        //                     this.$Electron.sendMessage('windowDestroy');
-        //                 }
-        //             });
-        //             return true
-        //         }
-        //     }
-        // }
     },
 
     methods: {
 
+        onFrameLoad() {
+            this.loadIng = false;
+        },
+
         // 监听消息
         onMessage(data) {
+
             switch (data.action) {
                 case 'ready':
                     this.loadIng = false;
@@ -173,8 +193,9 @@ export default {
                 }).then(({data}) => {
                     let key = `${data.id}-${$A.Time(data.update_at)}`;
                     let historyId = this.value.history_id || 0;
-                    let readOnly = false;
+                    let readOnly = !$A.isDesktop();
                     let conf = this.getPluginConfig();
+                    let title = encodeURIComponent(this.file.name);
                     let fileName = $A.strExists(this.file.name, '.') ? this.file.name : (this.file.name + '.' + this.file.ext);
 
                     let lang = languageType;
@@ -186,8 +207,8 @@ export default {
 
                     this.iframeSrc = conf.path + (conf.path.indexOf("?") == -1 ? '?': '&') + `documentKey=${key}&userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
                         + `&codeId=${this.file.id}&lang=${lang}&theme=${this.themeIsDark}&historyId=${historyId}`
-                        + `&fileType=${this.file.ext}&fileName=${fileName}&readOnly=${readOnly}&t=${$A.randNum(1000, 99999)}`
-                        + `&title=${fileName}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`
+                        + `&fileType=${this.file.ext}&fileName=${fileName}&readOnly=${readOnly}`
+                        + `&title=${title}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`
 
                     resolve(key)
                 }).catch(() => {

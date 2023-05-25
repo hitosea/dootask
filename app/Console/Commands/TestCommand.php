@@ -34,8 +34,7 @@ class TestCommand extends Command
     public function handle()
     {
 
-        $dockerCompos = Plugin::generateDockerCompose();
-
+        $dockerCompos = Plugin::execute();
         dump($dockerCompos);
 
     }

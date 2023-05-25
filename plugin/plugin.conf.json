@@ -36,7 +36,7 @@
         {
             "title": "图表",
             "ext": "drawio",
-            "path": "/plugin/lib/drawio.html",
+            "path": "/drawio/webapp/?offline=1&pwa=0&embed=1&noLangIcon=1&noExitBtn=1&noSaveBtn=1&saveAndExit=0&spin=1&proto=json",
             "icon": "/images/file/light/drawio.svg",
             "showHeader": true
         },
@@ -44,26 +44,30 @@
             "title": "思维导图",
             "ext": "mind",
             "path": "/minder/index.html?type=manual&readonly=no",
-            "icon": "/images/file/light/mind.svg"
+            "icon": "/images/file/light/mind.svg",
+            "showHeader": true
         },
         {
             "title": "Word 文档",
             "ext": "docx",
             "path": "/officeui/index.html",
             "icon": "/images/file/light/word.svg",
-            "divided": true
+            "divided": true,
+            "platform":"desktop"
         },
         {
             "title": "Excel 工作表",
             "ext": "xlsx",
             "path": "/officeui/index.html",
-            "icon": "/images/file/light/excel.svg"
+            "icon": "/images/file/light/excel.svg",
+            "platform":"desktop"
         },
         {
             "title": "PPT 演示文稿",
             "ext": "pptx",
             "path": "/officeui/index.html",
-            "icon": "/images/file/light/ppt.svg"
+            "icon": "/images/file/light/ppt.svg",
+            "platform":"desktop"
         }
     ],
     "dockerCompose": {
@@ -80,17 +84,59 @@
                 "./docker/office/resources/spreadsheeteditor/main/resources/css/app.css:/var/www/onlyoffice/documentserver/web-apps/apps/spreadsheeteditor/main/resources/css/app.css",
                 "./docker/office/resources/spreadsheeteditor/mobile/css/887.css:/var/www/onlyoffice/documentserver/web-apps/apps/spreadsheeteditor/mobile/css/887.css"
             ],
-            "command":"sdasdasdas",
-            "ports":[
-                "8000:80"
-            ],
             "environment":{
                 "JWT_ENABLED":"false"
+            },
+            "nginx_proxy":{
+                "enable":true,
+                "location":"/office/",
+                "proxy_pass": "http://office/"
             }
         },
         "officeui":{
-            "image": "hitosea2020/officeui:0.0.1"
+            "image": "hitosea2020/dootask-plugin-officeui:latest",
+            "nginx_proxy":{
+                "enable":true,
+                "location":"/officeui/",
+                "proxy_pass": "http://officeui/"
+            }
+        },
+        "drawio-webapp":{
+            "image": "jgraph/drawio:20.8.20",
+            "volumes": [
+                "./docker/drawio/webapp/index.html:/usr/local/tomcat/webapps/draw/index.html",
+                "./docker/drawio/webapp/stencils:/usr/local/tomcat/webapps/draw/stencils",
+                "./docker/drawio/webapp/js/app.min.js:/usr/local/tomcat/webapps/draw/js/app.min.js",
+                "./docker/drawio/webapp/js/croppie/croppie.min.css:/usr/local/tomcat/webapps/draw/js/croppie/croppie.min.css",
+                "./docker/drawio/webapp/js/diagramly/ElectronApp.js:/usr/local/tomcat/webapps/draw/js/diagramly/ElectronApp.js"
+            ],
+            "depends_on":[
+                "drawio-export"
+            ],
+            "nginx_proxy":{
+                "enable":true,
+                "location":"/drawio/webapp/",
+                "proxy_pass": "http://drawio-webapp:8080/"
+            }
+        },
+        "drawio-export":{
+            "image": "kuaifan/export-server:latest",
+            "volumes": [
+                "./docker/drawio/export/fonts:/usr/share/fonts/drawio"
+            ],
+            "nginx_proxy":{
+                "enable":true,
+                "location":"/drawio/export/",
+                "proxy_pass": "http://drawio-export:8000/"
+            }
+        },
+        "minder":{
+            "image": "kuaifan/minder:0.1.1",
+            "nginx_proxy":{
+                "enable":true,
+                "location":"/minder/",
+                "proxy_pass": "http://minder/"
+            }
         }
-        
     }
 }
