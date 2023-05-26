@@ -541,8 +541,6 @@ class FileController extends AbstractController
         $down = Request::input('down', 'no');
         $only_update_at = Request::input('only_update_at', 'no');
         $history_id = intval(Request::input('history_id'));
-
-        info( request()->all() );
         //
         if (Base::isNumber($id)) {
             $user = User::auth();

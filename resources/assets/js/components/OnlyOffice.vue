@@ -128,7 +128,7 @@ export default {
             let codeId = this.code || this.value.id;
             let fileUrl
             if ($A.leftExists(codeId, "msgFile_")) {
-                fileUrl = `d.fileTypeuserToken}`;
+                fileUrl = `dialog/msg/download/?msg_id=${$A.leftDelete(codeId, "msgFile_")}&token=${this.userToken}`;
             } else if ($A.leftExists(codeId, "taskFile_")) {
                 fileUrl = `project/task/filedown/?file_id=${$A.leftDelete(codeId, "taskFile_")}&token=${this.userToken}`;
             } else {

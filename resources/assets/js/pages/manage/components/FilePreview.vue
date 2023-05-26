@@ -11,8 +11,7 @@
                         <Icon v-else type="ios-refresh" @click="getContent" />
                     </div>
                 </div>
-                <Dropdown
-                    v-if="file.type=='mind'"
+                <Dropdown v-if="file.type=='mind'"
                     trigger="click"
                     class="header-hint"
                     @on-click="exportMenu">
@@ -28,10 +27,8 @@
                     <MDPreview v-if="contentDetail.type=='md'" :initialValue="contentDetail.content"/>
                     <TEditor v-else :value="contentDetail.content" height="100%" readOnly/>
                 </template>
-                <Drawio v-else-if="file.type=='drawio'" ref="myFlow" :value="contentDetail" :title="file.name" readOnly/>
-                <Minder v-else-if="file.type=='mind'" ref="myMind" :value="contentDetail" readOnly/>
                 <AceEditor v-else-if="['code', 'txt'].includes(file.type)" :value="contentDetail.content" :ext="file.ext" readOnly/>
-                <OnlyOffice v-else-if="['word', 'excel', 'ppt'].includes(file.type)" :value="contentDetail" :code="code" :historyId="historyId" :documentKey="documentKey" readOnly/>
+                <Plugins v-else ref="pluginsRef" :file="file" v-model="contentDetail" :readOnly="true" :historyId="historyId"/>
             </div>
         </template>
         <div v-if="contentLoad" class="content-load"><Loading/></div>
@@ -44,13 +41,17 @@ import IFrame from "./IFrame";
 const MDPreview = () => import('../../../components/MDEditor/preview');
 const TEditor = () => import('../../../components/TEditor.vue');
 const AceEditor = () => import('../../../components/AceEditor.vue');
-const OnlyOffice = () => import('../../../components/OnlyOffice.vue');
-const Drawio = () => import('../../../components/Drawio.vue');
-const Minder = () => import('../../../components/Minder.vue');
+const Plugins = () => import('../../../components/Plugins.vue');
 
 export default {
     name: "FilePreview",
-    components: {IFrame, AceEditor, TEditor, MDPreview, OnlyOffice, Drawio, Minder},
+    components: {
+        IFrame, 
+        AceEditor, 
+        TEditor, 
+        MDPreview, 
+        Plugins
+    },
     props: {
         code: {
             type: String,
@@ -160,11 +161,7 @@ export default {
         },
 
         exportMenu(type) {
-            switch (this.file.type) {
-                case 'mind':
-                    this.$refs.myMind.exportHandle(type, this.file.name);
-                    break;
-            }
+            this.$refs.pluginsRef.exportHandle(type, this.file.name);
         },
     }
 }

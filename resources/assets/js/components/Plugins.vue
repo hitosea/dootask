@@ -1,10 +1,7 @@
 <template>
     <div class="plugin-content">
-        <template v-if="isShow">
-            <IFrame v-if="iframeSrc" ref="frame" class="preview-iframe" :src="iframeSrc" @on-message="onMessage"/>
-        </template>
-        <IFrame v-else class="preview-iframe" :src="previewUrl" @on-load="onFrameLoad"/>
-        <div v-if="loadIng" class="loading"><Loading/></div>
+        <IFrame v-if="iframeSrc" ref="frame" class="preview-iframe" :src="iframeSrc" @on-message="onMessage" @on-load="onFrameLoad"/>
+        <div v-if="loadIng" class="loading"><Loading/></div> 
     </div>
 </template>
 
@@ -55,6 +52,14 @@ export default {
             type: Boolean,
             default: false
         },
+        historyId: {
+            type: Number,
+            default: 0
+        },
+        openType: {
+            type: String,
+            default: 'file'
+        },
     },
 
     data() {
@@ -69,34 +74,26 @@ export default {
         ...mapState(['userInfo', 'themeIsDark', 'plugins']),
 
         isShow() {
-            let conf = this.getPluginConfig();
-            if(conf.platform == "desktop"){
-                return $A.isDesktop();
-            }else{
-                return true;
-            }
+            return $A.isDesktop();
         },
         
 
         fileUrl() {
             let codeId = this.file.id;
-            let fileUrl
-            if ($A.leftExists(codeId, "msgFile_")) {
-                fileUrl = `d.fileTypeuserToken}`;
-            } else if ($A.leftExists(codeId, "taskFile_")) {
+            let fileUrl = `file/content/?id=${codeId}&token=${this.userToken}`;
+            if (this.openType == 'msg') {
+                fileUrl = `dialog/msg/download/?msg_id=${$A.leftDelete(codeId, "msgFile_")}&token=${this.userToken}`;
+            } else if (this.openType == 'task') {
                 fileUrl = `project/task/filedown/?file_id=${$A.leftDelete(codeId, "taskFile_")}&token=${this.userToken}`;
             } else {
-                fileUrl = `file/content/?id=${codeId}&token=${this.userToken}`;
                 if (this.historyId > 0) {
                     fileUrl += `&history_id=${this.historyId}`
                 }
             }
+
             return fileUrl;
         },
 
-        previewUrl() {
-            return $A.apiUrl(this.fileUrl) + "&down=preview"
-        }
     },
 
     watch: {
@@ -107,24 +104,21 @@ export default {
                 }
                 this.loading = true;
                 this.loadError = false;
-                this.documentKey();
             },
             deep: true
         },
 
         iframeSrc: {
             handler() {
-                if (!$A.isDesktop()) {
-                    this.loading = true;
-                    this.updateContent();
-                }    
+                this.loading = true;
+                this.updateContent();
             },
             immediate: true
         }
     },
 
     mounted() {
-        this.documentKey();
+       this.load();
     },
 
     methods: {
@@ -139,6 +133,12 @@ export default {
             switch (data.action) {
                 case 'ready':
                     this.loadIng = false;
+                    break;
+                case 'content':
+                    this.$emit('input', data.content);
+                    break;
+                case "save":
+                    this.$emit('saveData');
                     break;
             }
 
@@ -168,6 +168,7 @@ export default {
                     this.$emit('saveData');
                     break;
             }
+            
         },
 
         // 获取插件配置
@@ -182,8 +183,18 @@ export default {
         },
 
         // 获取key
-        documentKey() {
-            return new Promise(resolve => {
+        load() {
+            if(this.openType == 'msg'){
+                this.$store.dispatch("call", {
+                    url: 'dialog/msg/detail',
+                    data: {
+                        msg_id: this.file.id,
+                        only_update_at: 'yes'
+                    },
+                }).then(({data}) => {
+                    this.setIframeSrc(`${data.id}-${$A.Time(data.update_at)}`)
+                });
+            }else{
                 this.$store.dispatch("call", {
                     url: 'file/content',
                     data: {
@@ -191,43 +202,66 @@ export default {
                         only_update_at: 'yes'
                     },
                 }).then(({data}) => {
-                    let key = `${data.id}-${$A.Time(data.update_at)}`;
-                    let historyId = this.value.history_id || 0;
-                    let readOnly = !$A.isDesktop();
-                    let conf = this.getPluginConfig();
-                    let title = encodeURIComponent(this.file.name);
-                    let fileName = $A.strExists(this.file.name, '.') ? this.file.name : (this.file.name + '.' + this.file.ext);
+                    this.setIframeSrc(`${data.id}-${$A.Time(data.update_at)}`)
+                })
+            }
+        },
 
-                    let lang = languageType;
-                    switch (languageType) {
-                        case 'zh-CHT':
-                            lang = 'zh-tw'
-                            break;
-                    }
 
-                    this.iframeSrc = conf.path + (conf.path.indexOf("?") == -1 ? '?': '&') 
-                        + `documentKey=${key}&userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
-                        + `&codeId=${this.file.id}&lang=${lang}&theme=${this.themeIsDark}&historyId=${historyId}`
-                        + `&fileType=${this.file.ext}&fileName=${fileName}&readOnly=${readOnly}`
-                        + `&title=${title}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`
+        // 设置src
+        setIframeSrc(key){
+            
+            let historyId = this.historyId || 0;
+            let readOnly = !$A.isDesktop() || this.readOnly;
+            let conf = this.getPluginConfig();
+            let title = encodeURIComponent(this.file.name);
+            let fileName = $A.strExists(this.file.name, '.') ? this.file.name : (this.file.name + '.' + this.file.ext);
 
-                    resolve(key)
-                }).catch(() => {
-                    resolve(0)
-                });
+            let lang = languageType;
+            switch (languageType) {
+                case 'zh-CHT':
+                    lang = 'zh-tw'
+                    break;
+            }
+
+            if (this.$Electron) {
+                conf.path  = $A.originUrl(conf.path);
+            } else {
+                conf.path  = $A.apiUrl(conf.path );
+            }
+
+            this.iframeSrc = "";
+            this.$nextTick(() => {
+                this.iframeSrc = conf.path + (conf.path.indexOf("?") == -1 ? '?': '&') 
+                + `userToken=${this.userToken}&nickname=${this.userInfo.nickname}&userid=${this.userInfo.userid}`
+                + `&lang=${lang}&theme=${this.themeIsDark}&isDesktop=${$A.isDesktop()}&isElectron=${this.$Electron}&isEEUiApp=${this.$isEEUiApp}`
+                + `&documentKey=${key}&fileId=${this.file.id}&fileType=${this.file.ext}&fileName=${fileName}&historyId=${historyId}`
+                + `&fileUrl=${encodeURIComponent(this.fileUrl)}&openType=${this.openType}`
+                + `&readOnly=${readOnly}&t=${Math.round(Math.random() * 100000)}`
+                + `&title=${title}&chrome=${readOnly ? 0 : 1}&lightbox=${readOnly ? 1 : 0}&ui=${this.themeIsDark ? 'dark' : 'kennedy'}`
             })
         },
 
+        // 更新内容
         updateContent() {
-            this.$refs.frame.postMessage(JSON.stringify({
+            this.$refs.frame?.postMessage(JSON.stringify({
                 action: "load",
                 autosave: 1,
                 xml: this.value.xml,
             }));
         },
 
+        // 导出
+        exportHandle(type, filename) {
+            this.$refs.frame.postMessage({
+                action: 'headerDropdowns',
+                type,
+                name: filename 
+            });
+        },
+
         reload(){
-            // this.updateContent()
+            this.load();
         }
     }
 }

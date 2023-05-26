@@ -5,14 +5,15 @@
         <template v-else-if="!isWait">
             <MDPreview v-if="isType('md')" :initialValue="msgDetail.content.content"/>
             <TEditor v-else-if="isType('text')" :value="msgDetail.content.content" height="100%" readOnly/>
-            <Drawio v-else-if="isType('drawio')" v-model="msgDetail.content" :title="msgDetail.msg.name" readOnly/>
-            <Minder v-else-if="isType('mind')" :value="msgDetail.content" readOnly/>
             <template v-else-if="isType('code')">
                 <div v-if="isLongText(msgDetail.msg.name)" class="view-code" v-html="$A.formatTextMsg(msgDetail.content.content, userId)"></div>
                 <AceEditor v-else v-model="msgDetail.content.content" :ext="msgDetail.msg.ext" class="view-editor" readOnly/>
             </template>
-            <OnlyOffice v-else-if="isType('office')" v-model="officeContent" :code="officeCode" :documentKey="documentKey" readOnly/>
+            <!-- <Drawio v-else-if="isType('drawio')" v-model="msgDetail.content" :title="msgDetail.msg.name" readOnly/> -->
+            <!-- <Minder v-else-if="isType('mind')" :value="msgDetail.content" readOnly/> -->
+            <!-- <OnlyOffice v-else-if="isType('office')" v-model="officeContent" :code="officeCode" :documentKey="documentKey" readOnly/> -->
             <IFrame v-else-if="isType('preview')" class="preview-iframe" :src="previewUrl"/>
+            <Plugins v-else ref="pluginsRef" :file="file" :value="file" :readOnly="true" openType="msg"/>
             <div v-else class="no-support">{{$L('不支持单独查看此消息')}}</div>
         </template>
     </div>
@@ -71,12 +72,22 @@ import IFrame from "../manage/components/IFrame";
 const MDPreview = () => import('../../components/MDEditor/preview');
 const TEditor = () => import('../../components/TEditor');
 const AceEditor = () => import('../../components/AceEditor');
-const OnlyOffice = () => import('../../components/OnlyOffice');
-const Drawio = () => import('../../components/Drawio');
-const Minder = () => import('../../components/Minder');
+const OnlyOffice = () => import('../../components/OnlyOffice.vue');
+const Drawio = () => import('../../components/Drawio.vue');
+const Minder = () => import('../../components/Minder.vue');
+const Plugins = () => import('../../components/Plugins.vue');
 
 export default {
-    components: {IFrame, AceEditor, TEditor, MDPreview, OnlyOffice, Drawio, Minder},
+    components: {
+        IFrame, 
+        AceEditor, 
+        TEditor, 
+        MDPreview, 
+        OnlyOffice,
+        Drawio, 
+        Minder,
+        Plugins
+    },
     data() {
         return {
             loadIng: 0,
@@ -134,6 +145,15 @@ export default {
         previewUrl() {
             const {name, key} = this.msgDetail.content;
             return $A.apiUrl(`../online/preview/${name}?key=${key}`)
+        },
+
+        file(){
+            return {
+                id: this.msgDetail.id,
+                name: this.title,
+                ...this.msgDetail.msg,
+                ...this.msgDetail.content
+            }
         }
     },
     methods: {

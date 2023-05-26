@@ -2,15 +2,13 @@
     <div v-if="ready" class="file-content">
         <IFrame v-if="isPreview" class="preview-iframe" :src="previewUrl" @on-load="onFrameLoad"/>
         <template v-else-if="contentDetail">
-            <EPopover v-if="['word', 'excel', 'ppt'].includes(file.type)"
-                v-model="historyShow"
-                trigger="click">
+            <EPopover v-if="!showHeader" v-model="historyShow" trigger="click">
                 <div class="file-content-history">
                     <FileHistory :value="historyShow" :file="file" @on-restore="onRestoreHistory"/>
                 </div>
                 <div slot="reference" ref="officeHeader" class="office-header"></div>
             </EPopover>
-            <div v-else-if="showHeader" class="edit-header">
+            <div v-if="showHeader || ['document','code','txt'].includes(file.type)" class="edit-header">
                 <div class="header-title">
                     <EPopover v-if="!equalContent" v-model="unsaveTip" class="file-unsave-tip">
                         <div class="task-detail-delete-file-popover">
@@ -38,14 +36,11 @@
                         <Button :type="`${contentDetail.type!='md'?'primary':'default'}`" @click="setTextType('text')">{{$L('文本编辑器')}}</Button>
                     </ButtonGroup>
                 </div>
-                <div v-if="file.type=='mind'" class="header-hint">
-                    {{$L('选中节点，按enter键添加同级节点，tab键添加子节点')}}
-                </div>
-                <Dropdown v-if="file.type=='mind'" trigger="click" class="header-hint" @on-click="exportMenu" transfer>
-                    <a href="javascript:void(0)">{{$L('导出')}}<Icon type="ios-arrow-down"></Icon></a>
+                <div v-if="headerHint" class="header-hint"> {{$L(headerHint)}} </div>
+                <Dropdown v-if="headerDropdowns.name" trigger="click" class="header-hint" @on-click="exportMenu" transfer>
+                    <a href="javascript:void(0)">{{$L(headerDropdowns.name)}}<Icon type="ios-arrow-down"></Icon></a>
                     <DropdownMenu slot="list">
-                        <DropdownItem name="png">{{$L('导出PNG图片')}}</DropdownItem>
-                        <DropdownItem name="pdf">{{$L('导出PDF文件')}}</DropdownItem>
+                        <DropdownItem  v-for="(item,key) in headerDropdowns.list" :key="key" :name="item.value" >{{$L(item.lable)}}</DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
                 <template v-if="!file.only_view">
@@ -72,12 +67,7 @@
                     <TEditor v-else v-model="contentDetail.content" height="100%" @editorSave="handleClick('saveBefore')"/>
                 </template>
                 <AceEditor v-else-if="['code', 'txt'].includes(file.type)" v-model="contentDetail.content" :ext="file.ext" @saveData="handleClick('saveBefore')"/>
-
-                <!-- <Drawio v-else-if="file.type=='drawio'" ref="myFlow" v-model="contentDetail" :title="file.name" @saveData="handleClick('saveBefore')"/> -->
-                <!-- <Minder v-else-if="file.type=='mind'" ref="myMind" v-model="contentDetail" @saveData="handleClick('saveBefore')"/> -->
-                <!-- <OnlyOffice v-else-if="['word', 'excel', 'ppt'].includes(file.type)" v-model="contentDetail" :documentKey="documentKey" @on-document-ready="handleClick('officeReady')"/> -->
-               
-                <Plugins v-else ref="pluginsRef" :file="file" v-model="contentDetail" />
+                <Plugins v-else ref="pluginsRef" :file="file" v-model="contentDetail" @saveData="handleClick('saveBefore')"/>
             </div>
         </template>
         <div v-if="contentLoad" class="content-load"><Loading/></div>
@@ -120,14 +110,18 @@ import IFrame from "./IFrame";
 const MDEditor = () => import('../../../components/MDEditor/index');
 const TEditor = () => import('../../../components/TEditor.vue');
 const AceEditor = () => import('../../../components/AceEditor.vue');
-const OnlyOffice = () => import('../../../components/OnlyOffice.vue');
-const Drawio = () => import('../../../components/Drawio.vue');
-const Minder = () => import('../../../components/Minder.vue');
 const Plugins = () => import('../../../components/Plugins.vue');
 
 export default {
     name: "FileContent",
-    components: {IFrame, FileHistory, AceEditor, TEditor, MDEditor, OnlyOffice, Drawio, Minder, Plugins},
+    components: {
+        IFrame, 
+        FileHistory, 
+        AceEditor, 
+        TEditor, 
+        MDEditor, 
+        Plugins
+    },
     props: {
         value: {
             type: Boolean,
@@ -165,7 +159,8 @@ export default {
             historyShow: false,
             officeReady: false,
 
-            iframeSrc:''
+            headerHint:"",
+            headerDropdowns:{}
         }
     },
 
@@ -236,6 +231,9 @@ export default {
                                     content: '团队成员（' + info.nickname + '）更新了内容，<br/>更新时间：' + $A.formatDate("Y-m-d H:i:s", info.time) + '。<br/><br/>点击【确定】加载最新内容。',
                                     onOk: () => {
                                         this.getContent();
+                                        if(this.$refs.pluginsRef?.reload){
+                                            this.$refs.pluginsRef.reload();
+                                        }
                                     }
                                 });
                             }
@@ -300,30 +298,42 @@ export default {
 
     methods: {
         handleOfficeMessage({data, source}) {
-
+            
             if (data.source === 'onlyoffice') {
                 switch (data.action) {
                     case 'ready':
                         this.handleClick('officeReady')
                         source.postMessage("createMenu", "*");
                         break;
-
-                    case 'link':
-                        this.handleClick('link')
-                        break;
-
-                    case 'history':
-                        const dom = this.$refs.officeHeader;
-                        if (dom) {
-                            dom.style.top = `${data.rect.top}px`;
-                            dom.style.left = `${data.rect.left}px`;
-                            dom.style.width = `${data.rect.width}px`;
-                            dom.style.height = `${data.rect.height}px`;
-                            dom.click();
-                        }
-                        break;
                 }
             }
+
+            switch (data.action) {
+                case 'setHeaderHint':
+                    this.headerHint = data.msg
+                    break;
+
+                case 'setHeaderDropdowns':
+                    this.headerDropdowns = data.data
+                    break;
+
+                case 'link':
+                    this.handleClick('link')
+                    break;
+
+                case 'history':
+                    const dom = this.$refs.officeHeader;
+                    if (dom) {
+                        dom.style.top = `${data.rect.top}px`;
+                        dom.style.left = `${data.rect.left}px`;
+                        dom.style.width = `${data.rect.width}px`;
+                        dom.style.height = `${data.rect.height}px`;
+                        dom.click();
+                    }
+                    break;
+            }
+        
+
         },
 
         onFrameLoad() {
@@ -448,10 +458,11 @@ export default {
                             }
                         }).then(({msg}) => {
                             resolve(msg);
-                            this.file.history_id = item.id;
-                            this.$refs.pluginsRef.reload();
                             this.contentDetail = null;
                             this.getContent();
+                            if(this.$refs.pluginsRef?.reload){
+                                this.$refs.pluginsRef.reload();
+                            }
                         }).catch(({msg}) => {
                             reject(msg);
                         });
@@ -501,11 +512,7 @@ export default {
         },
 
         exportMenu(type) {
-            switch (this.file.type) {
-                case 'mind':
-                    this.$refs.myMind.exportHandle(type, this.file.name);
-                    break;
-            }
+            this.$refs.pluginsRef.exportHandle(type, this.file.name);
         },
 
         unSaveGive() {
