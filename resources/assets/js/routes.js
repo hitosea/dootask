@@ -84,6 +84,11 @@ export default [
                         path: 'delete',
                         component: () => import('./pages/manage/setting/delete.vue'),
                     },
+                    {
+                        name: 'manage-setting-plugin',
+                        path: 'plugin',
+                        component: () => import('./pages/manage/setting/plugin.vue'),
+                    },
                 ]
             },
             {
@@ -106,7 +111,7 @@ export default [
                 path: 'plugins',
                 component: () => import('./pages/manage/plugins/index.vue'),
                 children: [
-                    
+
                 ]
             },
         ]

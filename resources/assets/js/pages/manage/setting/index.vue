@@ -77,6 +77,7 @@ export default {
                 {path: 'theme', name: '主题设置'},
                 {path: 'password', name: '密码设置'},
                 {path: 'email', name: '修改邮箱'},
+                {path: 'plugin', name: '插件设置'},
             ]
 
             if (this.$Electron) {
@@ -97,8 +98,8 @@ export default {
                     if(item.enable !== false && item.position.setting){
                         let obj = JSON.parse(JSON.stringify(item.position.setting));
                         obj._key = key;
-                        obj.name = item.position.setting.name || item.title; 
-                        obj.path = JSON.stringify(obj); 
+                        obj.name = item.position.setting.name || item.title;
+                        obj.path = JSON.stringify(obj);
                         obj.divided = pluginsMenus.length==0;
                         pluginsMenus.push(obj)
                     }
