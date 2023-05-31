@@ -127,7 +127,7 @@ export default {
                 let data = this.transforTasks(this.dashboardTask[type]);
                 if(type == 'all'){
                     data = $.map(data,(h)=>{
-                        if( $.map(h.task_user,(k)=>{ return h.userid }).indexOf(this.userId) !== -1){
+                        if( $.map(h.task_user,(k)=>{ return h.task_userid }).indexOf(this.userId) !== -1){
                             return h
                         }
                     })
@@ -144,7 +144,7 @@ export default {
                 type: 'assist',
                 title: this.getTitle('assist'),
                 list: $.map(this.assistTask,(h)=>{
-                        if( $.map(h.task_user,(k)=>{ return h.userid }).indexOf(this.userId) !== -1){
+                        if( $.map(h.task_user,(k)=>{ return h.task_userid }).indexOf(this.userId) !== -1){
                             return h
                         }
                     }).sort((a, b) => {

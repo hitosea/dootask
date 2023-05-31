@@ -306,7 +306,8 @@ class ProjectTask extends AbstractModel
         $query
             ->select([
                 'project_tasks.*',
-                'project_task_users.owner'
+                'project_task_users.owner',
+                'project_task_users.userid AS task_userid'
             ])
             ->selectRaw("1 AS assist")
             ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')

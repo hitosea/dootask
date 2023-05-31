@@ -151,7 +151,11 @@ export default {
             overdue_count: overdueTasks.length,
 
             all: array,
-            all_count: array.length,
+            all_count: $.map(array,(h)=>{
+                if($.map(h.task_user,(k)=>{ return h.task_userid }).indexOf(state.userId) !== -1){
+                    return h
+                }
+            }).length,
         };
         if (tmpCount > 0) {
             result.today_count -= todayTasks.filter(task => state.taskCompleteTemps.includes(task.id)).length
