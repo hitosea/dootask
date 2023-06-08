@@ -1869,7 +1869,7 @@ const localforage = require("localforage");
             if (typeof params.data === 'undefined') params.data = {};
             if (typeof params.cache === 'undefined') params.cache = false;
             if (typeof params.method === 'undefined') params.method = 'GET';
-            if (typeof params.timeout === 'undefined') params.timeout = 30000;
+            if (typeof params.timeout === 'undefined') params.timeout = 60000;
             if (typeof params.dataType === 'undefined') params.dataType = 'json';
             if (typeof params.before === 'undefined') params.before = () => { };
             if (typeof params.complete === 'undefined') params.complete = () => { };
