@@ -20,11 +20,11 @@ read_buffer_size = 4096K
 read_rnd_buffer_size = 2048K
 myisam_sort_buffer_size = 8M
 thread_cache_size = 256
-query_cache_size = 384M
+query_cache_size = 512M
 tmp_table_size = 2048M
 sql-mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
 
-max_connections = 1500
+max_connections = 2000
 max_connect_errors = 100
 open_files_limit = 65535
 
