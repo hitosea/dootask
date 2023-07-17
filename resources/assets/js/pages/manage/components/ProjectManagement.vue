@@ -47,7 +47,7 @@
                     <div class="search-content">
                         <Select v-model="keys.principal" :placeholder="$L('全部')">
                             <Option value=" ">{{$L('全部')}}</Option>
-                            <Option :value="item.userid" v-for="(item, key) in usersList">{{item.nickname}}</Option>
+                            <Option :value="item.userid" v-for="(item, index) in usersList" :key="index">{{item.nickname}}</Option>
                         </Select>
                     </div>
                 </li>
@@ -122,7 +122,11 @@ export default {
                     key: 'name',
                     minWidth: 100,
                     render: (h, {row}) => {
-                        const arr = [h('AutoTip', row.name)];
+                        const arr = [h('AutoTip', {
+                            style:{
+                                cursor:'pointer'
+                            },
+                        },row.name )];
                         if (row.archived_at) {
                             arr.push(h('Tag', {
                                 props: {
@@ -131,7 +135,13 @@ export default {
                             }, this.$L('已归档')))
                         }
                         return h('div', {
-                            class: 'project-name'
+                            class: 'project-name',
+                            on: {
+                                click: () => {
+                                    this.$emit('close');
+                                    this.toggleRoute('project', {projectId: row.id});
+                                }
+                            },
                         }, arr)
                     }
                 },
@@ -186,7 +196,7 @@ export default {
                 },
             ],
             list: [],
-                
+
             page: 1,
             pageSize: 20,
             total: 0,
@@ -207,6 +217,16 @@ export default {
         }
     },
     methods: {
+        async toggleRoute(path, params) {
+            this.show768Menu = false;
+            let location = {name: 'manage-' + path, params: params || {}};
+            let fileFolderId = await $A.IDBInt("fileFolderId");
+            if (path === 'file' && fileFolderId > 0) {
+                location.params.folderId = fileFolderId
+            }
+            this.goForward(location);
+        },
+
         onSearch() {
             this.page = 1;
             this.getLists();

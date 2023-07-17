@@ -91,7 +91,7 @@
                     <span class="archived" @click.stop="openMenu($event, taskDetail)">{{$L('已归档')}}</span>
                 </div>
                 <div class="nav">
-                    <p v-if="projectName"><span>{{projectName}}</span></p>
+                    <p style="cursor: pointer;" @click="toggleRoute('project', {projectId: taskDetail.project_id})" v-if="projectName"><span>{{projectName}}</span></p>
                     <p v-if="columnName"><span>{{columnName}}</span></p>
                     <p v-if="taskDetail.id"><span>{{taskDetail.id}}</span></p>
                 </div>
@@ -881,6 +881,18 @@ export default {
     },
 
     methods: {
+
+        async toggleRoute(path, params) {
+            this.show768Menu = false;
+            let location = {name: 'manage-' + path, params: params || {}};
+            let fileFolderId = await $A.IDBInt("fileFolderId");
+            if (path === 'file' && fileFolderId > 0) {
+                location.params.folderId = fileFolderId
+            }
+            this.$store.dispatch("openTask", 0);
+            this.goForward(location);
+        },
+
         within24Hours(date) {
             return $A.Date(date, true) - this.nowTime < 86400
         },

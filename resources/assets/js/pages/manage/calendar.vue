@@ -98,8 +98,8 @@ export default {
             this.$L('{五}'),
             this.$L('{六}')
         ];
-        this.calendarWeek = {daynames};
-        this.calendarMonth = {daynames};
+        this.calendarWeek = {daynames, startDayOfWeek: 1};
+        this.calendarMonth = {daynames, startDayOfWeek: 1};
         this.calendarTheme = {
             'common.border': '1px solid rgba(0,0,0,0)',
             'month.dayname.fontSize': '14px',

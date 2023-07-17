@@ -290,8 +290,9 @@
         <DrawerOverlay
             v-model="allProjectShow"
             placement="right"
+
             :size="1200">
-            <ProjectManagement v-if="allProjectShow"/>
+            <ProjectManagement v-if="allProjectShow"     @close="allProjectShow = false"/>
         </DrawerOverlay>
 
         <!--查看归档项目-->
