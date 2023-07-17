@@ -61,7 +61,7 @@
                                 <!--有多少个子任务-->
                                 <span v-if="item.sub_my && item.sub_my.length > 0">+{{item.sub_my.length}}</span>
                                 <!--任务描述-->
-                                {{item.name}}
+                                {{item.project_name}} - {{item.name}}
                             </div>
                             <div v-if="item.desc" class="item-icon">
                                 <i class="taskfont">&#xe71a;</i>

@@ -14,6 +14,13 @@
                     <Button @click="curMonth">{{$L('今天')}}</Button>
                 </ButtonGroup>
                 <ButtonGroup class="calendar-view">
+                    <div>
+                        负责人：
+                        <Select v-model="principal" :placeholder="$L('全部')" style="width: 150px;margin-right: 20px;">
+                            <Option value=" ">{{$L('全部')}}</Option>
+                            <Option :value="item.userid" v-for="(item, index) in usersList" :key="index">{{item.nickname}}</Option>
+                        </Select>
+                    </div>
                     <Button @click="setView('day')" :type="calendarView == 'day' ? 'primary' : 'default'">{{$L('日')}}</Button>
                     <Button @click="setView('week')" :type="calendarView == 'week' ? 'primary' : 'default'">{{$L('周')}}</Button>
                     <Button @click="setView('month')" :type="calendarView == 'month' ? 'primary' : 'default'">{{$L('月')}}</Button>
@@ -76,6 +83,9 @@ export default {
 
             loadIng: 0,
             loadTimeout: null,
+
+            principal:0,
+            usersList:[],
         }
     },
 
@@ -128,6 +138,18 @@ export default {
                 return this.$L("删除");
             }
         }
+
+        // 获取用户列表
+        this.$store.dispatch("call", {
+            url: 'users/lists',
+            data: {
+                get_checkin_mac: 0,
+                page: 1,
+                pagesize: 1000,
+            },
+        }).then(({data}) => {
+            this.usersList = data.data
+        })
     },
 
     activated() {
@@ -166,6 +188,13 @@ export default {
                     array.push(...tmps);
                 }
             }
+
+            // 过滤负责人
+            array = array.filter(task => {
+                return !this.principal || (task.task_user || []).map((h)=>{ return h.owner == 1?  h.userid : 0 }).indexOf(this.principal) !== -1;
+            });
+            
+
             return this.transforTasks(array).map(data => {
                 const isAllday = $A.rightExists(data.start_at, "00:00:00") && $A.rightExists(data.end_at, "23:59:59")
                 const task = {

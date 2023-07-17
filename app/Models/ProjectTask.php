@@ -278,15 +278,18 @@ class ProjectTask extends AbstractModel
      */
     public function scopeAllData($query, $userid = null)
     {
-        $user = User::auth();
         $userid = $userid ?: User::userid();
 
         $query->select([
                 'project_tasks.*',
-                'project_task_users.owner'
+                'project_task_users.owner',
+                'projects.name as project_name',
             ])
-            ->leftJoin('project_task_users', function ($leftJoin) use ($userid, $user) {
+            ->leftJoin('project_task_users', function ($leftJoin) {
                 $leftJoin->on('project_tasks.id', '=', 'project_task_users.task_id');
+            })
+            ->leftJoin('projects', function ($leftJoin) {
+                $leftJoin->on('projects.id', '=', 'project_tasks.project_id');
             });
 
         return $query;
@@ -307,10 +310,14 @@ class ProjectTask extends AbstractModel
             ->select([
                 'project_tasks.*',
                 'project_task_users.owner',
-                'project_task_users.userid AS task_userid'
+                'project_task_users.userid AS task_userid',
+                'projects.name as project_name',
             ])
             ->selectRaw("1 AS assist")
             ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
+            ->leftJoin('projects', function ($leftJoin) {
+                $leftJoin->on('projects.id', '=', 'project_tasks.project_id');
+            })
             ->when(!$user->isAdmin(), function ($q) use ($user, $userid) {
                 if ($user->isDepOwner()) {
                     $depIds = UserDepartment::getOwnerDepIds($user);

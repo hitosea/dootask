@@ -176,9 +176,26 @@ export default {
         this.calendarInstance.destroy();
     },
     methods: {
+        initHeight() {
+            this.$nextTick(()=>{
+                if( $('.tui-full-calendar-vlayout-area').length ){
+                    $('.tui-full-calendar-vlayout-area>div').eq(0).css('height', 'calc(80% - 5px)');
+                    $('.tui-full-calendar-vlayout-area>div').eq(2).css('height', '20%');
+                }
+                setTimeout(()=>{
+                    if( $('.tui-full-calendar-vlayout-area').length ){
+                        $('.tui-full-calendar-vlayout-area>div').eq(0).css('height', 'calc(80% - 5px) ');
+                        $('.tui-full-calendar-vlayout-area>div').eq(2).css('height', '20%');
+                    }
+                },100)
+            })
+        },
         addEventListeners() {
             for (const eventName of Object.keys(this.$listeners)) {
-                this.calendarInstance.on(eventName, (...args) => this.$emit(eventName, ...args));
+                this.calendarInstance.on(eventName, (...args) => {
+                    this.$emit(eventName, ...args)
+                    this.initHeight();
+                });
             }
         },
         reflectSchedules() {
@@ -195,6 +212,7 @@ export default {
         resetRender() {
             this.calendarInstance.clear();
             this.reflectSchedules();
+            this.initHeight();
         },
         invoke(methodName, ...args) {
             let result;

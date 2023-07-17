@@ -121,7 +121,10 @@
                     <div class="menu-title">{{$L('审批')}}</div>
                     <Badge class="menu-badge" :overflow-count="999" v-if="backlogUnreadNumber > 0" :text="backlogUnreadNumber.toString()"/>
                 </li>
-
+                <li v-if="userIsAdmin" @click="toggleRoute('allProject')" :class="classNameRoute('allProject')">
+                    <i class="taskfont">&#xe6fa;</i>
+                    <div class="menu-title">{{$L('所有项目')}}</div>
+                </li>
                 <li ref="menuProject" class="menu-project">
                     <ul :class="listClassName" @scroll="operateVisible = false">
                         <li
@@ -569,7 +572,6 @@ export default {
 
                     {path: 'version', name: '更新版本', divided: true, visible: !!this.clientNewVersion},
 
-                    {path: 'allProject', name: '所有项目', divided: true},
                     {path: 'archivedProject', name: '已归档的项目'},
 
                     {path: 'team', name: '团队管理', divided: true},
@@ -741,6 +743,10 @@ export default {
         },
 
         async toggleRoute(path, params) {
+            if (path == 'allProject'){
+                this.allProjectShow = true;
+                return;
+            } 
             this.show768Menu = false;
             let location = {name: 'manage-' + path, params: params || {}};
             let fileFolderId = await $A.IDBInt("fileFolderId");

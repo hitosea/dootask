@@ -127,9 +127,7 @@ class ProjectController extends AbstractController
             $builder = Project::authData();
         }
         //
-        $usersList = User::whereIn('userid', $builder->distinct()->pluck("userid")->toArray() )
-            ->select("userid", "nickname", "email")
-            ->get();
+        $usersList = User::where("bot",0)->select("userid", "nickname", "email")->get();
         //
         if ($getcolumn == 'yes') {
             $builder->with(['projectColumn']);
@@ -158,10 +156,11 @@ class ProjectController extends AbstractController
             if ($keys['principal']) {
                 $builder->where(function($q) use($keys) {
                     $q->where("projects.userid", $keys['principal']);
-                    $q->orWhere(function($q) use($keys) {
-                        $q->orWhere("project_users.owner",1);
-                        $q->where("project_users.userid", $keys['principal']);
-                    });
+                    $q->orWhere("project_users.userid", $keys['principal']);
+                    // $q->orWhere(function($q) use($keys) {
+                    //     $q->orWhere("project_users.owner",1);
+                    //     $q->where("project_users.userid", $keys['principal']);
+                    // });
                 });
             }
         }
