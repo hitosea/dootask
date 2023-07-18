@@ -166,7 +166,27 @@ export default {
             disableDblClick: this.disableDblClick,
             disableClick: this.disableClick,
             isReadOnly: this.isReadOnly,
-            usageStatistics: this.usageStatistics
+            usageStatistics: this.usageStatistics,
+            DEFAULT_PANELS: [
+                {
+                    name: 'allday',
+                    type: 'daygrid',
+                    autoHeight: true,
+                    showExpandableButton: true,
+                    maxExpandableHeight: 210,
+                    handlers: ['click', 'creation', 'move', 'resize'],
+                    show: true
+                },
+                {
+                    name: 'time',
+                    type: 'timegrid',
+                    minHeight: 130,
+                    maxHeight: 130,
+                    handlers: ['click', 'creation', 'move', 'resize'],
+                    autoHeight: false,
+                    show: false
+                }
+            ]
         });
         this.addEventListeners();
         this.reflectSchedules();
@@ -176,25 +196,10 @@ export default {
         this.calendarInstance.destroy();
     },
     methods: {
-        initHeight() {
-            this.$nextTick(()=>{
-                if( $('.tui-full-calendar-vlayout-area').length ){
-                    $('.tui-full-calendar-vlayout-area>div').eq(0).css('height', 'calc(80% - 5px)');
-                    $('.tui-full-calendar-vlayout-area>div').eq(2).css('height', '20%');
-                }
-                setTimeout(()=>{
-                    if( $('.tui-full-calendar-vlayout-area').length ){
-                        $('.tui-full-calendar-vlayout-area>div').eq(0).css('height', 'calc(80% - 5px) ');
-                        $('.tui-full-calendar-vlayout-area>div').eq(2).css('height', '20%');
-                    }
-                },100)
-            })
-        },
         addEventListeners() {
             for (const eventName of Object.keys(this.$listeners)) {
                 this.calendarInstance.on(eventName, (...args) => {
                     this.$emit(eventName, ...args)
-                    this.initHeight();
                 });
             }
         },
@@ -212,7 +217,6 @@ export default {
         resetRender() {
             this.calendarInstance.clear();
             this.reflectSchedules();
-            this.initHeight();
         },
         invoke(methodName, ...args) {
             let result;

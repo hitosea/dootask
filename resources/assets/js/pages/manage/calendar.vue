@@ -14,9 +14,9 @@
                     <Button @click="curMonth">{{$L('今天')}}</Button>
                 </ButtonGroup>
                 <ButtonGroup class="calendar-view">
-                    <div>
-                        负责人：
-                        <Select v-model="principal" :placeholder="$L('全部')" style="width: 150px;margin-right: 20px;">
+                    <div style="margin-right: 15px;display: flex;">
+                        <div style="min-width: 56px;line-height: 32px;">{{$L('负责人：')}}</div>
+                        <Select v-model="principal" :placeholder="$L('全部')" style="flex: 1;width: 120px;">
                             <Option value=" ">{{$L('全部')}}</Option>
                             <Option :value="item.userid" v-for="(item, index) in usersList" :key="index">{{item.nickname}}</Option>
                         </Select>
