@@ -183,8 +183,7 @@ export default {
                     minHeight: 130,
                     maxHeight: 130,
                     handlers: ['click', 'creation', 'move', 'resize'],
-                    autoHeight: false,
-                    show: false
+                    autoHeight: false
                 }
             ]
         });

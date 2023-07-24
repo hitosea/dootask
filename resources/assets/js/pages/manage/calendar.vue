@@ -200,7 +200,7 @@ export default {
                 const task = {
                     id: data.id,
                     calendarId: String(data.project_id),
-                    title: data.name,
+                    title: data.project_name + " - " + data.name,
                     body: data.desc,
                     isAllDay: isAllday,
                     category: isAllday ? 'allday' : 'time',
