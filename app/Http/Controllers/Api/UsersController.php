@@ -675,7 +675,7 @@ class UsersController extends AbstractController
      */
     public function lists()
     {
-        User::auth('admin');
+        User::auth();
         //
         $builder = User::select(['*', 'nickname as nickname_original']);
         //
