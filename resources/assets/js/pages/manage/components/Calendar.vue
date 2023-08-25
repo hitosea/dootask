@@ -1,8 +1,9 @@
 <template>
     <div ref="tuiCalendar" class="calendar-wrapper"></div>
 </template>
+return [];
 <script>
-import Calendar from 'tui-calendar-hi';
+import Calendar from 'dootask-tui-calendar-hi';
 
 export default {
     name: 'Calendar',
@@ -10,7 +11,6 @@ export default {
         calendars: {
             type: Array,
             default() {
-                return [];
             }
         },
         schedules: {

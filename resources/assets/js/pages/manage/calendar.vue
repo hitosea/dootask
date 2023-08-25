@@ -52,7 +52,7 @@
 <script>
 import 'tui-date-picker/dist/tui-date-picker.css';
 import 'tui-time-picker/dist/tui-time-picker.css';
-import 'tui-calendar-hi/dist/tui-calendar-hi.css'
+import 'dootask-tui-calendar-hi/dist/tui-calendar-hi.css'
 
 import {mapState, mapGetters} from "vuex";
 import Calendar from "./components/Calendar";
@@ -193,7 +193,7 @@ export default {
             array = array.filter(task => {
                 return !this.principal || (task.task_user || []).map((h)=>{ return h.owner == 1?  h.userid : 0 }).indexOf(this.principal) !== -1;
             });
-            
+
 
             return this.transforTasks(array).map(data => {
                 const isAllday = $A.rightExists(data.start_at, "00:00:00") && $A.rightExists(data.end_at, "23:59:59")
