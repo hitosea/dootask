@@ -140,6 +140,14 @@ export default {
                         return h('span', row.status_reason || '-' )
                     },
                 },
+                {
+                    title: this.$L("申请时间"),
+                    align: 'center',
+                    width: 120,
+                    render:(h, {row})=>{
+                        return h('span', row.created_at || '-' )
+                    },
+                },
               {
                 title: this.$L("操作"),
                 align: 'center',
