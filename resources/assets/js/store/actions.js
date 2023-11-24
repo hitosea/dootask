@@ -79,7 +79,7 @@ export default {
                 data: {client_id: state.clientId},
                 encrypt: false,
             }).then(({data}) => {
-                state.apiKeyData = data;
+                // state.apiKeyData = data;
             })
 
             // 获取系统设置
