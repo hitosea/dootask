@@ -48,7 +48,8 @@
                             v-else-if="item.path === 'team'"
                             transfer
                             transfer-class-name="page-manage-menu-dropdown"
-                            placement="right-start">
+                            placement="right-start"
+                            class="display-block" >
                             <DropdownItem :divided="!!item.divided">
                                 <div class="manage-menu-flex">
                                     {{$L(item.name)}}
@@ -124,23 +125,33 @@
             </Scrollbar>
             <div class="manage-box-new-group">
                 <ul>
+                    <li class="client-download-update">
+                        <Tooltip v-if="clientDownloadUrl && !$Electron" :content="$L('客户端下载')" placement="right" transfer :delay="300">
+                            <a class="client-download common-right-bottom-link" :href="clientDownloadUrl" target="_blank">
+                                <i class="taskfont">&#xe7fa;</i>
+                            </a>
+                        </Tooltip>
+                        <Tooltip v-else-if="!!clientNewVersion && $Electron" :content="$L('更新客户端')" placement="right" transfer :delay="300">
+                            <i class="taskfont"  @click="settingRoute('version')">&#xe7fb;</i>
+                        </Tooltip>
+                    </li>
                     <li>
-                        <Tooltip :content="$L('新建项目') + ' ('+mateName+'+B)'" placement="top-start" transfer :delay="300">
+                        <Tooltip :content="$L('新建项目') + ' ('+mateName+'+B)'" placement="right" transfer :delay="300">
                             <i class="taskfont" @click="onAddShow">&#xe7b9;</i>
                         </Tooltip>
                     </li>
                     <li>
-                        <Tooltip :content="$L('新建任务') + ' ('+mateName+'+K)'" placement="top-start" transfer :delay="300">
+                        <Tooltip :content="$L('新建任务') + ' ('+mateName+'+K)'" placement="right" transfer :delay="300">
                             <i class="taskfont" @click="onAddMenu('task')">&#xe7b5;</i>
                         </Tooltip>
                     </li>
                     <li>
-                        <Tooltip :content="$L('新会议') + ' ('+mateName+'+J)'" placement="top-start" transfer :delay="300">
+                        <Tooltip :content="$L('新会议') + ' ('+mateName+'+J)'" placement="right" transfer :delay="300">
                             <i class="taskfont" @click="onAddMenu('createMeeting')">&#xe7c1;</i>
                         </Tooltip>
                     </li>
                     <li>
-                        <Tooltip :content="$L('加入会议')" placement="top-start" transfer :delay="300">
+                        <Tooltip :content="$L('加入会议')" placement="right" transfer :delay="300">
                             <i class="taskfont" @click="onAddMenu('joinMeeting')">&#xe794;</i>
                         </Tooltip>
                     </li>
@@ -397,6 +408,7 @@ export default {
             'wsMsg',
 
             'clientNewVersion',
+            'clientDownloadUrl',
             'cacheTaskBrowse',
 
             'dialogIns',
