@@ -1,5 +1,5 @@
 <template>
-    <div :class="classArray">
+    <div :class="classArray" :data-dialog-id="source.id">
         <div v-if="source.type === 'tag'" class="dialog-tag" @click="onViewTag">
             <div class="tag-user"><UserAvatar :userid="source.userid" :tooltipDisabled="source.userid == userId" :show-name="true" :show-icon="false"/></div>
             {{$L(source.msg.action === 'remove' ? '取消标注' : '标注了')}}
@@ -21,7 +21,7 @@
             {{source.msg.notice}}
         </div>
         <template v-else>
-            <div class="dialog-avatar">
+            <div class="dialog-avatar" v-if="dialogAvatar">
                 <UserAvatar
                     v-longpress="{callback: onMention, delay: 300}"
                     @open-dialog="onOpenDialog"
@@ -93,6 +93,10 @@ export default {
         msgId: {
             type: Number,
             default: 0
+        },
+        dialogAvatar: {
+            type: Boolean,
+            default: true
         },
     },
 

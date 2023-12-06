@@ -19,14 +19,19 @@
             <!-- 顶部 -->
             <template #header>
                 <div v-if="isFullscreen" class="user-modal-header">
-                    <div class="user-modal-close" @click="showModal=false">{{$L('关闭')}}</div>
+                    <div class="user-modal-close" @click="[  !multipleChoice && showMultiple ? showMultiple=false : showModal=false]">
+                        {{ !multipleChoice && showMultiple ? $L('取消') : $L('关闭') }}
+                    </div>
                     <div class="user-modal-title"><span>{{localTitle}}</span></div>
-                    <div class="user-modal-submit" @click="onSubmit">
+                    <div v-if="showMultiple" class="user-modal-submit" @click="onSubmit(1)">
                         <div v-if="submittIng > 0" class="submit-loading"><Loading /></div>
                         {{$L('确定')}}
                         <template v-if="selects.length > 0">
                             ({{selects.length}}<span v-if="multipleMax">/{{multipleMax}}</span>)
                         </template>
+                    </div>
+                    <div v-else class="user-modal-submit" @click="showMultiple = true">
+                        {{$L('多选')}}
                     </div>
                 </div>
                 <div v-else class="ivu-modal-header-inner">{{localTitle}}</div>
@@ -37,7 +42,7 @@
 
             <!-- 搜索 -->
             <div class="user-modal-search">
-                <Scrollbar ref="selected" class="search-selected" v-if="selects.length > 0" enable-x :enable-y="false">
+                <Scrollbar ref="selected" class="search-selected" v-if="showMultiple && selects.length > 0" enable-x :enable-y="false">
                     <ul>
                         <li v-for="item in formatSelect(selects)" :data-id="item.userid" @click.stop="onRemoveItem(item.userid)">
                             <template v-if="item.type=='group'">
@@ -76,15 +81,19 @@
                         v-for="item in lists"
                         :class="selectClass(item.userid_list)"
                         @click="onSelectProject(item.userid_list)">
-                        <Icon class="user-modal-icon" :type="selectIcon(item.userid_list)" />
+                        <template v-if="showMultiple">
+                            <Icon class="user-modal-icon" :type="selectIcon(item.userid_list)" />
+                        </template>
                         <div class="user-modal-avatar">
                             <i class="taskfont icon-avatar">&#xe6f9;</i>
                             <div class="project-name">
                                 <div class="label">{{item.name}}</div>
                                 <div class="subtitle">
                                     {{item.userid_list.length}} {{$L('项目成员')}}
-                                    <em class="all">{{$L('已全选')}}</em>
-                                    <em class="some">{{$L('已选部分')}}</em>
+                                    <template v-if="showMultiple">
+                                        <em class="all">{{$L('已全选')}}</em>
+                                        <em class="some">{{$L('已选部分')}}</em>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -93,7 +102,7 @@
                 <!-- 会员、会话 -->
                 <ul v-else>
                     <li
-                        v-if="showSelectAll"
+                        v-if="showMultiple && showSelectAll"
                         :class="selectClass('all')"
                         @click="onSelectAll">
                         <Icon class="user-modal-icon" :type="selectIcon('all')" />
@@ -106,8 +115,10 @@
                             disabled: isUncancelable(item.userid) || isDisabled(item.userid)
                         }"
                         @click="onSelectItem(item)">
-                        <Icon v-if="selects.includes(item.userid)" class="user-modal-icon" type="ios-checkmark-circle" />
-                        <Icon v-else class="user-modal-icon" type="ios-radio-button-off" />
+                        <template v-if="showMultiple">
+                            <Icon v-if="selects.includes(item.userid)" class="user-modal-icon" type="ios-checkmark-circle" />
+                            <Icon v-else class="user-modal-icon" type="ios-radio-button-off" />
+                        </template>
                         <div v-if="item.type=='group'" class="user-modal-avatar">
                             <EAvatar v-if="item.avatar" class="img-avatar" :src="item.avatar" :size="40"></EAvatar>
                             <i v-else-if="item.group_type=='department'" class="taskfont icon-avatar department">&#xe75c;</i>
@@ -134,11 +145,57 @@
 
             <!-- 底部 -->
             <template #footer>
-                <Button type="primary" :loading="submittIng > 0" @click="onSubmit">
+                <Button v-if="!multipleChoice && showMultiple"  @click="showMultiple = false">
+                    {{$L('取消')}}
+                </Button>
+                <Button v-if="showMultiple" type="primary" :loading="submittIng > 0" @click="onSubmit(1)">
                     {{$L('确定')}}
                     <template v-if="selects.length > 0">
                         ({{selects.length}}<span v-if="multipleMax">/{{multipleMax}}</span>)
                     </template>
+                </Button>
+                <Button v-else type="primary"  @click="showMultiple = true">
+                    {{$L('多选')}}
+                </Button>
+
+            </template>
+        </Modal>
+
+        <!-- 二次确认 -->
+        <Modal
+            v-model="showAffirmModal"
+            :title="twiceAffirmTitle"
+            class-name="common-user-select-modal twice-affirm-modal"
+            :mask-closable="false"
+            width="420">
+            <div class="user-modal-search twice-affirm">
+                <Scrollbar class="search-selected" v-if="selects?.length > 0" enable-x :enable-y="false">
+                    <ul>
+                        <li v-for="item in formatSelect(selects)" :data-id="item.userid">
+                            <div v-if="item.type=='group'" class="user-modal-avatar">
+                                <EAvatar v-if="item.avatar" class="img-avatar" :src="item.avatar" :size="32"></EAvatar>
+                                <i v-else-if="item.group_type=='department'" class="taskfont icon-avatar department">&#xe75c;</i>
+                                <i v-else-if="item.group_type=='project'" class="taskfont icon-avatar project">&#xe6f9;</i>
+                                <i v-else-if="item.group_type=='task'" class="taskfont icon-avatar task">&#xe6f4;</i>
+                                <i v-else-if="item.group_type=='okr'" class="taskfont icon-avatar task">&#xe6f4;</i>
+                                <Icon v-else class="icon-avatar" type="ios-people" />
+                                <div v-if="selects?.length == 1" class="avatar-name">
+                                    <span>{{item.name}}</span>
+                                </div>
+                            </div>
+                            <UserAvatar v-else :userid="item.userid" :size="32" :show-name="selects?.length == 1" tooltip-disabled />
+                        </li>
+                    </ul>
+                </Scrollbar>
+            </div>
+            <div class="twice-affirm-body-extend">
+                <slot name="twice-affirm-body-extend"></slot>
+            </div>
+            <template #footer>
+                <slot name="twice-affirm-footer-extend"></slot>
+                <Button type="primary" :loading="submittIng > 0" @click="onSubmit(2)">
+                    {{$L('确定')}}
+                    <template v-if="selects.length > 0">({{selects.length}})</template>
                 </Button>
             </template>
         </Modal>
@@ -253,11 +310,31 @@ export default {
             type: Boolean,
             default: false
         },
-
         // 是否禁用
         disable: {
             type: Boolean,
             default: false
+        },
+        // 是否禁用
+        submitBtnTwoText: {
+            type: String,
+            default: ''
+        },
+        // 是否需要确认
+        twiceAffirm: {
+            type: Boolean,
+            default: false
+        },
+        // 确认标题
+        twiceAffirmTitle: {
+            type: String,
+            default: ''
+        },
+
+        // 是否多选
+        multipleChoice: {
+            type: Boolean,
+            default: true
         },
 
         // 提交前的回调
@@ -266,134 +343,123 @@ export default {
     data() {
         return {
             switchItems: [
-                {key: 'recent', label: '最近'},
-                {key: 'contact', label: '通讯录'},
-                {key: 'project', label: '项目成员'},
+                { key: 'recent', label: '最近' },
+                { key: 'contact', label: '通讯录' },
+                { key: 'project', label: '项目成员' },
             ],
             switchActive: 'recent',
-
-            loadIng: 0,     // 搜索框等待效果
-            waitIng: 0,     // 页面等待效果
-            submittIng: 0,  // 提交按钮等待效果
-
+            loadIng: 0,
+            waitIng: 0,
+            submittIng: 0,
             values: [],
             selects: [],
-
             recents: [],
             contacts: [],
             projects: [],
-
             showModal: false,
-
             searchKey: null,
             searchCache: [],
-        }
+            showAffirmModal: false,
+            showMultiple: true,
+        };
     },
     watch: {
         value: {
             handler(value) {
                 if (typeof value === 'number') {
-                    this.$emit('input', value > 0 ? [value] : [])
-                } else if (typeof value === 'string') {
-                    value = value.indexOf(',') > -1 ? value.split(',') : [value]
-                    this.$emit('input', value.map(item => $A.runNum(item)).filter(item => item > 0))
+                    this.$emit('input', value > 0 ? [value] : []);
                 }
-                this.values = value
+                else if (typeof value === 'string') {
+                    value = value.indexOf(',') > -1 ? value.split(',') : [value];
+                    this.$emit('input', value.map(item => $A.runNum(item)).filter(item => item > 0));
+                }
+                this.values = value;
             },
             immediate: true
         },
-
         isWhole: {
             handler(value) {
                 if (value) {
-                    this.switchActive = 'recent'
-                } else {
-                    this.switchActive = 'contact'
+                    this.switchActive = 'recent';
+                }
+                else {
+                    this.switchActive = 'contact';
                 }
             },
             immediate: true
         },
-
         showModal(value) {
             if (value) {
-                this.searchBefore()
-            } else {
-                this.searchKey = ""
+                this.searchBefore();
+                this.showMultiple = this.multipleChoice
             }
-            this.$emit("on-show-change",value,this.values)
+            else {
+                this.searchKey = "";
+            }
+            this.$emit("on-show-change", value, this.values);
         },
-
         searchKey() {
-            this.searchBefore()
+            this.searchBefore();
         },
-
         switchActive() {
-            this.searchBefore()
+            this.searchBefore();
         },
     },
     computed: {
         ...mapState([
             'cacheDialogs',
         ]),
-
-        isFullscreen({windowWidth}) {
-            return windowWidth < 576
+        isFullscreen({ windowWidth }) {
+            return windowWidth < 576;
         },
-
-        isWhole({projectId, noProjectId, dialogId}) {
-            return projectId === 0 && noProjectId === 0 && dialogId === 0
+        isWhole({ projectId, noProjectId, dialogId }) {
+            return projectId === 0 && noProjectId === 0 && dialogId === 0;
         },
-
-        lists({switchActive, searchKey, recents, contacts, projects}) {
+        lists({ switchActive, searchKey, recents, contacts, projects }) {
             switch (switchActive) {
                 case 'recent':
                     if (searchKey) {
                         return recents.filter(item => {
-                            return `${item.name}`.indexOf(searchKey) > -1
-                        })
+                            return `${item.name}`.indexOf(searchKey) > -1;
+                        });
                     }
-                    return recents
-
+                    return recents;
                 case 'contact':
-                    return contacts
-
+                    return contacts;
                 case 'project':
-                    return projects
+                    return projects;
             }
-            return []
+            return [];
         },
-
-        isSelectAll({lists, selects}) {
+        isSelectAll({ lists, selects }) {
             return lists.length > 0 && lists.filter(item => selects.includes(item.userid)).length === lists.length;
         },
-
         warpClass() {
             return {
                 'select-module': this.module,
                 'select-border': this.border,
                 'select-whole': this.isWhole,
-            }
+            };
         },
-
-        addStyle({avatarSize}) {
+        addStyle({ avatarSize }) {
             return {
                 width: avatarSize + 'px',
                 height: avatarSize + 'px',
-            }
+            };
         },
-
-        localTitle({title}) {
+        localTitle({ title }) {
             if (title === undefined) {
-                return this.$L('选择会员')
-            } else {
+                return this.$L('选择会员');
+            }
+            else {
                 return title;
             }
         },
-
-        localPlaceholder({placeholder}) {
+        localPlaceholder({ placeholder }) {
             if (placeholder === undefined) {
-                return this.$L('搜索')
-            } else {
+                return this.$L('搜索');
+            }
+            else {
                 return placeholder;
             }
         }
@@ -405,32 +471,29 @@ export default {
             }
             return this.uncancelable.includes(value);
         },
-
         isDisabled(userid) {
             if (this.disabledChoice.length === 0) {
                 return false;
             }
-            return this.disabledChoice.includes(userid)
+            return this.disabledChoice.includes(userid);
         },
-
         formatSelect(list) {
             return list.map(userid => {
                 if ($A.leftExists(userid, 'd:')) {
-                    return this.recents.find(item => item.userid === userid)
+                    return this.recents.find(item => item.userid === userid);
                 }
                 return {
                     type: 'user',
                     userid,
-                }
-            })
+                };
+            });
         },
-
         selectIcon(value) {
             if (value === 'all') {
                 return this.isSelectAll ? 'ios-checkmark-circle' : 'ios-radio-button-off';
             }
             if ($A.isArray(value) && value.length > 0) {
-                const len = value.filter(value => this.selects.includes(value)).length
+                const len = value.filter(value => this.selects.includes(value)).length;
                 if (len === value.length) {
                     return 'ios-checkmark-circle';
                 }
@@ -440,7 +503,6 @@ export default {
             }
             return 'ios-radio-button-off';
         },
-
         selectClass(value) {
             switch (this.selectIcon(value)) {
                 case 'ios-checkmark-circle':
@@ -450,29 +512,29 @@ export default {
             }
             return '';
         },
-
         searchBefore() {
             if (!this.showModal) {
-                return
+                return;
             }
             if (this.switchActive === 'recent') {
-                this.searchRecent()
-            } else if (this.switchActive === 'contact') {
-                this.searchContact()
-            } else if (this.switchActive === 'project') {
-                this.searchProject()
+                this.searchRecent();
+            }
+            else if (this.switchActive === 'contact') {
+                this.searchContact();
+            }
+            else if (this.switchActive === 'project') {
+                this.searchProject();
             }
         },
-
         searchRecent() {
             this.recents = this.cacheDialogs.filter(dialog => {
                 if (dialog.name === undefined || dialog.dialog_delete === 1) {
-                    return false
+                    return false;
                 }
                 if (!this.showBot && dialog.bot) {
-                    return false
+                    return false;
                 }
-                return this.showDialog || dialog.type === 'user'
+                return this.showDialog || dialog.type === 'user';
             }).sort((a, b) => {
                 if (a.top_at || b.top_at) {
                     return $A.Date(b.top_at) - $A.Date(a.top_at);
@@ -481,33 +543,32 @@ export default {
                     return b.todo_num - a.todo_num;
                 }
                 return $A.Date(b.last_at) - $A.Date(a.last_at);
-            }).map(({id, name, type, group_type, avatar, dialog_user}) => {
+            }).map(({ id, name, type, group_type, avatar, dialog_user }) => {
                 return {
                     name,
                     type,
                     group_type,
                     avatar,
                     userid: type === 'user' ? dialog_user.userid : `d:${id}`,
-                }
+                };
             });
         },
-
         searchContact() {
             let key = this.searchKey;
             const cache = this.searchCache.find(item => item.type === 'contact' && item.key == key);
             if (cache) {
-                this.contacts = cache.data
+                this.contacts = cache.data;
             }
             //
-            this.waitIng++
+            this.waitIng++;
             setTimeout(() => {
                 if (this.searchKey != key) {
-                    this.waitIng--
+                    this.waitIng--;
                     return;
                 }
                 setTimeout(() => {
-                    this.loadIng++
-                }, 300)
+                    this.loadIng++;
+                }, 300);
                 this.$store.dispatch("call", {
                     url: 'users/search',
                     data: {
@@ -521,43 +582,43 @@ export default {
                         },
                         take: 50
                     },
-                }).then(({data}) => {
-                    data = data.map(item => Object.assign(item, {type: 'user'}))
-                    this.contacts = data
+                }).then(({ data }) => {
+                    data = data.map(item => Object.assign(item, { type: 'user' }));
+                    this.contacts = data;
                     //
                     const index = this.searchCache.findIndex(item => item.key == key);
-                    const tmpData = {type: 'contact', key, data, time: $A.Time()};
+                    const tmpData = { type: 'contact', key, data, time: $A.Time() };
                     if (index > -1) {
-                        this.searchCache.splice(index, 1, tmpData)
-                    } else {
-                        this.searchCache.push(tmpData)
+                        this.searchCache.splice(index, 1, tmpData);
                     }
-                }).catch(({msg}) => {
-                    this.contacts = []
-                    $A.messageWarning(msg)
+                    else {
+                        this.searchCache.push(tmpData);
+                    }
+                }).catch(({ msg }) => {
+                    this.contacts = [];
+                    $A.messageWarning(msg);
                 }).finally(_ => {
                     this.loadIng--;
                     this.waitIng--;
                 });
-            }, this.searchCache.length > 0 ? 300 : 0)
+            }, this.searchCache.length > 0 ? 300 : 0);
         },
-
         searchProject() {
             let key = this.searchKey;
             const cache = this.searchCache.find(item => item.type === 'project' && item.key == key);
             if (cache) {
-                this.projects = cache.data
+                this.projects = cache.data;
             }
             //
-            this.waitIng++
+            this.waitIng++;
             setTimeout(() => {
                 if (this.searchKey != key) {
-                    this.waitIng--
+                    this.waitIng--;
                     return;
                 }
                 setTimeout(() => {
-                    this.loadIng++
-                }, 300)
+                    this.loadIng++;
+                }, 300);
                 this.$store.dispatch("call", {
                     url: 'project/lists',
                     data: {
@@ -568,137 +629,158 @@ export default {
                         getuserid: 'yes',
                         getstatistics: 'no'
                     },
-                }).then(({data}) => {
-                    data = data.data.map(item => Object.assign(item, {type: 'project'}))
-                    this.projects = data
+                }).then(({ data }) => {
+                    data = data.data.map(item => Object.assign(item, { type: 'project' }));
+                    this.projects = data;
                     //
                     const index = this.searchCache.findIndex(item => item.key == key);
-                    const tmpData = {type: 'project', key, data, time: $A.Time()};
+                    const tmpData = { type: 'project', key, data, time: $A.Time() };
                     if (index > -1) {
-                        this.searchCache.splice(index, 1, tmpData)
-                    } else {
-                        this.searchCache.push(tmpData)
+                        this.searchCache.splice(index, 1, tmpData);
                     }
-                }).catch(({msg}) => {
-                    this.projects = []
-                    $A.messageWarning(msg)
+                    else {
+                        this.searchCache.push(tmpData);
+                    }
+                }).catch(({ msg }) => {
+                    this.projects = [];
+                    $A.messageWarning(msg);
                 }).finally(_ => {
                     this.loadIng--;
                     this.waitIng--;
                 });
-            }, this.searchCache.length > 0 ? 300 : 0)
+            }, this.searchCache.length > 0 ? 300 : 0);
         },
-
         onSelection() {
-            if(this.disable){
-                return
+            if (this.disable) {
+                return;
             }
             this.$nextTick(_ => {
-                this.selects = $A.cloneJSON(this.values)
-                this.showModal = true
-            })
+                this.selects = $A.cloneJSON(this.values);
+                this.showModal = true;
+            });
         },
-
         onSelectAll() {
             if (this.isSelectAll) {
-                this.selects = $A.cloneJSON(this.uncancelable)
-                return
+                this.selects = $A.cloneJSON(this.uncancelable);
+                return;
             }
             this.lists.some(item => {
                 if (this.isDisabled(item.userid)) {
-                    return false
+                    return false;
                 }
                 if (this.multipleMax && this.selects.length >= this.multipleMax) {
-                    $A.messageWarning("已超过最大选择数量")
-                    return true
+                    $A.messageWarning("已超过最大选择数量");
+                    return true;
                 }
                 if (!this.selects.includes(item.userid)) {
-                    this.selects.push(item.userid)
+                    this.selects.push(item.userid);
                 }
-            })
+            });
         },
-
-        onSelectItem({userid}) {
+        onSelectItem({ userid }) {
+            if(!this.showMultiple){
+                this.selects = [];
+            }
             if (this.selects.includes(userid)) {
                 if (this.isUncancelable(userid)) {
-                    return
+                    return;
                 }
-                this.selects = this.selects.filter(value => value != userid)
-            } else {
+                this.selects = this.selects.filter(value => value != userid);
+            }
+            else {
                 if (this.isDisabled(userid)) {
-                    return
+                    return;
                 }
                 if (this.multipleMax && this.selects.length >= this.multipleMax) {
-                    $A.messageWarning("已超过最大选择数量")
-                    return
+                    $A.messageWarning("已超过最大选择数量");
+                    return;
                 }
-                this.selects.push(userid)
+                this.selects.push(userid);
                 // 滚动到选中的位置
                 this.$nextTick(() => {
-                    $A.scrollIntoViewIfNeeded(this.$refs.selected.querySelector(`li[data-id="${userid}"]`))
-                })
+                    $A.scrollIntoViewIfNeeded(this.$refs.selected?.querySelector(`li[data-id="${userid}"]`));
+                });
+            }
+            if(!this.showMultiple){
+                this.onSubmit(1)
             }
         },
-
         onSelectProject(userid_list) {
+            if(!this.showMultiple){
+                this.selects = [];
+            }
             switch (this.selectIcon(userid_list)) {
                 case 'ios-checkmark-circle':
                     // 去除
-                    const removeList = userid_list.filter(userid => !this.isUncancelable(userid))
+                    const removeList = userid_list.filter(userid => !this.isUncancelable(userid));
                     if (removeList.length != userid_list.length) {
-                        $A.messageWarning("部分成员禁止取消")
+                        $A.messageWarning("部分成员禁止取消");
                     }
-                    this.selects = this.selects.filter(userid => !removeList.includes(userid))
+                    this.selects = this.selects.filter(userid => !removeList.includes(userid));
                     break;
                 default:
                     // 添加
-                    const addList = userid_list.filter(userid => !this.isDisabled(userid))
+                    const addList = userid_list.filter(userid => !this.isDisabled(userid));
                     if (addList.length != userid_list.length) {
-                        $A.messageWarning("部分成员禁止选择")
+                        $A.messageWarning("部分成员禁止选择");
                     }
-                    this.selects = this.selects.concat(addList.filter(userid => !this.selects.includes(userid)))
+                    this.selects = this.selects.concat(addList.filter(userid => !this.selects.includes(userid)));
                     // 超过最大数量
                     if (this.multipleMax && this.selects.length > this.multipleMax) {
-                        $A.messageWarning("已超过最大选择数量")
-                        this.selects = this.selects.slice(0, this.multipleMax)
+                        $A.messageWarning("已超过最大选择数量");
+                        this.selects = this.selects.slice(0, this.multipleMax);
                     }
                     break;
             }
+            if(!this.showMultiple){
+                this.onSubmit(1)
+            }
         },
-
         onRemoveItem(userid) {
             if (this.isUncancelable(userid)) {
-                return
+                return;
             }
-            this.selects = this.selects.filter(value => value != userid)
+            this.selects = this.selects.filter(value => value != userid);
         },
-
-        onSubmit() {
+        onSubmit(index) {
             if (this.submittIng > 0) {
-                return
+                return;
             }
-            const clone = $A.cloneJSON(this.values)
-            this.values = $A.cloneJSON(this.selects)
-            this.$emit('input', this.values)
-            this.$emit('onSubmit', this.values)
-
+            const clone = $A.cloneJSON(this.values);
+            this.values = $A.cloneJSON(this.selects);
+            //
+            if (index !=2 && this.twiceAffirm) {
+                if (this.values.length < 1) {
+                    $A.messageError("请选择对话或成员");
+                    return;
+                }
+                this.showAffirmModal = true;
+                return;
+            }
+            //
+            this.$emit('input', this.values);
+            this.$emit('onSubmit', this.values);
             if (!this.beforeSubmit) {
-                this.showModal = false
-                return
+                this.showModal = false;
+                this.showAffirmModal = false;
+                return;
             }
             const before = this.beforeSubmit();
             if (before && before.then) {
-                this.submittIng++
+                this.submittIng++;
                 before.then(() => {
-                    this.showModal = false
+                    this.showModal = false;
+                    this.showAffirmModal = false;
                 }).catch(() => {
-                    this.values = clone
-                    this.$emit('input', this.values)
+                    this.values = clone;
+                    this.$emit('input', this.values);
                 }).finally(() => {
-                    this.submittIng--
-                })
-            } else {
-                this.showModal = false
+                    this.submittIng--;
+                });
+            }
+            else {
+                this.showModal = false;
+                this.showAffirmModal = false;
             }
         },
     }
