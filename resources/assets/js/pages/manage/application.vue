@@ -189,6 +189,19 @@
             </div>
         </Modal>
 
+        <!-- 发起接龙 -->
+        <UserSelect
+            ref="wordChainAndVoteRef"
+            v-model="sendData"
+            :multiple-max="50"
+            :title="sendType == 'vote' ? $L('选择群组发起投票') : $L('选择群组发起接龙')"
+            :before-submit="goWordChainAndVote"
+            :show-select-all="false"
+            :forced-radio="true"
+            :group="true"
+            show-dialog
+            module/>
+
     </div>
 </template>
 
@@ -279,6 +292,9 @@ export default {
             scanLoginShow: false,
             scanLoginLoad: false,
             scanLoginCode: '',
+            //
+            sendData: [],
+            sendType: '',
         }
     },
     activated() {
@@ -304,39 +320,49 @@ export default {
     methods: {
         initList() {
             let applyList = [
-                { value: "approve", label: "审批中心" },
-                { value: "report", label: "工作报告" },
-                { value: "okr", label: "OKR管理" },
-                { value: "robot", label: "AI机器人" },
-                { value: "signin", label: "签到" },
-                { value: "meeting", label: "会议" },
-                { value: "calendar", label: "日历" },
+                { value: "approve", label: "审批中心", sort: 1 },
+                { value: "report", label: "工作报告", sort: 2 },
+                { value: "okr", label: "OKR管理", sort: 3 },
+                { value: "robot", label: "AI机器人", sort: 4 },
+                { value: "signin", label: "签到", sort: 5 },
+                { value: "meeting", label: "会议", sort: 6 },
+                { value: "calendar", label: "日历", sort: 7 },
+                { value: "word-chain", label: "接龙", sort: 9 },
+                { value: "vote", label: "投票", sort: 10 },
             ];
             // wap模式
             let appApplyList = this.windowOrientation != 'portrait' ? (
                     $A.isEEUiApp ? [
-                        { value: "scan", label: "扫一扫" }
+                        { value: "scan", label: "扫一扫", sort: 13 }
                     ] : []
                 ) : [
-                { value: "file", label: "文件" },
-                { value: "addProject", label: "创建项目" },
-                { value: "addTask", label: "添加任务" },
-                { value: "scan", label: "扫一扫", show: $A.isEEUiApp },
-                { value: "setting", label: "设置" }
+                { value: "file", label: "文件", sort: 8 },
+                { value: "addProject", label: "创建项目", sort: 11 },
+                { value: "addTask", label: "添加任务", sort: 12 },
+                { value: "scan", label: "扫一扫", sort: 13 , show: $A.isEEUiApp },
+                { value: "setting", label: "设置", sort: 14 }
             ];
             // 管理员
             let adminApplyList = !this.userIsAdmin ? [] : [
-                { value: "okrAnalyze", label: "OKR结果" },
-                { value: "ldap", label: "LDAP" },
-                { value: "mail", label: "邮件" },
-                { value: "appPush", label: "APP推送" },
-                { value: "allUser", label: "团队管理" }
+                { value: "okrAnalyze", label: "OKR结果", sort: 15 },
+                { value: "ldap", label: "LDAP", sort: 16 },
+                { value: "mail", label: "邮件", sort: 17 },
+                { value: "appPush", label: "APP推送", sort: 18 },
+                { value: "allUser", label: "团队管理", sort: 19 }
             ].map((h) => {
                 h.type = 'admin';
                 return h;
             });
             //
-            this.applyList = [...applyList, ...appApplyList, ...adminApplyList];
+            this.applyList = [...applyList, ...appApplyList, ...adminApplyList].sort((a, b) => {
+                if (a.sort < b.sort) {
+                    return -1;
+                } else if (a.sort > b.sort) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
         },
         getLogoPath(name) {
             name = name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
@@ -399,6 +425,12 @@ export default {
                     break;
                 case 'scan':
                     $A.eeuiAppScan(this.scanResult);
+                    return;
+                case 'word-chain':
+                case 'vote':
+                    this.sendData = [];
+                    this.sendType = item.value;
+                    this.$refs.wordChainAndVoteRef.onSelection()
                     return;
             }
             this.$emit("on-click", item.value)
@@ -507,7 +539,7 @@ export default {
                 this.scanLoginLoad = false
             });
         },
-        // 打开明显
+        // 打开明细
         openDetail(desc){
             $A.modalInfo({
                 content: desc,
@@ -528,6 +560,26 @@ export default {
                     })
                 },
             });
+        },
+        // 前往接龙与投票
+        goWordChainAndVote(){
+            const dialog_id = Number(this.sendData[0].replace('d:', ''))
+            if(this.windowPortrait){
+                this.$store.dispatch("openDialog", dialog_id ).then(() => {
+                    this.$store.state[ this.sendType == 'word-chain' ?'dialogDroupWordChain' : 'dialogGroupVote'] = {
+                        type: 'create',
+                        dialog_id: dialog_id
+                    }
+                })
+            }else{
+                this.goForward({ name: 'manage-messenger', params: { dialog_id: dialog_id}});
+                setTimeout(()=>{
+                    this.$store.state[ this.sendType == 'word-chain' ?'dialogDroupWordChain' : 'dialogGroupVote'] = {
+                        type: 'create',
+                        dialog_id: dialog_id
+                    }
+                },100)
+            }
         }
     }
 }

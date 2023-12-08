@@ -819,6 +819,10 @@
                 switch (data.type) {
                     case 'text':
                         return $A.getMsgTextPreview(data.msg.text, imgClassName)
+                    case 'word-chain':
+                        return `[${$A.L('接龙')}]` + $A.getMsgTextPreview(data.msg.text, imgClassName)
+                    case 'vote':
+                        return `[${$A.L('投票')}]` + $A.getMsgTextPreview(data.msg.text, imgClassName)
                     case 'record':
                         return `[${$A.L('语音')}]`
                     case 'meeting':
