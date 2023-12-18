@@ -1,149 +1,152 @@
 {
-    "name": "DooTask",
-    "version": "1.0.0",
-    "description": "DooTask is task management system.",
-    "main": "electron.js",
-    "license": "MIT",
-    "scripts": {
-        "start": "electron-forge start",
-        "start-quiet": "sleep 3 && electron-forge start &> /dev/null",
-        "build": "electron-builder",
-        "build-mac": "electron-builder --mac",
-        "build-win": "electron-builder --win",
-        "build-mac-publish": "electron-builder --publish always --mac",
-        "build-win-publish": "electron-builder --publish always --win",
-        "package": "electron-forge package",
-        "make": "electron-forge make",
-        "publish": "electron-forge publish"
+  "name": "DooTask",
+  "version": "0.32.65",
+  "description": "DooTask is task management system.",
+  "main": "electron.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron-forge start",
+    "start-quiet": "sleep 3 && electron-forge start &> /dev/null",
+    "build": "electron-builder",
+    "build-mac": "electron-builder --mac",
+    "build-win": "electron-builder --win",
+    "build-mac-publish": "electron-builder --publish always --mac",
+    "build-win-publish": "electron-builder --publish always --win",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish"
+  },
+  "author": {
+    "name": "KuaiFan",
+    "email": "aipaw@live.cn",
+    "url": "https://github.com/kuaifan"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kuaifan/dootask.git"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.2.0",
+    "@electron-forge/maker-deb": "^7.2.0",
+    "@electron-forge/maker-rpm": "^7.2.0",
+    "@electron-forge/maker-squirrel": "^7.2.0",
+    "@electron-forge/maker-zip": "^7.2.0",
+    "dotenv": "^16.3.1",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "electron-notarize": "^1.2.2",
+    "form-data": "^4.0.0",
+    "ora": "^4.1.1"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "crc": "^3.8.0",
+    "electron-log": "^5.0.1",
+    "electron-screenshots-tool": "^1.1.2",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-updater": "^6.1.7",
+    "fs-extra": "^11.2.0",
+    "pdf-lib": "^1.17.1",
+    "request": "^2.88.2"
+  },
+  "trayIcon": {
+    "dev": {
+      "mac": "../resources/assets/statics/public/images/tray/logo-trayTemplate.png",
+      "win": "../resources/assets/statics/public/images/logo-app.ico"
     },
-    "author": {
-        "name": "KuaiFan",
-        "email": "aipaw@live.cn",
-        "url": "https://github.com/kuaifan"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/kuaifan/dootask.git"
-    },
-    "devDependencies": {
-        "@electron-forge/cli": "^7.2.0",
-        "@electron-forge/maker-deb": "^7.2.0",
-        "@electron-forge/maker-rpm": "^7.2.0",
-        "@electron-forge/maker-squirrel": "^7.2.0",
-        "@electron-forge/maker-zip": "^7.2.0",
-        "dotenv": "^16.3.1",
-        "electron": "^28.0.0",
-        "electron-builder": "^24.9.1",
-        "electron-notarize": "^1.2.2",
-        "form-data": "^4.0.0",
-        "ora": "^4.1.1"
-    },
-    "dependencies": {
-        "axios": "^1.6.2",
-        "crc": "^3.8.0",
-        "electron-log": "^5.0.1",
-        "electron-screenshots-tool": "^1.1.2",
-        "electron-squirrel-startup": "^1.0.0",
-        "electron-updater": "^6.1.7",
-        "fs-extra": "^11.2.0",
-        "pdf-lib": "^1.17.1",
-        "request": "^2.88.2"
-    },
-    "trayIcon": {
-        "dev": {
-            "mac": "../resources/assets/statics/public/images/tray/logo-trayTemplate.png",
-            "win": "../resources/assets/statics/public/images/logo-app.ico"
-        },
-        "prod": {
-            "mac": "./public/images/tray/logo-trayTemplate.png",
-            "win": "./public/images/logo-app.ico"
-        }
-    },
-    "build": {
-        "appId": "com.dootask.task",
-        "artifactName": "${productName}-v${version}-${os}-${arch}.${ext}",
-        "asar": true,
-        "directories": {
-            "output": "dist"
-        },
-        "files": [
-            "public/**/*",
-            "electron-menu.js",
-            "electron-preload.js",
-            "electron.js",
-            "utils.js"
-        ],
-        "npmRebuild": false,
-        "publish": {
-            "provider": "generic"
-        },
-        "releaseInfo": {},
-        "mac": {
-            "icon": "../resources/assets/statics/public/images/logo-app.png",
-            "entitlements": "entitlements.plist",
-            "entitlementsInherit": "entitlements.plist",
-            "category": "public.app-category.productivity",
-            "target": [
-                {
-                    "target": "zip",
-                    "arch": [
-                        "x64",
-                        "arm64"
-                    ]
-                },
-                {
-                    "target": "dmg",
-                    "arch": [
-                        "x64",
-                        "arm64"
-                    ]
-                }
-            ]
-        },
-        "win": {
-            "icon": "../resources/assets/statics/public/images/logo-app.ico",
-            "target": [
-                {
-                    "target": "nsis",
-                    "arch": [
-                        "x64",
-                        "arm64"
-                    ]
-                }
-            ],
-            "verifyUpdateCodeSignature": false
-        },
-        "nsis": {
-            "oneClick": false,
-            "artifactName": "${productName}-v${version}-${os}-${arch}.${ext}",
-            "allowToChangeInstallationDirectory": true
-        }
-    },
-    "config": {
-        "forge": {
-            "packagerConfig": {},
-            "makers": [
-                {
-                    "name": "@electron-forge/maker-squirrel",
-                    "config": {
-                        "name": "DooTask"
-                    }
-                },
-                {
-                    "name": "@electron-forge/maker-zip",
-                    "platforms": [
-                        "darwin"
-                    ]
-                },
-                {
-                    "name": "@electron-forge/maker-deb",
-                    "config": {}
-                },
-                {
-                    "name": "@electron-forge/maker-rpm",
-                    "config": {}
-                }
-            ]
-        }
+    "prod": {
+      "mac": "./public/images/tray/logo-trayTemplate.png",
+      "win": "./public/images/logo-app.ico"
     }
+  },
+  "build": {
+    "appId": "com.dootask.task",
+    "artifactName": "DooTask-v${version}-${os}-${arch}.${ext}",
+    "asar": true,
+    "directories": {
+      "output": "dist/com-dootask-task/build-mac-generic"
+    },
+    "files": [
+      "public/**/*",
+      "electron-menu.js",
+      "electron-preload.js",
+      "electron.js",
+      "utils.js"
+    ],
+    "npmRebuild": false,
+    "publish": {
+      "provider": "generic",
+      "url": "https://www.dootask.com/desktop/publish"
+    },
+    "releaseInfo": {
+      "releaseNotes": "## [0.32.65]\n\n### Bug Fixes\n\n- 修复头像出现D的情况\n\n### Documentation\n\n- 更新文档\n\n### Performance\n\n- 优化任务列表查询速度\n- 优化消息输入框内选择文本\n- 移动端修改任务详情确认提示\n- 优化发送录音消息抖动\n- 优化录音效果\n- 优化快捷键设置\n\n## [0.32.55]\n\n### Bug Fixes\n\n- 聊天输入框内容为空时仍可以长安发送显示发送菜单\n- 文件页移动端滑动返回失败情况\n- 会员头像显示错乱\n\n### Performance\n\n- 优化输入空换行时的兼容问题\n- 优化设置页面\n- 优化应用中心菜单排序\n- 更新录音插件\n- 更换移动任务图标\n- 优化设置返回跟滑动返回冲突\n- 优化键盘设置\n- 优化清除缓存数据\n- 优化阅读消息列表机制\n- 优化项目页面任务加载速度\n\n## [0.32.35]\n\n### Bug Fixes\n\n- 修复重复SSE请求的问题\n- 部分pad设备横版和竖屏反过来\n- 修复安装项目报错\n\n### Features\n\n- 新增以下为新消息提示\n\n### Performance\n\n- 优化消息阅读逻辑\n- 优化未读消息机制\n- 优化重连时消息列表跳回第一页的情况\n- 优化未读消息机制\n- 优化消息更新太快导致不更新数据的情况\n- 机器人添加清空上下文菜单\n- 优化翻译\n- 发送消息失败时再次编辑改为重新发送\n- 优化通过消息设置待办功能\n- 优化扫一扫登录功能\n- 优化头像\n- 搜索消息时按esc取消搜索\n- 移动设备优化消息输入框菜单\n- 优化消息输入框@所有人暗黑样式\n- 优化@人名换行的情况\n\n## [0.32.17]\n\n### Bug Fixes\n\n- 修复打包下载问题\n- 1. 修复 windows端  右键发送 是直接发送了，没有出现使用md格式发送  2.其他bug修复\n- 修复打包下载问题\n- 修复统一打包下载命名\n\n### Performance\n\n- 审批版本更新\n- Okr 和 审批中心弄一些演示数据\n- 项目邀请页 - 安卓用opne方式打开\n\n## [0.32.9]\n\n### Bug Fixes\n\n- 移动打开分享链接时先关闭聊天窗口\n- 修复未登录时，进入邀请项目的链接会弹出多次登录框的情况\n- 修复进度完成后再次完成\n- 华为手机弹出键盘时出现空白区域的问题\n- 修复错误提示\n- 栏目被删除的时候，已归档任务不受影响\n- 直接拖文件会发送两次的bug修复\n\n### Features\n\n- 邀请加入项目的链接客户端直接打开\n- 新增临时压缩下载文件24小时自动清理\n- 任务加时功能  (模仿可见性的交互，任务延期和修改时间) - 100%\n- 任务加时功能  (模仿可见性的交互，任务延期和修改时间) - 70%\n- 添加功能 - 每天发出本项目未领取任务\n- 添加转移任务到别的项目功能\n- 键盘设置里面，支持设置回车发送还是按键发送\n- 上传文件大小限制\n- 任务标题有换行时聊天引用会失败\n- 文件共享只读禁止下载文件\n- 保存任务详情至文件的方法 添加失败日志\n- 翻译\n- 翻译\n- 新增实现文件夹下载以及多文件压缩下载功能\n- 任务可以筛选未设置时间的\n- 临时账号可以主动跟机器人聊天\n\n### Performance\n\n- Office只读模式，隐藏下载按钮\n- 优化实现文件夹下载以及多文件压缩下载功能\n- 优化实现文件夹下载以及多文件压缩下载功能\n- 机器人设置页面，点点点看不到内容，需要给弹窗看详细内容\n- 文件选中后，移动端页面宽度放不下对应内容\n- 文件选中后，移动端页面宽度放不下对应内容，没有滚动条\n- 压缩下载改名打包下载\n- 复制链接去除主题语言参数\n- 优化实现文件夹下载以及多文件压缩下载功能\n- 优化实现文件夹下载以及多文件压缩下载功能\n\n"
+    },
+    "mac": {
+      "icon": "../resources/assets/statics/public/images/logo-app.png",
+      "entitlements": "entitlements.plist",
+      "entitlementsInherit": "entitlements.plist",
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "../resources/assets/statics/public/images/logo-app.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "artifactName": "DooTask-v${version}-${os}-${arch}.${ext}",
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "DooTask"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
+  }
 }
