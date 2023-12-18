@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:public/js/build/login.8f31029c.js
 import{d as wr,l as yr,a as Ar,m as xr,p as Cr,n as _r}from"./app.350b47a4.js";/*!
+========
+import{d as wr,l as yr,a as Ar,m as xr,q as Cr,n as _r}from"./app.7b9537da.js";/*!
+>>>>>>>> okr:public/js/build/login.732daef3.js
  * vue-qrcode v1.0.2
  * https://fengyuanchen.github.io/vue-qrcode
  *
