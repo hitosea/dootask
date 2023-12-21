@@ -1846,8 +1846,6 @@ class DialogController extends AbstractController
         $dialog_id = intval(Request::input('dialog_id'));
         $userid = intval(Request::input('userid'));
         $check_owner = trim(Request::input('check_owner', 'yes')) === 'yes';
-        info(Request::input('check_owner', 'yes'));
-        info($check_owner);
         //
         if ($check_owner && $userid === $user?->userid) {
             return Base::retError('你已经是群主');
