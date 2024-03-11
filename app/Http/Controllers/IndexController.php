@@ -7,6 +7,7 @@ use Cache;
 use Request;
 use Redirect;
 use Response;
+use App\Module\Doo;
 use App\Models\File;
 use App\Module\Base;
 use App\Tasks\LoopTask;
@@ -37,9 +38,8 @@ class IndexController extends InvokeController
         if ($action) {
             $app .= "__" . $action;
         }
-        if ($app === 'manifest.txt') {
-            $app = 'manifest';
-            $child = 'txt';
+        if ($app == 'default') {
+            return '';
         }
         if (!method_exists($this, $app)) {
             $app = method_exists($this, $method) ? $method : 'main';
@@ -68,49 +68,7 @@ class IndexController extends InvokeController
             'version' => Base::getVersion(),
             'style' => $style,
             'script' => $script,
-        ])->header('Link', "<" . url('manifest.txt') . ">; rel=\"prefetch\"");
-    }
-
-    /**
-     * Manifest
-     * @param $child
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response|string
-     */
-    public function manifest($child = '')
-    {
-        if (empty($child)) {
-            $murl = url('manifest.txt');
-            return response($murl)->header('Link', "<{$murl}>; rel=\"prefetch\"");
-        }
-        $array = [
-            "office/web-apps/apps/api/documents/api.js?hash=" . Base::getVersion(),
-            "office/7.5.1-23/web-apps/vendor/requirejs/require.js",
-            "office/7.5.1-23/web-apps/apps/api/documents/api.js",
-            "office/7.5.1-23/sdkjs/common/AllFonts.js",
-            "office/7.5.1-23/web-apps/vendor/xregexp/xregexp-all-min.js",
-            "office/7.5.1-23/web-apps/vendor/sockjs/sockjs.min.js",
-            "office/7.5.1-23/web-apps/vendor/jszip/jszip.min.js",
-            "office/7.5.1-23/web-apps/vendor/jszip-utils/jszip-utils.min.js",
-            "office/7.5.1-23/sdkjs/common/libfont/wasm/fonts.js",
-            "office/7.5.1-23/sdkjs/common/Charts/ChartStyles.js",
-            "office/7.5.1-23/sdkjs/slide/themes//themes.js",
-
-            "office/7.5.1-23/web-apps/apps/presentationeditor/main/app.js",
-            "office/7.5.1-23/sdkjs/slide/sdk-all-min.js",
-            "office/7.5.1-23/sdkjs/slide/sdk-all.js",
-
-            "office/7.5.1-23/web-apps/apps/documenteditor/main/app.js",
-            "office/7.5.1-23/sdkjs/word/sdk-all-min.js",
-            "office/7.5.1-23/sdkjs/word/sdk-all.js",
-
-            "office/7.5.1-23/web-apps/apps/spreadsheeteditor/main/app.js",
-            "office/7.5.1-23/sdkjs/cell/sdk-all-min.js",
-            "office/7.5.1-23/sdkjs/cell/sdk-all.js",
-        ];
-        foreach ($array as &$item) {
-            $item = url($item);
-        }
-        return implode(PHP_EOL, $array);
+        ]);
     }
 
     /**
@@ -217,6 +175,7 @@ class IndexController extends InvokeController
     public function desktop__publish($name = '')
     {
         $publishVersion = Request::header('publish-version');
+        $fileNum = Request::get('file_num', 1);
         $latestFile = public_path("uploads/desktop/latest");
         $latestVersion = file_exists($latestFile) ? trim(file_get_contents($latestFile)) : "0.0.1";
         if (strtolower($name) === 'latest') {
@@ -224,6 +183,7 @@ class IndexController extends InvokeController
         }
         // 上传
         if (preg_match("/^\d+\.\d+\.\d+$/", $publishVersion)) {
+            $uploadSuccessFileNum  = (int)Cache::get($publishVersion, 0);
             $publishKey = Request::header('publish-key');
             if ($publishKey !== env('APP_KEY')) {
                 return Base::retError("key error");
@@ -238,6 +198,20 @@ class IndexController extends InvokeController
                 ]);
                 if (Base::isSuccess($res)) {
                     file_put_contents($latestFile, $publishVersion);
+                    $uploadSuccessFileNum = $uploadSuccessFileNum + 1;
+                    Cache::set($publishVersion, $uploadSuccessFileNum, 7200);
+                }
+                if ($uploadSuccessFileNum >= $fileNum){
+                    $directoryPath = public_path("uploads/desktop");
+                    $files = array_filter(scandir($directoryPath), function($file) use($directoryPath) {
+                        return preg_match("/^\d+\.\d+\.\d+$/", $file) && is_dir($directoryPath . '/' . $file) && $file != '.' && $file != '..';
+                    });
+                    sort($files);
+                    foreach ($files as $key => $file) {
+                        if ($file != $publishVersion && $key < count($files) - 2) {
+                            Base::deleteDirAndFile($directoryPath . '/' . $file);
+                        }
+                    }
                 }
                 return $res;
             }
@@ -249,14 +223,15 @@ class IndexController extends InvokeController
             $lists = Base::readDir($dirPath);
             $files = [];
             foreach ($lists as $file) {
-                if (str_ends_with($file, '.yml') || str_ends_with($file, '.yaml')) {
+                if (str_ends_with($file, '.yml') || str_ends_with($file, '.yaml') || str_ends_with($file, '.blockmap')) {
                     continue;
                 }
                 $fileName = Base::leftDelete($file, $dirPath);
+                $fileSize = filesize($file);
                 $files[] = [
                     'name' => substr($fileName, 1),
                     'time' => date("Y-m-d H:i:s", filemtime($file)),
-                    'size' => Base::readableBytes(filesize($file)),
+                    'size' => $fileSize > 0 ? Base::readableBytes($fileSize) : 0,
                     'url' => Base::fillUrl($path . $fileName),
                 ];
             }
@@ -273,10 +248,11 @@ class IndexController extends InvokeController
                     continue;
                 }
                 $fileName = Base::leftDelete($file, $dirPath);
+                $fileSize = filesize($file);
                 $apkFile = [
                     'name' => substr($fileName, 1),
                     'time' => date("Y-m-d H:i:s", filemtime($file)),
-                    'size' => Base::readableBytes(filesize($file)),
+                    'size' => $fileSize > 0 ? Base::readableBytes($fileSize) : 0,
                     'url' => Base::fillUrl($path . $fileName),
                 ];
             }
@@ -321,45 +297,89 @@ class IndexController extends InvokeController
         $data = parse_url($key);
         $path = Arr::get($data, 'path');
         $file = public_path($path);
+        // 防止 ../ 穿越获取到系统文件
+        if (!str_starts_with(realpath($file), public_path())) {
+            abort(404);
+        }
         //
-        if (file_exists($file)) {
-            parse_str($data['query'], $query);
-            $name = Arr::get($query, 'name');
-            $ext = strtolower(Arr::get($query, 'ext'));
-            $userAgent = strtolower(Request::server('HTTP_USER_AGENT'));
-            if ($ext === 'pdf'
-                && (str_contains($userAgent, 'electron') || str_contains($userAgent, 'chrome'))) {
+        if (!file_exists($file)) {
+            abort(404);
+        }
+        //
+        parse_str($data['query'], $query);
+        $name = Arr::get($query, 'name');
+        $ext = strtolower(Arr::get($query, 'ext'));
+        $userAgent = strtolower(Request::server('HTTP_USER_AGENT'));
+        if ($ext === 'pdf') {
+            // 文件超过 10m 不支持在线预览，提示下载
+            if (filesize($file) > 10 * 1024 * 1024) {
+                return view('download', [
+                    'name' => $name,
+                    'size' => Base::readableBytes(filesize($file)),
+                    'url' => Base::fillUrl($path),
+                    'button' => Doo::translate('点击下载'),
+                ]);
+            }
+            // 浏览器类型
+            $browser = 'none';
+            if (str_contains($userAgent, 'chrome')) {
+                $browser = str_contains($userAgent, 'android') || str_contains($userAgent, 'harmonyos') ? 'android-mobile' : 'chrome-desktop';
+            } elseif (str_contains($userAgent, 'safari') || str_contains($userAgent, 'iphone') || str_contains($userAgent, 'ipad')) {
+                $browser = str_contains($userAgent, 'iphone') || str_contains($userAgent, 'ipad') ? 'safari-mobile' : 'safari-desktop';
+            }
+            // electron 直接在线预览查看
+            if (str_contains($userAgent, 'electron') || str_contains($browser, 'desktop')) {
                 return Response::download($file, $name, [
                     'Content-Type' => 'application/pdf'
                 ], 'inline');
             }
-            //
-            if (in_array($ext, File::localExt)) {
-                $url = Base::fillUrl($path);
-            } else {
-                $url = 'http://' . env('APP_IPPR') . '.3/' . $path;
+            // EEUI App 直接在线预览查看
+            if (str_contains($userAgent, 'eeui') && Base::judgeClientVersion("0.34.47")) {
+                if ($browser === 'safari-mobile') {
+                    $redirectUrl = Base::fillUrl($path);
+                    return <<<EOF
+                        <script>
+                            window.top.postMessage({
+                                action: "eeuiAppSendMessage",
+                                data: [
+                                    {
+                                        action: 'setPageData',
+                                        data: {
+                                            titleFixed: true,
+                                            urlFixed: true,
+                                        }
+                                    },
+                                    {
+                                        action: 'createTarget',
+                                        url: "{$redirectUrl}",
+                                    }
+                                ]
+                            }, "*")
+                        </script>
+                        EOF;
+                }
             }
-            if ($ext !== 'pdf') {
-                $url = Base::urlAddparameter($url, [
-                    'fullfilename' => $name . '.' . $ext
-                ]);
-            }
-            $toUrl = Base::fillUrl("fileview/onlinePreview?url=" . urlencode(base64_encode($url)));
-            return Redirect::to($toUrl, 301);
         }
-        return abort(404);
+        //
+        if (in_array($ext, File::localExt)) {
+            $url = Base::fillUrl($path);
+        } else {
+            $url = 'http://' . env('APP_IPPR') . '.3/' . $path;
+        }
+        $url = Base::urlAddparameter($url, [
+            'fullfilename' => Base::rightDelete($name, '.' . $ext) . '_' . filemtime($file) . '.' . $ext
+        ]);
+        $redirectUrl = Base::fillUrl("fileview/onlinePreview?url=" . urlencode(base64_encode($url)));
+        return Redirect::to($redirectUrl, 301);
     }
 
     /**
-     * 设置语言和皮肤
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     * 保存配置 (todo 已废弃)
+     * @return string
      */
-    public function setting__theme_language()
+    public function storage__synch()
     {
-        return view('setting', [
-            'theme' => Request::input('theme'),
-            'language' => Request::input('language')
-        ]);
+        return '<!-- Deprecated -->';
     }
 
     /**

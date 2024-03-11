@@ -31,7 +31,7 @@
             </div>
             <div class="initiate">
                 <span>{{ $L('由') }}</span>
-                <UserAvatar :userid="createId" :size="22" :showName="true" tooltipDisabled/>
+                <UserAvatar :userid="createId" :size="22" :showName="true"/>
                 <span> {{ $L('发起，参与接龙目前共'+num+'人') }}</span>
             </div>
             <div class="textarea">
@@ -136,6 +136,7 @@ export default {
             if(data.type == 'create' && data.dialog_id){
                 this.show = true;
                 this.createId = this.userId;
+                this.list = [];
                 this.list.push({
                     id: Date.now(),
                     type: "case",
@@ -232,7 +233,6 @@ export default {
             }).catch(({msg}) => {
                 if( msg.indexOf("System error") !== -1){
                     $A.modalInfo({
-                        language: false,
                         title: '版本过低',
                         content: '服务器版本过低，请升级服务器。',
                     })

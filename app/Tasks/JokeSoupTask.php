@@ -13,13 +13,15 @@ use Carbon\Carbon;
 /**
  * 获取笑话、心灵鸡汤
  *
- * 在.env添加笑话 JUKE_KEY_JOKE
- * 在.env添加鸡汤 JUKE_KEY_SOUP
- *
- * 每日小时采集1次
+ * 每分钟采集1次
  */
 class JokeSoupTask extends AbstractTask
 {
+    public static function keyName($key)
+    {
+        return "JokeSoupTask-v2:{$key}";
+    }
+
     public function __construct()
     {
         parent::__construct();
@@ -27,27 +29,25 @@ class JokeSoupTask extends AbstractTask
 
     public function start()
     {
-        // 判断每小时执行一次
-        if (Cache::get("JokeSoupTask:YmdH") == date("YmdH")) {
+        // 判断每分钟执行一次
+        if (Cache::get(self::keyName("YmdHi")) == date("YmdHi")) {
             return;
         }
-        Cache::put("JokeSoupTask:YmdH", date("YmdH"), Carbon::now()->addDay());
+        Cache::put(self::keyName("YmdHi"), date("YmdHi"), Carbon::now()->addDay());
         //
-        $array = Base::json2array(Cache::get("JokeSoupTask:jokes"));
+        $array = Base::json2array(Cache::get(self::keyName("jokes")));
         $data = Extranet::randJoke();
-        foreach ($data as $item) {
-            if ($text = trim($item['content'])) {
-                $array[] = $text;
-            }
+        if ($data) {
+            $array[] = $data;
         }
-        Cache::forever("JokeSoupTask:jokes", Base::array2json(array_slice($array, -100)));
+        Cache::forever(self::keyName("jokes"), Base::array2json(array_slice($array, -200)));
         //
-        $array = Base::json2array(Cache::get("JokeSoupTask:soups"));
+        $array = Base::json2array(Cache::get(self::keyName("soups")));
         $data = Extranet::soups();
         if ($data) {
             $array[] = $data;
         }
-        Cache::forever("JokeSoupTask:soups", Base::array2json(array_slice($array, -24)));
+        Cache::forever(self::keyName("soups"), Base::array2json(array_slice($array, -200)));
     }
 
     public function end()

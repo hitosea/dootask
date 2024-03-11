@@ -26,7 +26,7 @@
                             <div class="apply-col">
                                 <div @click="applyClick(item)">
                                     <div class="logo">
-                                        <img :src="getLogoPath(item.value)" />
+                                        <div class="apply-icon no-dark-content" :class="getLogoClass(item.value)"></div>
                                         <div @click.stop="applyClick(item, 'badge')" class="apply-box-top-report">
                                             <Badge v-if="showBadge(item,'approve')" :overflow-count="999" :count="approveUnreadNumber" />
                                             <Badge v-if="showBadge(item,'report')" :overflow-count="999" :count="reportUnreadNumber" />
@@ -46,11 +46,11 @@
             <Report v-if="workReportShow" v-model="workReportTabs" @on-read="$store.dispatch('getReportUnread', 1000)" />
         </DrawerOverlay>
 
-        <!--AI机器人-->
+        <!--AI 机器人-->
         <DrawerOverlay v-model="aibotShow" placement="right" :size="600">
             <div class="ivu-modal-wrap-apply">
                 <div class="ivu-modal-wrap-apply-title">
-                    {{ $L('AI机器人') }}
+                    {{ $L('AI 机器人') }}
                     <p @click="aibotType = aibotType == 1 ? 2 : 1" v-if="userIsAdmin">
                         {{ aibotType == 1 ? $L('机器人设置') : $L('返回') }}
                     </p>
@@ -58,7 +58,7 @@
                 <div class="ivu-modal-wrap-apply-body">
                     <ul class="ivu-modal-wrap-ul" v-if="aibotType == 1">
                         <li v-for="(item, key) in aibotList"  :key="key">
-                            <img :src="item.src">
+                            <img class="apply-icon" :src="item.src">
                             <h4>{{ item.label }}</h4>
                             <p class="desc" @click="openDetail(item.desc)">{{ item.desc }}</p>
                             <p class="btn" @click="onGoToChat(item.value)">{{ $L('开始聊天') }}</p>
@@ -71,6 +71,11 @@
                         <TabPane label="ChatGPT" name="opanai">
                             <div class="aibot-warp">
                                 <SystemAibot type="ChatGPT" v-if="aibotTabAction == 'opanai'" />
+                            </div>
+                        </TabPane>
+                        <TabPane label="Gemini" name="gemini">
+                            <div class="aibot-warp">
+                                <SystemAibot type="Gemini" v-if="aibotTabAction == 'gemini'" />
                             </div>
                         </TabPane>
                         <TabPane label="Claude" name="claude">
@@ -121,13 +126,13 @@
                 <div class="ivu-modal-wrap-apply-body">
                     <ul class="ivu-modal-wrap-ul" v-if="meetingType == 1">
                         <li>
-                            <img :src="getLogoPath('meeting')">
+                            <div class="apply-icon no-dark-content meeting"></div>
                             <h4>{{ $L('新会议') }}</h4>
                             <p class="desc" @click="openDetail(meetingDescs.add)"> {{ meetingDescs.add }} </p>
                             <p class="btn" @click="onMeeting('createMeeting')">{{ $L('新建会议') }}</p>
                         </li>
                         <li>
-                            <img :src="getLogoPath('meeting-join')">
+                            <div class="apply-icon no-dark-content meeting-join"></div>
                             <h4>{{ $L('加入会议') }}</h4>
                             <p class="desc" @click="openDetail(meetingDescs.join)">{{ meetingDescs.join }}</p>
                             <p class="btn" @click="onMeeting('joinMeeting')">{{ $L('加入会议') }}</p>
@@ -142,7 +147,7 @@
         <DrawerOverlay v-model="ldapShow" placement="right" :size="700">
             <div class="ivu-modal-wrap-apply">
                 <div class="ivu-modal-wrap-apply-title">
-                    {{ $L('LDAP设置') }}
+                    {{ $L('LDAP 设置') }}
                 </div>
                 <div class="ivu-modal-wrap-apply-body">
                     <SystemThirdAccess />
@@ -166,7 +171,7 @@
         <DrawerOverlay v-model="appPushShow" placement="right" :size="700">
             <div class="ivu-modal-wrap-apply">
                 <div class="ivu-modal-wrap-apply-title">
-                    {{ $L('APP推送') }}
+                    {{ $L('APP 推送') }}
                 </div>
                 <div class="ivu-modal-wrap-apply-body">
                     <SystemAppPush />
@@ -189,16 +194,15 @@
             </div>
         </Modal>
 
-        <!-- 发起接龙 -->
+        <!-- 发起群投票、接龙 -->
         <UserSelect
             ref="wordChainAndVoteRef"
             v-model="sendData"
-            :multiple-max="50"
+            :multiple-max="1"
             :title="sendType == 'vote' ? $L('选择群组发起投票') : $L('选择群组发起接龙')"
             :before-submit="goWordChainAndVote"
             :show-select-all="false"
-            :forced-radio="true"
-            :group="true"
+            :only-group="true"
             show-dialog
             module/>
 
@@ -206,7 +210,7 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+import {mapState} from "vuex";
 import DrawerOverlay from "../../components/DrawerOverlay";
 import UserSelect from "../../components/UserSelect";
 import Report from "../manage/components/Report";
@@ -248,6 +252,12 @@ export default {
                     desc: this.$L('我是一个人工智能助手，为用户提供问题解答和指导。我没有具体的身份，只是一个程序。您有什么问题可以问我哦？')
                 },
                 {
+                    value: "gemini",
+                    label: "Gemini",
+                    src: $A.apiUrl('../images/avatar/default_gemini.png'),
+                    desc: `${this.$L('我是由Google开发的生成式人工智能聊天机器人。')}${this.$L('它基于同名的Gemini系列大型语言模型。')}${this.$L('是应对OpenAI公司开发的ChatGPT聊天机器人的崛起而开发的。')}`
+                },
+                {
                     value: "claude",
                     label: "Claude",
                     src: $A.apiUrl('../images/avatar/default_claude.png'),
@@ -256,7 +266,7 @@ export default {
                 {
                     value: "wenxin",
                     label: "Wenxin",
-                    src: $A.apiUrl('../avatar/Wenxin.png'),
+                    src: $A.apiUrl('../avatar/%E6%96%87%E5%BF%83.png'),
                     desc: this.$L('我是文心一言，英文名是ERNIE Bot。我能够与人对话互动，回答问题，协助创作，高效便捷地帮助人们获取信息、知识和灵感。')
                 },
                 {
@@ -277,7 +287,7 @@ export default {
             meetingShow: false,
             meetingType: 1,
             meetingDescs: {
-                add: this.$L('创建一个全新的会议视频会议，与会者可以在实时中进行面对面的视听交流。通过视频会议平台，参与者可以分享屏幕、共享文档，并与其他与会人员进行讨论和协。'),
+                add: this.$L('创建一个全新的会议视频会议，与会者可以在实时中进行面对面的视听交流。') + this.$L('通过视频会议平台，参与者可以分享屏幕、共享文档，并与其他与会人员进行讨论和协。'),
                 join: this.$L('加入视频会议，参与已经创建的会议，在会议过程中与其他参会人员进行远程实时视听交流和协作。'),
             },
             //
@@ -323,12 +333,12 @@ export default {
             let applyList = [
                 { value: "approve", label: "审批中心", sort: 3 },
                 { value: "report", label: "工作报告", sort: 5 },
-                { value: "okr", label: "OKR管理", sort: 4 },
-                { value: "robot", label: "AI机器人", sort: 6 },
-                { value: "signin", label: "签到", sort: 7 },
-                { value: "meeting", label: "会议", sort: 8 },
-                { value: "word-chain", label: "接龙", sort: 9 },
-                { value: "vote", label: "投票", sort: 10 },
+                { value: "okr", label: "OKR 管理", sort: 4 },
+                { value: "robot", label: "AI 机器人", sort: 6 },
+                { value: "signin", label: "签到打卡", sort: 7 },
+                { value: "meeting", label: "在线会议", sort: 8 },
+                { value: "word-chain", label: "群接龙", sort: 9 },
+                { value: "vote", label: "群投票", sort: 10 },
             ];
             // wap模式
             if (this.windowOrientation == 'landscape') {
@@ -349,14 +359,14 @@ export default {
             let adminApplyList = [];
             if (!this.userIsAdmin) {
                 if (this.userInfo.department_owner) {
-                    adminApplyList.push({ value: "okrAnalyze", label: "OKR结果", sort: 15 })
+                    adminApplyList.push({ value: "okrAnalyze", label: "OKR 结果", sort: 15 })
                 }
             } else {
                 adminApplyList.push(...[
-                    { value: "okrAnalyze", label: "OKR结果", sort: 15 },
+                    { value: "okrAnalyze", label: "OKR 结果", sort: 15 },
                     { value: "ldap", label: "LDAP", sort: 16 },
                     { value: "mail", label: "邮件通知", sort: 17 },
-                    { value: "appPush", label: "APP推送", sort: 18 },
+                    { value: "appPush", label: "APP 推送", sort: 18 },
                     { value: "allUser", label: "团队管理", sort: 19 }
                 ])
             }
@@ -375,9 +385,9 @@ export default {
                 }
             });
         },
-        getLogoPath(name) {
+        getLogoClass(name) {
             name = name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-            return $A.apiUrl(`../images/application/${name}.svg`)
+            return name
         },
         showBadge(item,type) {
             let num = 0;
@@ -527,7 +537,7 @@ export default {
             }
             if (/^https*:\/\//i.test(text)) {
                 // 打开链接
-                $A.eeuiAppOpenPage({
+                this.$store.dispatch('openAppChildPage', {
                     pageType: 'app',
                     pageTitle: ' ',
                     url: 'web.js',
@@ -584,23 +594,24 @@ export default {
             });
         },
         // 前往接龙与投票
-        goWordChainAndVote(){
+        goWordChainAndVote() {
             const dialog_id = Number(this.sendData[0].replace('d:', ''))
-            if(this.windowPortrait){
-                this.$store.dispatch("openDialog", dialog_id ).then(() => {
-                    this.$store.state[ this.sendType == 'word-chain' ?'dialogDroupWordChain' : 'dialogGroupVote'] = {
+            const type = this.sendType == 'word-chain' ? 'dialogDroupWordChain' : 'dialogGroupVote'
+            if (this.windowPortrait) {
+                this.$store.dispatch("openDialog", dialog_id).then(() => {
+                    this.$store.state[type] = {
                         type: 'create',
                         dialog_id: dialog_id
                     }
                 })
-            }else{
-                this.goForward({ name: 'manage-messenger', params: { dialog_id: dialog_id}});
-                setTimeout(()=>{
-                    this.$store.state[ this.sendType == 'word-chain' ?'dialogDroupWordChain' : 'dialogGroupVote'] = {
-                        type: 'create',
+            } else {
+                this.goForward({
+                    name: 'manage-messenger',
+                    params: {
+                        open: this.sendType,
                         dialog_id: dialog_id
                     }
-                },100)
+                })
             }
         }
     }

@@ -28,7 +28,7 @@
             <div v-if="quoteData" class="chat-quote">
                 <div v-if="quoteUpdate" class="quote-label">{{$L('编辑消息')}}</div>
                 <UserAvatar v-else :userid="quoteData.userid" :show-icon="false" :show-name="true"/>
-                <div class="quote-desc">{{$A.getMsgSimpleDesc(quoteData)}}</div>
+                <div class="quote-desc no-dark-content">{{$A.getMsgSimpleDesc(quoteData)}}</div>
                 <i class="taskfont" @click.stop="cancelQuote">&#xe6e5;</i>
             </div>
 
@@ -36,15 +36,18 @@
             <div
                 ref="editor"
                 class="no-dark-content"
-                :style="editorStyle"
                 @click.stop="onClickEditor"
                 @paste="handlePaste"></div>
+
+            <!-- 工具栏占位 -->
+            <div class="chat-space"></div>
 
             <!-- 工具栏 -->
             <ul class="chat-toolbar" @click.stop>
                 <!-- 桌面端表情（漂浮） -->
                 <li>
                     <EPopover
+                        ref="emoji"
                         v-if="!emojiBottom"
                         v-model="showEmoji"
                         :visibleArrow="false"
@@ -75,6 +78,7 @@
                 <!-- 图片文件 -->
                 <li>
                     <EPopover
+                        ref="more"
                         v-model="showMore"
                         :visibleArrow="false"
                         placement="top"
@@ -103,11 +107,11 @@
                             {{$L('匿名消息')}}
                         </div>
                         <div v-if="dialogData.type == 'group'" class="chat-input-popover-item" @click="onToolbar('word-chain')">
-                            <i class="taskfont">&#xe807;</i>
+                            <i class="taskfont">&#xe80a;</i>
                             {{$L('发起接龙')}}
                         </div>
                         <div v-if="dialogData.type == 'group'" class="chat-input-popover-item" @click="onToolbar('vote')">
-                            <i class="taskfont">&#xe806;</i>
+                            <i class="taskfont">&#xe7fd;</i>
                             {{$L('发起投票')}}
                         </div>
                         <div class="chat-input-popover-item" @click="onToolbar('full')">
@@ -125,6 +129,7 @@
                     v-touchmouse="clickSend"
                     v-longpress="{callback: onShowMenu, delay: 300}">
                     <EPopover
+                        ref="menu"
                         v-model="showMenu"
                         :visibleArrow="false"
                         trigger="manual"
@@ -155,10 +160,10 @@
                         </div>
                     </EPopover>
                 </li>
-
-                <!-- 录音效果 -->
-                <li class="chat-record-recwave"><div ref="recwave"></div></li>
             </ul>
+
+            <!-- 录音效果 -->
+            <div class="chat-record"><div ref="recwave"></div></div>
 
             <!-- 覆盖层 -->
             <div class="chat-cover" @click.stop="onClickCover"></div>
@@ -178,7 +183,7 @@
                 :style="recordTransferStyle"
                 @click="stopRecord">
                 <div v-if="recordDuration > 0" class="record-duration">{{recordFormatDuration}}</div>
-                <div v-else class="record-loading"><Loading/></div>
+                <div v-else class="record-loading"><Loading type="pure"/></div>
                 <div class="record-cancel" @click.stop="stopRecord(true)">{{$L(touchLimitY ? '松开取消' : '向上滑动取消')}}</div>
             </div>
         </transition>
@@ -293,11 +298,6 @@ export default {
             emojiQuickKey: '',
             emojiQuickItems: [],
 
-            observer: null,
-            wrapperWidth: 0,
-            wrapperHeight: 0,
-            editorHeight: 0,
-
             recordReady: false,
             recordRec: null,
             recordBlob: null,
@@ -330,19 +330,6 @@ export default {
     mounted() {
         this.init();
         //
-        this.observer = new ResizeObserver(entries => {
-            entries.some(({target, contentRect}) => {
-                if (target === this.$el) {
-                    this.wrapperWidth = contentRect.width;
-                    this.wrapperHeight = contentRect.height;
-                } else if (target === this.$refs.editor) {
-                    this.editorHeight = contentRect.height;
-                }
-            })
-        });
-        this.observer.observe(this.$el);
-        this.observer.observe(this.$refs.editor);
-        //
         this.recordInter = setInterval(_ => {
             if (this.recordState === 'ing') {
                 // 录音中，但录音时长不增加则取消录音
@@ -374,10 +361,6 @@ export default {
         if (this.recordRec) {
             this.recordRec = null
         }
-        if (this.observer) {
-            this.observer.disconnect()
-            this.observer = null
-        }
         if (this.recordInter) {
             clearInterval(this.recordInter)
         }
@@ -408,17 +391,6 @@ export default {
 
         canAnon() {
             return this.dialogData.type === 'user' && !this.dialogData.bot
-        },
-
-        editorStyle() {
-            const {wrapperWidth, editorHeight} = this;
-            const style = {};
-            if (wrapperWidth > 0
-                && editorHeight > 0
-                && (wrapperWidth < 280 || editorHeight > 40)) {
-                style.width = '100%';
-            }
-            return style;
         },
 
         recordTransferStyle() {
@@ -594,7 +566,6 @@ export default {
             } else if (this.rangeIndex > 0) {
                 this.quill.setSelection(this.rangeIndex)
             }
-            this.$emit('on-emoji-visible-change', val)
         },
 
         emojiQuickShow(val) {
@@ -644,10 +615,6 @@ export default {
                 this.$refs.recwave.innerHTML = ""
             }
             this.$emit('on-record-state', state)
-        },
-
-        wrapperHeight(newVal, oldVal) {
-            this.$emit('on-height-change', {newVal, oldVal})
         },
 
         fullInput(val) {
@@ -732,9 +699,13 @@ export default {
 
             // Update model if text changes
             this.quill.on('text-change', _ => {
-                this.changeLoad++
-                this.textTimer && clearTimeout(this.textTimer)
+                if (this.textTimer) {
+                    clearTimeout(this.textTimer)
+                } else {
+                    this.changeLoad++
+                }
                 this.textTimer = setTimeout(_ => {
+                    this.textTimer = null
                     this.changeLoad--
                     if (this.maxlength > 0 && this.quill.getLength() > this.maxlength) {
                         this.quill.deleteText(this.maxlength, this.quill.getLength());
@@ -905,6 +876,7 @@ export default {
             }
             this.emojiTimer && clearTimeout(this.emojiTimer)
             this.emojiTimer = setTimeout(_ => {
+                this.emojiTimer = null
                 if (/<img/i.test(text)) {
                     this.emojiQuickShow = false
                     return
@@ -1065,6 +1037,9 @@ export default {
         },
 
         onSend(type) {
+            this.emojiTimer && clearTimeout(this.emojiTimer)
+            this.emojiQuickShow = false;
+            //
             setTimeout(_ => {
                 if (this.filterInvalidLine(this.value) === '') {
                     return
@@ -1284,10 +1259,6 @@ export default {
                 }
                 resolve()
             })
-        },
-
-        onMoreVisibleChange(v) {
-            this.showMore = v;
         },
 
         setQuote(id, type = 'reply') {
@@ -1677,6 +1648,22 @@ export default {
             let value = (content + '').replace(/^(<p>\s*<\/p>)+|(<p>\s*<\/p>)+$/gi, '')
             return value.replace(/^(<p><br\/*><\/p>)+|(<p><br\/*><\/p>)+$/gi, '')
         },
+
+        updateTools() {
+            if (this.showEmoji) {
+                this.$refs.emoji?.updatePopper()
+            }
+            if (this.showMore) {
+                this.$refs.more?.updatePopper()
+            }
+            if (this.showMenu) {
+                this.$refs.menu?.updatePopper()
+            }
+            const mention = this.quill?.getModule("mention")
+            if (mention.isOpen) {
+                mention.setMentionContainerPosition()
+            }
+        }
     }
 }
 </script>

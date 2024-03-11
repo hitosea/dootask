@@ -5,19 +5,24 @@
             <div class="messenger-select">
                 <div class="messenger-search">
                     <div class="search-wrapper">
+                        <div class="search-pre">
+                            <Loading v-if="searchLoading"/>
+                            <Icon v-else type="ios-search" />
+                        </div>
                         <Input
                             v-if="tabActive==='dialog'"
                             v-model="dialogSearchKey"
                             ref="searchInput"
-                            :placeholder="$L(loadDialogs ? '更新中...' : '搜索消息')"
+                            :placeholder="$L(loadDialogs > 0 ? '更新中...' : '搜索')"
                             @on-keydown="onKeydown"
-                            clearable>
-                            <div class="search-pre" slot="prefix">
-                                <Loading v-if="loadDialogs || dialogSearchLoad > 0"/>
-                                <Icon v-else type="ios-search" />
-                            </div>
-                        </Input>
-                        <Input v-else prefix="ios-search" v-model="contactsKey" :placeholder="$L('搜索联系人')" clearable />
+                            clearable/>
+                        <Input
+                            v-else
+                            v-model="contactsKey"
+                            ref="contactInput"
+                            :placeholder="$L('搜索')"
+                            @on-keydown="onKeydown"
+                            clearable/>
                     </div>
                 </div>
                 <div v-if="tabActive==='dialog' && !dialogSearchKey" class="messenger-nav">
@@ -116,21 +121,12 @@
                                 <div class="dialog-line"></div>
                             </li>
                         </template>
-                        <li v-else-if="dialogSearchLoad === 0 && dialogMarkLoad === 0" class="nothing">
-                            {{$L(dialogSearchKey ? `没有任何与"${dialogSearchKey}"相关的会话` : `没有任何会话`)}}
-                        </li>
-                        <li v-else class="nothing">
-                            <Loading/>
+                        <li v-else-if="dialogSearchLoad === 0" class="nothing">
+                            {{$L(dialogSearchKey ? `没有任何与"${dialogSearchKey}"相关的结果` : `没有任何会话`)}}
                         </li>
                     </ul>
                     <ul v-else class="contacts">
-                        <template v-if="contactsFilter.length === 0">
-                            <li v-if="contactsLoad > 0" class="loading"><Loading/></li>
-                            <li v-else class="nothing">
-                                {{$L(contactsKey ? `没有任何与"${contactsKey}"相关的联系人` : `没有任何联系人`)}}
-                            </li>
-                        </template>
-                        <template v-else>
+                        <template v-if="contactsFilter.length > 0">
                             <li v-for="items in contactsList">
                                 <div class="label">{{items.az}}</div>
                                 <ul>
@@ -151,6 +147,9 @@
                                 <template v-else>{{$L('共' + contactsTotal + '位联系人')}}</template>
                             </li>
                         </template>
+                        <li v-else-if="contactsLoad == 0" class="nothing">
+                            {{$L(contactsKey ? `没有任何与"${contactsKey}"相关的结果` : `没有任何联系人`)}}
+                        </li>
                     </ul>
                     <div class="operate-position" :style="operateStyles" v-show="operateVisible">
                         <Dropdown
@@ -178,6 +177,12 @@
                                     <div class="item">
                                         {{ $L(operateItem.silence ? '允许消息通知' : '消息免打扰') }}
                                         <i class="taskfont" v-html="operateItem.silence ? '&#xe7eb;' : '&#xe7d7;'"></i>
+                                    </div>
+                                </DropdownItem>
+                                <DropdownItem @click.native="handleHideClick" :disabled="operateItem.top_at">
+                                    <div class="item">
+                                        {{ $L('不显示该会话') }}
+                                        <i class="taskfont">&#xe787;</i>
                                     </div>
                                 </DropdownItem>
                                 <DropdownItem @click.native="handleColorClick(c.color)" v-for="(c, k) in taskColorList" :key="'c_' + k" :divided="k==0"  v-if="k<6" >
@@ -225,6 +230,7 @@ export default {
     directives: {longpress},
     data() {
         return {
+            firstLoad: true,
             activeNum: 0,
             tabActive: 'dialog',
 
@@ -241,7 +247,7 @@ export default {
                 {type: 'group', name: '群聊'},
                 {type: 'bot', name: '机器人'},
                 {type: 'mark', name: '标注'},
-                {type: '@', name: '@我的'},
+                {type: '@', name: '@我'},
             ],
             dialogHistory: MessengerObject.menuHistory,
 
@@ -258,8 +264,6 @@ export default {
             operateVisible: false,
 
             clickAgainSubscribe: null,
-
-            dialogMarkLoad: 0,
         }
     },
 
@@ -273,6 +277,7 @@ export default {
         if (id > 0) {
             this.openDialog(id)
         }
+        //
         this.clickAgainSubscribe = Store.subscribe('clickAgainDialog', this.shakeUnread);
     },
 
@@ -286,7 +291,9 @@ export default {
     },
 
     activated() {
-        this.updateDialogs(1000);
+        this.updateDialogs(this.firstLoad ? 0 : 1000);
+        this.firstLoad = false;
+        //
         this.$nextTick(_ => this.activeNum++)
         //
         if ($A.isEEUiApp) {
@@ -346,11 +353,11 @@ export default {
             if (dialogActive == '' && dialogSearchKey == '') {
                 return this.cacheDialogs.filter(dialog => this.filterDialog(dialog)).sort(this.dialogSort);
             }
-            if(dialogActive == 'mark' && !dialogSearchKey){
+            if (dialogActive == 'mark' && !dialogSearchKey) {
                 const lists = [];
-                this.dialogMsgs.filter(h=>h.tag).forEach(h=>{
-                    let dialog = $A.cloneJSON(this.cacheDialogs).find(p=>p.id == h.dialog_id)
-                    if(dialog){
+                this.dialogMsgs.filter(h => h.tag).forEach(h => {
+                    let dialog = $A.cloneJSON(this.cacheDialogs).find(p => p.id == h.dialog_id)
+                    if (dialog) {
                         dialog.last_msg = h;
                         dialog.search_msg_id = h.id;
                         lists.push(dialog);
@@ -368,7 +375,7 @@ export default {
                     if (last_msg) {
                         switch (last_msg.type) {
                             case 'text':
-                                searchString += ` ${last_msg.msg.text.replace(/<[^>]+>/g,"")}`
+                                searchString += ` ${last_msg.msg.text.replace(/<[^>]+>/g, "")}`
                                 break
                             case 'meeting':
                             case 'file':
@@ -472,12 +479,24 @@ export default {
                                 return false;
                             }
                             break;
+                        case 'mark':
+                            return false;
+                        case '@':
+                            return false;
                     }
                     num += $A.getDialogNum(dialog);
                 });
                 return num;
             }
-        }
+        },
+
+        searchLoading({tabActive, loadDialogs, dialogSearchLoad, contactsLoad}) {
+            if (tabActive==='dialog') {
+                return loadDialogs > 0 || dialogSearchLoad > 0
+            } else {
+                return contactsLoad > 0
+            }
+        },
     },
 
     watch: {
@@ -527,8 +546,8 @@ export default {
             if (val == '') {
                 return
             }
-            this.__searchTimer && clearTimeout(this.__searchTimer)
-            this.__searchTimer = setTimeout(this.searchDialog, 600)
+            this.__search_timer && clearTimeout(this.__search_timer)
+            this.__search_timer = setTimeout(this.searchDialog, 600)
             this.dialogSearchLoad++
             setTimeout(_ => this.dialogSearchLoad--, 600)
         },
@@ -606,7 +625,8 @@ export default {
 
         onKeydown(e) {
             if (e.key === "Escape") {
-                this.$refs.searchInput.handleClear()
+                this.$refs.searchInput?.handleClear()
+                this.$refs.contactInput?.handleClear()
             }
         },
 
@@ -729,7 +749,7 @@ export default {
             if (dialog.name === undefined || dialog.dialog_delete === 1) {
                 return false;
             }
-            if (!dialog.last_at) {
+            if (dialog.hide || !dialog.last_at) {
                 return false;
             }
             if (dialog.type == 'group') {
@@ -803,8 +823,7 @@ export default {
         },
 
         searchTagDialog() {
-            //
-            this.dialogMarkLoad++;
+            this.dialogSearchLoad++;
             this.$store.dispatch("call", {
                 url: 'dialog/search/tag',
             }).then(({data}) => {
@@ -821,7 +840,7 @@ export default {
                 })
                 this.dialogSearchList = lists;
             }).finally(_ => {
-                this.dialogMarkLoad--;
+                this.dialogSearchLoad--;
             });
         },
 
@@ -902,7 +921,9 @@ export default {
         },
 
         formatDraft(value) {
-            return value?.replace(/<img[^>]*>/gi, `[${$A.L('图片')}]`).replace(/<[^>]*>/g, '') || null
+            return value?.replace(/<img[^>]*>/gi, `[${$A.L('图片')}]`)
+                .replace(/<[^>]*>/g, '')
+                .replace(/&nbsp;/g, ' ')|| null
         },
 
         formatTodoNum(num) {
@@ -960,12 +981,11 @@ export default {
             this.operateVisible = false;
             this.operateItem = $A.isJson(dialogItem) ? dialogItem : {};
             this.$nextTick(() => {
-                const dialogRect = el.getBoundingClientRect();
-                const wrapRect = this.$refs.list.$el.getBoundingClientRect();
+                const rect = el.getBoundingClientRect();
                 this.operateStyles = {
-                    left: `${event.clientX - wrapRect.left}px`,
-                    top: `${dialogRect.top - dialogRect.height + this.windowScrollY}px`,
-                    height: dialogRect.height + 'px',
+                    left: `${event.clientX}px`,
+                    top: `${rect.top + this.windowScrollY}px`,
+                    height: rect.height + 'px',
                 }
                 this.operateVisible = true;
             })
@@ -988,8 +1008,8 @@ export default {
         handleReadClick() {
             this.$store.dispatch("showSpinner", 600)
             this.$store.dispatch("dialogMsgMark", {
+                type: $A.getDialogUnread(this.operateItem, true) > 0 ? 'read' : 'unread',
                 dialog_id: this.operateItem.id,
-                type: $A.getDialogUnread(this.operateItem, true) > 0 ? 'read' : 'unread'
             }).catch(({msg}) => {
                 $A.modalError(msg)
             }).finally(_ => {
@@ -1008,6 +1028,22 @@ export default {
                     type: this.operateItem.silence ? 'cancel' : 'set'
                 },
             }).then(({data}) => {
+                this.$store.dispatch("saveDialog", data);
+            }).catch(({msg}) => {
+                $A.modalError(msg);
+            });
+        },
+
+        handleHideClick() {
+            this.$store.dispatch("call", {
+                url: 'dialog/hide',
+                data: {
+                    dialog_id: this.operateItem.id,
+                },
+            }).then(({data}) => {
+                if (this.dialogId == this.operateItem.id) {
+                    this.$store.dispatch("openDialog", 0)
+                }
                 this.$store.dispatch("saveDialog", data);
             }).catch(({msg}) => {
                 $A.modalError(msg);
@@ -1033,7 +1069,7 @@ export default {
             if (timeout > -1) {
                 this.__updateDialogs = setTimeout(_ => {
                     if (this.tabActive === 'dialog') {
-                        this.$store.dispatch("getDialogs", {hideload: true}).catch(() => {});
+                        this.$store.dispatch("getDialogAuto").catch(() => {});
                     }
                 }, timeout)
             }

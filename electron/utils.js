@@ -314,6 +314,42 @@ module.exports = {
     },
 
     /**
+     * 新窗口打开事件
+     * @param webContents
+     * @param url
+     * @returns {Promise<unknown>}
+     */
+    onBeforeOpenWindow(webContents, url) {
+        return new Promise(resolve => {
+            const dataStr = JSON.stringify({url: url})
+            webContents.executeJavaScript(`if(typeof window.__onBeforeOpenWindow === 'function'){window.__onBeforeOpenWindow(${dataStr})}`, true).then(options => {
+                if (options !== true) {
+                    resolve()
+                }
+            }).catch(_ => {
+                resolve()
+            })
+        })
+    },
+
+    /**
+     * 分发事件
+     * @param webContents
+     * @param data
+     * @returns {Promise<unknown>}
+     */
+    onDispatchEvent(webContents, data) {
+        return new Promise(resolve => {
+            const dataStr = JSON.stringify(data)
+            webContents.executeJavaScript(`window.__onDispatchEvent(${dataStr})`, true).then(options => {
+                resolve(options)
+            }).catch(_ => {
+                resolve()
+            })
+        })
+    },
+
+    /**
      * 版本比较
      * @param version1
      * @param version2
@@ -385,5 +421,18 @@ module.exports = {
             }
             callback({responseHeaders: details.responseHeaders});
         });
+    },
+
+    /**
+     * win mac meta control
+     * @param input
+     * @returns {boolean | Point | HTMLElement}
+     */
+    isMetaOrControl(input) {
+        if (process.platform === 'win32') {
+            return input.control
+        } else {
+            return input.meta
+        }
     }
 }

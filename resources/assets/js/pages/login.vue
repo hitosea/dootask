@@ -27,7 +27,7 @@
                 <transition name="login-mode">
                     <div v-if="loginMode=='access'" class="login-access">
                         <Input
-                            v-if="isSoftware && cacheServerUrl"
+                            v-if="$isSoftware && cacheServerUrl"
                             :value="$A.getDomain(cacheServerUrl)"
                             prefix="ios-globe-outline"
                             size="large"
@@ -121,7 +121,7 @@
                                     v-for="(item, key) in themeList"
                                     :key="key"
                                     :name="item.value"
-                                    :selected="themeMode === item.value">{{$L(item.name)}}</DropdownItem>
+                                    :selected="themeConf === item.value">{{$L(item.name)}}</DropdownItem>
                             </DropdownMenu>
                         </Dropdown>
                         <Dropdown placement="right-start" transfer @on-click="onLanguage">
@@ -136,7 +136,7 @@
                                     v-for="(item, key) in languageList"
                                     :key="key"
                                     :name="key"
-                                    :selected="languageType === key">{{item}}</DropdownItem>
+                                    :selected="languageName === key">{{item}}</DropdownItem>
                             </DropdownMenu>
                         </Dropdown>
                     </DropdownMenu>
@@ -151,8 +151,8 @@
             :title="$L('隐私协议')"
             :mask-closable="false">
             <div class="privacy-content">
-                <div>欢迎使用本软件！</div>
-                <p>在您使用本软件前，请您认真阅读并了解相应的<a target="_blank" :href="$A.apiUrl('privacy')">《{{ $L('隐私政策') }}》</a>，以了解我们的服务内容和您相关个人信息的处理规则。我们将严格的按照隐私服务协议为您提供服务，保护您的个人信息。</p>
+                <div>{{$L('欢迎使用本软件！')}}</div>
+                <p>{{$L('在您使用本软件前，请您认真阅读并了解相应的')}}<a target="_blank" :href="$A.apiUrl('privacy')">《{{ $L('隐私政策') }}》</a>, {{$L('以了解我们的服务内容和您相关个人信息的处理规则。')}}{{$L('我们将严格的按照隐私服务协议为您提供服务，保护您的个人信息。')}}</p>
             </div>
             <div slot="footer" class="adaption">
                 <Button type="default" @click="onPrivacy(false)">{{$L('不同意')}}</Button>
@@ -165,7 +165,7 @@
 <script>
 import {mapState} from "vuex";
 import {Store} from "le5le-store";
-import {languageList, languageType, setLanguage} from "../language";
+import {languageList, languageName, setLanguage} from "../language";
 import VueQrcode from "@chenfengyuan/vue-qrcode";
 
 export default {
@@ -175,7 +175,7 @@ export default {
             loadIng: 0,
 
             languageList,
-            languageType,
+            languageName,
 
             qrcodeVal: '',
             qrcodeTimer: null,
@@ -210,7 +210,7 @@ export default {
         this.privacyShow = !!this.$isEEUiApp && (await $A.IDBString("cachePrivacyShow")) !== "no";
         this.email = await $A.IDBString("cacheLoginEmail") || ''
         //
-        if (this.isSoftware) {
+        if (this.$isSoftware) {
             this.chackServerUrl().catch(_ => {});
         } else {
             this.setServerUrl('').catch(_ => {});
@@ -238,7 +238,8 @@ export default {
         this.getNeedStartHome();
         //
         if (this.$Electron) {
-            this.$Electron.sendMessage('subWindowDestroyAll')
+            this.$Electron.sendMessage('webTabDestroyAll')
+            this.$Electron.sendMessage('childWindowDestroyAll')
         }
     },
 
@@ -254,16 +255,12 @@ export default {
         ...mapState([
             'cacheServerUrl',
 
-            'themeMode',
+            'themeConf',
             'themeList',
         ]),
 
-        isSoftware() {
-            return this.$Electron || this.$isEEUiApp;
-        },
-
         currentLanguage() {
-            return languageList[languageType] || 'Language'
+            return languageList[languageName] || 'Language'
         },
 
         welcomeTitle() {
@@ -454,9 +451,13 @@ export default {
                 this.$store.dispatch("call", {
                     url: `${url}system/setting`,
                     checkNetwork: false,
-                }).then(async () => {
-                    await this.setServerUrl(url)
-                    resolve()
+                }).then(async ({data}) => {
+                    if (typeof data.server_version === "undefined" && typeof data.all_group_mute === "undefined") {
+                        reject(`服务器（${$A.getDomain(value)}）版本过低`)
+                    } else {
+                        await this.setServerUrl(url)
+                        resolve()
+                    }
                 }).catch(({ret, msg}) => {
                     if (ret === -1001) {
                         if (!/^https*:\/\//i.test(value)) {
@@ -493,7 +494,7 @@ export default {
 
         isNotServer() {
             let apiHome = $A.getDomain(window.systemInfo.apiUrl)
-            return this.isSoftware && (apiHome == "" || apiHome == "public")
+            return this.$isSoftware && (apiHome == "" || apiHome == "public")
         },
 
         onBlur() {

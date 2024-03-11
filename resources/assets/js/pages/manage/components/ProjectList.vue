@@ -3,19 +3,18 @@
         <PageTitle :title="$L('项目')"/>
         <div class="list-search">
             <div class="search-wrapper">
-                <Input v-model="projectKeyValue" :placeholder="$L(loadProjects ? '更新中...' : '搜索项目')" clearable>
-                    <div class="search-pre" slot="prefix">
-                        <Loading v-if="loadProjects"/>
-                        <Icon v-else type="ios-search" />
-                    </div>
-                </Input>
+                <div class="search-pre">
+                    <Loading v-if="loadProjects > 0"/>
+                    <Icon v-else type="ios-search" />
+                </div>
+                <Input v-model="projectKeyValue" :placeholder="$L(loadProjects > 0 ? '更新中...' : '搜索')" clearable/>
             </div>
         </div>
-        <ul @scroll="operateVisible = false">
+        <ul @touchstart="onTouchStart" @scroll="onScroll">
             <template v-if="projectLists.length === 0">
                 <li v-if="projectKeyLoading > 0" class="loading"><Loading/></li>
                 <li v-else class="nothing">
-                    {{$L(projectKeyValue ? `没有任何与"${projectKeyValue}"相关的项目` : `没有任何项目`)}}
+                    {{$L(projectKeyValue ? `没有任何与"${projectKeyValue}"相关的结果` : `没有任何项目`)}}
                 </li>
             </template>
             <li
@@ -141,7 +140,6 @@ export default {
                 keys: {
                     name: this.projectKeyValue
                 },
-                hideload: true,
             }).finally(_ => {
                 this.projectKeyLoading--;
             });
@@ -152,6 +150,17 @@ export default {
                 return
             }
             this.goForward({name: 'manage-' + path, params: params || {}});
+        },
+
+        onTouchStart(e) {
+            const focusedElement = document.activeElement;
+            if (focusedElement) {
+                focusedElement.blur();
+            }
+        },
+
+        onScroll(e) {
+            this.operateVisible = false
         },
 
         modalPercent(item) {
@@ -180,12 +189,11 @@ export default {
             this.operateVisible = false;
             this.operateItem = $A.isJson(projectItem) ? projectItem : {};
             this.$nextTick(() => {
-                const projectRect = el.getBoundingClientRect();
-                const wrapRect = this.$el.getBoundingClientRect();
+                const rect = el.getBoundingClientRect();
                 this.operateStyles = {
-                    left: `${event.clientX - wrapRect.left}px`,
-                    top: `${projectRect.top + this.windowScrollY}px`,
-                    height: projectRect.height + 'px',
+                    left: `${event.clientX}px`,
+                    top: `${rect.top + this.windowScrollY}px`,
+                    height: rect.height + 'px',
                 }
                 this.operateVisible = true;
             })

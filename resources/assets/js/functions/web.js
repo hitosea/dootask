@@ -1,3 +1,5 @@
+import {MarkdownPreview} from "../store/markdown";
+
 /**
  * 页面专用
  */
@@ -65,6 +67,16 @@
         },
 
         /**
+         * 预览文件地址
+         * @param name
+         * @param key
+         * @returns {*}
+         */
+        onlinePreviewUrl(name, key) {
+            return $A.apiUrl(`../online/preview/${name}?key=${key}&version=${window.systemInfo.version}&__=${new Date().getTime()}`)
+        },
+
+        /**
          * 项目配置模板
          * @param project_id
          * @returns {{showMy: boolean, showUndone: boolean, project_id, chat: boolean, showHelp: boolean, showCompleted: boolean, menuType: string, menuInit: boolean, completedTask: boolean}}
@@ -90,16 +102,17 @@
          */
         formatTime(date) {
             let now = $A.Time(),
-                time = $A.Date(date, true),
-                string = '';
-            if (Math.abs(now - time) < 3600 * 6 || $A.formatDate('Ymd', now) === $A.formatDate('Ymd', time)) {
-                string = $A.formatDate('H:i', time)
-            } else if ($A.formatDate('Y', now) === $A.formatDate('Y', time)) {
-                string = $A.formatDate('m-d', time)
-            } else {
-                string = $A.formatDate('Y-m-d', time)
+                time = $A.Date(date, true);
+            if ($A.formatDate('Ymd', now) === $A.formatDate('Ymd', time)) {
+                return $A.formatDate('H:i', time)
             }
-            return string || '';
+            if ($A.formatDate('Ymd', now - 86400) === $A.formatDate('Ymd', time)) {
+                return `${$A.L('昨天')} ${$A.formatDate('H:i', time)}`
+            }
+            if ($A.formatDate('Y', now) === $A.formatDate('Y', time)) {
+                return $A.formatDate('m-d', time)
+            }
+            return $A.formatDate('Y-m-d', time) || '';
         },
 
         /**
@@ -673,19 +686,35 @@
          * @returns {*}
          */
         getMsgTextPreview(text, imgClassName = null) {
-            if (!text) return '';
+            if (!text) {
+                return '';
+            }
+            //
             text = text.replace(/<img\s+class="emoticon"[^>]*?alt="(\S+)"[^>]*?>/g, "[$1]")
             text = text.replace(/<img\s+class="emoticon"[^>]*?>/g, `[${$A.L('动画表情')}]`)
             if (imgClassName) {
-                text = text.replace(/<img\s+class="browse"[^>]*?src="(\S+)"[^>]*?>/g, `[image:$1]`)
+                text = text.replace(/<img\s+class="browse"[^>]*?src="(\S+)"[^>]*?>/g, function (res, src) {
+                    const widthMatch = res.match("width=\"(\\d+)\""),
+                        heightMatch = res.match("height=\"(\\d+)\"");
+                    if (widthMatch && heightMatch) {
+                        const width = parseInt(widthMatch[1]),
+                            height = parseInt(heightMatch[1]),
+                            maxSize = 40;
+                        const scale = $A.scaleToScale(width, height, maxSize, maxSize);
+                        imgClassName = `${imgClassName}" style="width:${scale.width}px;height:${scale.height}px`
+                    }
+                    return `[image:${src}]`
+                })
             } else {
                 text = text.replace(/<img\s+class="browse"[^>]*?>/g, `[${$A.L('图片')}]`)
             }
-            text = text.replace(/<[^>]+>/g,"")
-            text = text.replace(/&nbsp;/g," ")
-            text = text.replace(/&amp;/g,"&")
-            text = text.replace(/&lt;/g,"<")
-            text = text.replace(/&gt;/g,">")
+            text = text
+                .replace(/<[^>]+>/g, "")
+                .replace(/&nbsp;/g, " ")
+                .replace(/&quot;/g, "\"")
+                .replace(/&amp;/g, "&")
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
             if (imgClassName) {
                 text = text.replace(/\[image:(.*?)\]/g, `<img class="${imgClassName}" src="$1">`)
                 text = text.replace(/\{\{RemoteURL\}\}/g, this.apiUrl('../'))
@@ -734,24 +763,10 @@
             text = text.replace(atReg, `<span class="mention me" data-id="${userid}">`)
             // 处理内容连接
             if (/https*:\/\//.test(text)) {
-                const urlMatch = $.apiUrl('../').match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im);
-                const isMentionFile = text.indexOf('class="mention file"') !== -1 && ($A.isEEUiApp || $A.isElectron)
-                const theme = isMentionFile ? $A.dark.isDarkEnabled() ? 'dark' : 'light' : '';
-                const lang = isMentionFile ? window.localStorage.getItem("__language:type__") : ''
                 text = text.split(/(<[^>]*>)/g).map(string => {
                     if (string && !/<[^>]*>/.test(string)) {
                         string = string.replace(/(^|[^'"])((https*:\/\/)((\w|=|\?|\.|\/|&|-|:|\+|%|;|#|@|,|!)+))/g, "$1<a href=\"$2\" target=\"_blank\">$2</a>")
                     }
-                    //
-                    const href = string.match(/href="([^"]+)"/)?.[1] || ''
-                    if (urlMatch?.[1] && href.indexOf(urlMatch[1]) !== -1) {
-                        const searchParams = new URLSearchParams()
-                        theme && href.indexOf("theme=") === -1 && searchParams.append('theme', theme);
-                        lang && href.indexOf("lang=") === -1 && searchParams.append('lang', lang);
-                        const prefix = searchParams.toString() ? (href.indexOf("?") === -1 ? '?' : '&') : '';
-                        string = string.replace(/(href="[^"]*)/g, '$1' + prefix + searchParams.toString())
-                    }
-                    //
                     return string;
                 }).join("")
             }
@@ -766,11 +781,11 @@
                     if (widthMatch && heightMatch) {
                         const width = parseInt(widthMatch[1]),
                             height = parseInt(heightMatch[1]),
-                            maxSize = res.indexOf("emoticon") > -1 ? 150 : 220;
+                            maxSize = res.indexOf("emoticon") > -1 ? 150 : 220; // 跟css中的设置一致
                         const scale = $A.scaleToScale(width, height, maxSize, maxSize);
                         const value = res
-                            .replace(widthReg, `original-width="${width}" width="${scale.width}"`)
-                            .replace(heightReg, `original-height="${height}" height="${scale.height}"`)
+                            .replace(widthReg, `original-width="${width}"`)
+                            .replace(heightReg, `original-height="${height}" style="width:${scale.width}px;height:${scale.height}px"`)
                         text = text.replace(res, value)
                     } else {
                         text = text.replace(res, `<div class="no-size-image-box">${res}</div>`);
@@ -819,7 +834,7 @@
             if ($A.isJson(data)) {
                 switch (data.type) {
                     case 'text':
-                        return $A.getMsgTextPreview(data.msg.text, imgClassName)
+                        return $A.getMsgTextPreview(data.msg.type === 'md' ? MarkdownPreview(data.msg.text) : data.msg.text, imgClassName)
                     case 'word-chain':
                         return `[${$A.L('接龙')}]` + $A.getMsgTextPreview(data.msg.text, imgClassName)
                     case 'vote':
@@ -831,7 +846,11 @@
                     case 'file':
                         if (data.msg.type == 'img') {
                             if (imgClassName) {
-                                return `<img class="${imgClassName}" src="${data.msg.thumb}">`
+                                const width = parseInt(data.msg.width),
+                                    height = parseInt(data.msg.height),
+                                    maxSize = 40;
+                                const scale = $A.scaleToScale(width, height, maxSize, maxSize);
+                                return `<img class="${imgClassName}" style="width:${scale.width}px;height:${scale.height}px" src="${data.msg.thumb}">`
                             } else {
                                 return `[${$A.L('图片')}]`
                             }
@@ -839,6 +858,8 @@
                         return `[${$A.L('文件')}] ${data.msg.name}`
                     case 'tag':
                         return `[${$A.L(data.msg.action === 'remove' ? '取消标注' : '标注')}] ${$A.getMsgSimpleDesc(data.msg.data)}`
+                    case 'top':
+                        return `[${$A.L(data.msg.action === 'remove' ? '取消置顶' : '置顶')}] ${$A.getMsgSimpleDesc(data.msg.data)}`
                     case 'todo':
                         return `[${$A.L(data.msg.action === 'remove' ? '取消待办' : (data.msg.action === 'done' ? '完成' : '设待办'))}] ${$A.getMsgSimpleDesc(data.msg.data)}`
                     case 'notice':
@@ -904,7 +925,7 @@
                 }
             }
             return false;
-        }
+        },
     });
 
     /**
@@ -1310,7 +1331,6 @@
                     html {
                         min-width: 100%;
                         min-height: 100%;
-                        background: #000;
                     }
                     .child-view {
                         background-color: #fff;

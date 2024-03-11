@@ -13,6 +13,8 @@ use App\Models\FileUser;
 use App\Models\User;
 use App\Module\Base;
 use App\Module\Ihttp;
+use Response;
+use Session;
 use Swoole\Coroutine;
 use Carbon\Carbon;
 use Redirect;
@@ -479,8 +481,6 @@ class FileController extends AbstractController
         $down = Request::input('down', 'no');
         $only_update_at = Request::input('only_update_at', 'no');
         $history_id = intval(Request::input('history_id'));
-        //
-        Base::checkClientVersion('0.31.75');
         //
         if (Base::isNumber($id)) {
             $user = User::auth();
@@ -993,9 +993,33 @@ class FileController extends AbstractController
      */
     public function download__pack()
     {
+        $key = Request::input('key');
+        if ($key) {
+            $userid = Session::get('file::pack:userid');
+            if (empty($userid)) {
+                return Base::ajaxError("请求已过期，请重新导出！", [], 0, 502);
+            }
+            //
+            $array = Base::string2array(base64_decode(urldecode($key)));
+            $file = $array['file'];
+            if (empty($file) || !file_exists(storage_path($file))) {
+                return Base::ajaxError("文件不存在！", [], 0, 502);
+            }
+            return Response::download(storage_path($file));
+        }
+
         $user = User::auth();
         $ids = Request::input('ids');
-        $downName = Request::input('name');
+        $fileName = Request::input('name');
+        $fileName = preg_replace("/[\/\\\:\*\?\"\<\>\|]/", "", $fileName);
+        if (empty($fileName)) {
+            $fileName = 'Package_' . $user->userid;
+        }
+        $fileName .= '_' . Base::time() . '.zip';
+
+        $filePath = "temp/file/pack/" . date("Ym", Base::time());
+        $zipFile = "app/" . $filePath . "/" . $fileName;
+        $zipPath = storage_path($zipFile);
 
         if (!is_array($ids) || empty($ids)) {
             return Base::retError('请选择下载的文件或文件夹');
@@ -1003,9 +1027,12 @@ class FileController extends AbstractController
         if (count($ids) > 100) {
             return Base::retError('一次最多可以下载100个文件或文件夹');
         }
-        if (count($ids) > 100) {
-            return Base::retError('一次最多可以下载100个文件或文件夹');
+
+        $botUser = User::botGetOrCreate('system-msg');
+        if (empty($botUser)) {
+            return Base::retError('系统机器人不存在');
         }
+        $dialog = WebSocketDialog::checkUserDialog($botUser, $user->userid);
 
         $files = [];
         $totalSize = 0;
@@ -1019,23 +1046,28 @@ class FileController extends AbstractController
             return Base::retError('文件总大小已超过1GB，请分批下载');
         }
 
+        $base64 = base64_encode(Base::array2string([
+            'file' => $zipFile,
+        ]));
+        $fileUrl = Base::fillUrl('api/file/download/pack?key=' . urlencode($base64));
+        Session::put('file::pack:userid', $user->userid);
+
         $zip = new \ZipArchive();
-        $zipName = 'tmp/file/' . date("Ym") . '/' . $user->userid . '/' . $downName;
-        $zipPath = public_path($zipName);
         Base::makeDir(dirname($zipPath));
 
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             return Base::retError('创建压缩文件失败');
         }
 
-        go(function() use ($user, $zip, $files, $downName, $zipName) {
+        go(function () use ($zipPath, $fileUrl, $zip, $files, $fileName, $botUser, $dialog) {
             Coroutine::sleep(0.1);
             // 压缩进度
             $progress = 0;
-            $zip->registerProgressCallback(0.05, function($ratio) use ($downName, &$progress) {
+            $zip->registerProgressCallback(0.05, function ($ratio) use ($fileUrl, $fileName, &$progress) {
                 $progress = round($ratio * 100);
                 File::filePushMsg('compress', [
-                    'name'=> $downName,
+                    'name' => $fileName,
+                    'url' => $fileUrl,
                     'progress' => $progress
                 ]);
             });
@@ -1047,51 +1079,24 @@ class FileController extends AbstractController
             //
             if ($progress < 100) {
                 File::filePushMsg('compress', [
-                    'name'=> $downName,
+                    'name' => $fileName,
+                    'url' => $fileUrl,
                     'progress' => 100
                 ]);
             }
             //
-            $botUser = User::botGetOrCreate('system-msg');
-            if (empty($botUser)) {
-                return;
-            }
-            if ($dialog = WebSocketDialog::checkUserDialog($botUser, $user->userid)) {
-                $text = "<b>文件下载打包已完成。</b>";
-                $text .= "\n\n";
-                $text .= "文件名：{$downName}";
-                $text .= "\n";
-                $text .= "下载地址：".Base::fillUrl($zipName);
-                WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
-            }
+            $text = "<b>文件下载打包已完成。</b>";
+            $text .= "\n\n";
+            $text .= "文件名：{$fileName}";
+            $text .= "\n";
+            $text .= "文件大小：".Base::twoFloat(filesize($zipPath) / 1024, true)."KB";
+            $text .= "\n";
+            $text .= '<a href="' . $fileUrl . '" target="_blank"><button type="button" class="ivu-btn ivu-btn-warning" style="margin-top: 10px;"><span>立即下载</span></button></a>';
+            WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
         });
-
-        return Base::retSuccess('success');
-    }
-
-    /**
-     * @api {get} api/file/download/confirm          20. 确认下载
-     *
-     * @apiDescription 需要token身份
-     * @apiVersion 1.0.0
-     * @apiGroup file
-     * @apiName download__confirm
-     *
-     * @apiParam {String} [name]        下载文件名
-     *
-     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
-     * @apiSuccess {String} msg     返回信息（错误描述）
-     * @apiSuccess {Object} data    返回数据
-     */
-    public function download__confirm()
-    {
-        $user = User::auth();
-        $downName = Request::input('name');
-        $zipName = 'tmp/file/' . date("Ym") . '/' . $user->userid . '/' . $downName;
-        $zipPath = public_path($zipName);
-        if (!file_exists($zipPath)) {
-            abort(403, "The file does not exist.");
-        }
-        return response()->download($zipPath);
+        return Base::retSuccess('success', [
+            'name' => $fileName,
+            'url' => $fileUrl,
+        ]);
     }
 }

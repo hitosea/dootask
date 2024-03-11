@@ -137,14 +137,10 @@ export default {
             if(data.type == 'create' && data.dialog_id){
                 this.show = true;
                 this.createId = this.userId;
-                this.list.push({
-                    id: Date.now(),
-                    text: ""
-                });
-                this.list.push({
-                    id: Date.now() + 1,
-                    text: ""
-                });
+                this.list = [
+                    { id: Date.now(), text: "" },
+                    { id: Date.now() + 1, text: "" }
+                ]
             }
             if(data.type == 'participate' && data.dialog_id && data.msgData){
                 this.show = true;
@@ -209,7 +205,6 @@ export default {
             }).catch(({msg}) => {
                 if( msg.indexOf("System error") !== -1){
                     $A.modalInfo({
-                        language: false,
                         title: '版本过低',
                         content: '服务器版本过低，请升级服务器。',
                     })

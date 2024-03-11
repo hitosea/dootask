@@ -133,7 +133,8 @@ class Base
 
     /**
      * 判断客户端版本
-     * @param $min
+     * @param $min // 最小版本（满足此版本返回true）
+     * @param null $clientVersion
      * @return bool
      */
     public static function judgeClientVersion($min, $clientVersion = null)
@@ -2117,7 +2118,7 @@ class Base
             }
             $scaleName = "";
             if ($param['fileName']) {
-                $fileName = $param['fileName'];
+                $fileName = basename($param['fileName']);
             } else {
                 if ($param['scale'] && is_array($param['scale'])) {
                     list($width, $height) = $param['scale'];
@@ -2276,7 +2277,7 @@ class Base
             if ($param['fileName'] === true) {
                 $fileName = $file->getClientOriginalName();
             } elseif ($param['fileName']) {
-                $fileName = $param['fileName'];
+                $fileName = basename($param['fileName']);
             } else {
                 if ($param['scale'] && is_array($param['scale'])) {
                     list($width, $height) = $param['scale'];

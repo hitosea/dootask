@@ -17,12 +17,33 @@ function runExec(command, cb) {
     });
 }
 
+function removeDuplicateLines(log) {
+    const logs = log.split(/(\n## \[.*?\])/)
+    if (logs) {
+        log = logs.map(str => {
+            const array = [];
+            const items = str.split("\n");
+            items.some(item => {
+                if (/^-/.test(item)) {
+                    if (array.indexOf(item) === -1) {
+                        array.push(item);
+                    }
+                } else {
+                    array.push(item);
+                }
+            })
+            return array.join("\n");
+        }).join('');
+    }
+    return log;
+}
+
 runExec("git rev-list --count HEAD $(git branch | sed -n -e 's/^\* \(.*\)/\1/p')", function (err, response) {
     if (err) {
         console.error(err);
         return;
     }
-    const num = 1238 + parseInt(response)
+    const num = 1240 + parseInt(response)
     if (isNaN(num) || Math.floor(num % 100) < 0) {
         console.error("get version error " + response);
         return;
@@ -43,7 +64,7 @@ runExec("git rev-list --count HEAD $(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
             console.error("Change file does not exist");
             return "";
         }
-        let newContent = fs.readFileSync(changeFile, 'utf8');
+        let newContent = removeDuplicateLines(fs.readFileSync(changeFile, 'utf8'));
         if (newContent.indexOf("## [Unreleased]") !== -1) {
             newContent = newContent.replace("## [Unreleased]", `## [${ver}]`);
         } else {

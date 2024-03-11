@@ -6,6 +6,9 @@ export default {
     // 客户端ID（希望不变的，除非清除浏览器缓存或者卸载应用）
     clientId: "",
 
+    // 缓存版本号（如果想升级后清除客户端缓存则修改此参数值）
+    cacheVersion: "v6",
+
     // 窗口是否激活
     windowActive: true,
 
@@ -52,8 +55,12 @@ export default {
     loadUserBasic: false,
     loadProjects: 0,
     loadDialogs: 0,
+    loadDialogAuto: false,
+    loadDialogLatestId: 0,
     floatSpinnerTimer: [],
     floatSpinnerLoad: 0,
+
+    // 滑动返回
     touchBackInProgress: false,
 
     // User
@@ -93,8 +100,6 @@ export default {
     wsRandom: 0,
     wsOpenNum: 0,
     wsListener: {},
-    wsReadTimeout: null,
-    wsReadWaitData: {},
 
     // 会员信息
     userInfo: {},
@@ -106,10 +111,12 @@ export default {
     // 会话聊天
     dialogId: 0,
     dialogMsgId: 0,
+    dialogMsgKeep: 25,
     dialogSearchMsgId: 0,
     dialogIns: [],
     dialogMsgs: [],
     dialogTodos: [],
+    dialogMsgTops: [],
     dialogHistory: [],
     dialogDraftTimer: {},
     dialogMsgTransfer: {time: 0},
@@ -119,6 +126,11 @@ export default {
 
     // 搜索关键词（主要用于移动端判断滑动返回）
     messengerSearchKey: {dialog: '', contacts: ''},
+
+    // 阅读消息
+    readLoadNum: 0,
+    readTimeout: null,
+    readWaitData: {},
 
     // 文件
     fileLists: [],
@@ -176,13 +188,13 @@ export default {
     ],
 
     // 主题皮肤
-    themeMode: window.localStorage.getItem("__theme:mode__"),
+    themeConf: window.localStorage.getItem("__system:themeConf__"), // auto|light|dark
+    themeName: null, // 自动生成
     themeList: [
         {name: '跟随系统', value: 'auto'},
         {name: '明亮', value: 'light'},
         {name: '暗黑', value: 'dark'},
     ],
-    themeIsDark: false,
 
     // 客户端新版本号
     clientNewVersion: null,

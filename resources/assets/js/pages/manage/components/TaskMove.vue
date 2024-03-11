@@ -21,29 +21,29 @@
                 </div>
                 <div class="task-move-row" :class="{'not-flex': windowPortrait}">
                     <span class="label">{{$L('负责人')}}:</span>
-                    <UserSelect class="item-content user"
+                    <UserSelect
                         v-model="ownerUserids"
+                        class="item-content user"
                         :avatar-size="28"
                         :project-id="task.project_id"
                         :add-icon="false"
-                        disable
-                    />
+                        disabled/>
                 </div>
                 <div class="task-move-row" :class="{'not-flex': windowPortrait}">
                     <span class="label">{{$L('协助人')}}:</span>
-                    <UserSelect class="item-content user"
+                    <UserSelect
+                        class="item-content user"
                         v-model="assistUserids"
                         :avatar-size="28"
                         :project-id="task.project_id"
                         :add-icon="false"
-                        disable
-                    />
+                        disabled/>
                 </div>
             </div>
             <div class="task-move-content-new">
                 <div class="task-move-title">{{ $L('移动后') }}</div>
                 <div class="task-move-row">
-                    <span class="label"> {{$L('状态:')}} </span>
+                    <span class="label">{{$L('状态')}}:</span>
                     <TaskMenu
                         :ref="`taskMenu_${task.id}`"
                         :task="tasks"
@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 <div class="task-move-row" :class="{'not-flex': windowPortrait}">
-                    <span class="label">{{$L('负责人:')}}</span>
+                    <span class="label">{{$L('负责人')}}:</span>
                     <div>
                         <UserSelect
                             class="item-content user"
@@ -66,12 +66,11 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :project-id="cascader[0]"
-                            :add-icon="false"
-                        />
+                            :add-icon="false"/>
                     </div>
                 </div>
                 <div class="task-move-row" :class="{'not-flex': windowPortrait}">
-                    <span class="label">{{$L('协助人:')}}</span>
+                    <span class="label">{{$L('协助人')}}:</span>
                     <div>
                         <UserSelect
                             class="item-content user"
@@ -79,8 +78,7 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :project-id="cascader[0]"
-                            :add-icon="false"
-                        />
+                            :add-icon="false"/>
                     </div>
                 </div>
             </div>
@@ -271,6 +269,8 @@ export default {
                 }
             }).then(({data,msg}) => {
                 this.loadIng--;
+                data.column_name = "";
+                data.project_name = "";
                 this.$store.dispatch("saveTask", data);
                 $A.messageSuccess(msg);
                 this.close()

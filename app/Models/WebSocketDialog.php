@@ -10,6 +10,7 @@ use Cache;
 use Carbon\Carbon;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\WebSocketDialog
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $last_at 最后消息时间
  * @property int|null $owner_id 群主用户ID
  * @property int|null $link_id 关联id
+ * @property int|null $top_msg_id 置顶的消息ID
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -40,6 +42,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Eloquent\Builder|WebSocketDialog whereLinkId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|WebSocketDialog whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder|WebSocketDialog whereOwnerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|WebSocketDialog whereTopMsgId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|WebSocketDialog whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder|WebSocketDialog whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|WebSocketDialog withTrashed()
@@ -76,9 +79,9 @@ class WebSocketDialog extends AbstractModel
      * @param $deleted
      * @return array
      */
-    public function getDialogList($userid, $updated = "", $deleted = "")
+    public static function getDialogList($userid, $updated = "", $deleted = "")
     {
-        $builder = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.color', 'u.updated_at as user_at'])
+        $builder = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.hide', 'u.color', 'u.updated_at as user_at'])
             ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
             ->where('u.userid', $userid);
         if ($updated) {
@@ -100,6 +103,35 @@ class WebSocketDialog extends AbstractModel
     }
 
     /**
+     * 获取未读对话列表
+     * @param $userid
+     * @param $beforeAt
+     * @param $take
+     * @return WebSocketDialog[]
+     */
+    public static function getDialogUnread($userid, $beforeAt, $take = 20)
+    {
+        DB::statement("SET SQL_MODE=''");
+        $list = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.hide', 'u.color', 'u.updated_at as user_at'])
+            ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
+            ->join('web_socket_dialog_msg_reads as r', 'web_socket_dialogs.id', '=', 'r.dialog_id')
+            ->where('u.userid', $userid)
+            ->where('r.userid', $userid)
+            ->where('r.silence', 0)
+            ->where('r.read_at')
+            ->where('web_socket_dialogs.last_at', '>', $beforeAt)
+            ->groupBy('web_socket_dialogs.id')
+            ->take(min(100, $take))
+            ->get();
+        $list->transform(function (WebSocketDialog $item) use ($userid) {
+            return $item->formatData($userid);
+        });
+        //
+        return $list;
+    }
+
+
+    /**
      * 格式化对话
      * @param int $userid   会员ID
      * @param bool $hasData
@@ -115,6 +147,7 @@ class WebSocketDialog extends AbstractModel
         };
         //
         $time = Carbon::parse($this->user_at ?? $dialogUserFun('updated_at'));
+        $this->hide = $this->hide ?? $dialogUserFun('hide');
         $this->top_at = $this->top_at ?? $dialogUserFun('top_at');
         $this->user_at = $time->toDateTimeString('millisecond');
         $this->user_ms = $time->valueOf();
@@ -122,10 +155,14 @@ class WebSocketDialog extends AbstractModel
         if (isset($this->search_msg_id)) {
             // 最后消息 (搜索预览消息)
             $this->last_msg = WebSocketDialogMsg::whereDialogId($this->id)->find($this->search_msg_id);
-            $this->last_at = $this->last_msg?->created_at;
+            $this->last_at = $this->last_msg ? Carbon::parse($this->last_msg->created_at)->format('Y-m-d H:i:s') : null;
         } else {
             // 未读信息
-            $this->generateUnread($userid, $hasData);
+            if (Base::judgeClientVersion("0.34.0")) {
+                $this->generateUnread($userid);
+            } else {
+                $this->generateUnread_03398($userid, $hasData);
+            }
             // 未读标记
             $this->mark_unread = $this->mark_unread ?? $dialogUserFun('mark_unread');
             // 是否免打扰
@@ -161,9 +198,13 @@ class WebSocketDialog extends AbstractModel
                     $this->dialog_delete = 1;
                 }
                 $this->dialog_user = $dialog_user;
+                $this->dialog_mute = Base::settingFind('system', 'user_private_chat_mute');
                 break;
             case "group":
                 switch ($this->group_type) {
+                    case 'user':
+                        $this->dialog_mute = Base::settingFind('system', 'user_group_chat_mute');
+                        break;
                     case 'project':
                         $this->group_info = Project::withTrashed()->select(['id', 'name', 'archived_at', 'deleted_at'])->whereDialogId($this->id)->first()?->cancelAppend()->cancelHidden();
                         if ($this->group_info) {
@@ -184,7 +225,7 @@ class WebSocketDialog extends AbstractModel
                         break;
                     case 'all':
                         $this->name = Doo::translate('全体成员');
-                        $this->all_group_mute = Base::settingFind('system', 'all_group_mute');
+                        $this->dialog_mute = Base::settingFind('system', 'all_group_mute');
                         break;
                 }
                 break;
@@ -192,10 +233,26 @@ class WebSocketDialog extends AbstractModel
         if ($hasData === true) {
             $msgBuilder = WebSocketDialogMsg::whereDialogId($this->id);
             $this->has_tag = $msgBuilder->clone()->where('tag', '>', 0)->exists();
+            $this->has_todo = $msgBuilder->clone()->where('todo', '>', 0)->exists();
             $this->has_image = $msgBuilder->clone()->whereMtype('image')->exists();
             $this->has_file = $msgBuilder->clone()->whereMtype('file')->exists();
             $this->has_link = $msgBuilder->clone()->whereLink(1)->exists();
-            $this->has_todo = $msgBuilder->clone()->where('todo', '>', 0)->exists();
+            Cache::forever("Dialog::tag:" . $this->id, Base::array2json([
+                'has_tag' => $this->has_tag,
+                'has_todo' => $this->has_todo,
+                'has_image' => $this->has_image,
+                'has_file' => $this->has_file,
+                'has_link' => $this->has_link,
+            ]));
+        } else {
+            $tagData = Base::json2array(Cache::get("Dialog::tag:" . $this->id));
+            if ($tagData) {
+                $this->has_tag = !!$tagData['has_tag'];
+                $this->has_todo = !!$tagData['has_todo'];
+                $this->has_image = !!$tagData['has_image'];
+                $this->has_file = !!$tagData['has_file'];
+                $this->has_link = !!$tagData['has_link'];
+            }
         }
         return $this;
     }
@@ -203,10 +260,29 @@ class WebSocketDialog extends AbstractModel
     /**
      * 生成未读数据
      * @param $userid
+     * @return $this
+     */
+    public function generateUnread($userid)
+    {
+        $builder = WebSocketDialogMsgRead::whereDialogId($this->id)->whereUserid($userid)->whereReadAt(null);
+        // 未读消息
+        $this->unread = $builder->count();
+        // 最早一条未读消息
+        $this->unread_one = $this->unread > 0 ? intval($builder->clone()->orderBy('msg_id')->value('msg_id')) : 0;
+        // @我的消息
+        $this->mention = $this->unread > 0 ? $builder->clone()->whereMention(1)->count() : 0;
+        // @我的消息（id集合）
+        $this->mention_ids = $this->mention > 0 ? $builder->clone()->whereMention(1)->orderByDesc('msg_id')->take(20)->pluck('msg_id')->toArray() : [];
+        return $this;
+    }
+
+    /**
+     * 生成未读数据   // todo: 旧版兼容，后续删除
+     * @param $userid
      * @param $positionData
      * @return $this
      */
-    public function generateUnread($userid, $positionData = false)
+    public function generateUnread_03398($userid, $positionData = false)
     {
         $builder = WebSocketDialogMsgRead::whereDialogId($this->id)->whereUserid($userid)->whereReadAt(null);
         $this->unread = $builder->count();
@@ -388,17 +464,37 @@ class WebSocketDialog extends AbstractModel
      */
     public function checkMute($userid)
     {
-        if ($this->group_type === 'all') {
-            $allGroupMute = Base::settingFind('system', 'all_group_mute');
-            switch ($allGroupMute) {
-                case 'all':
-                    throw new ApiException('当前会话全员禁言');
-                case 'user':
-                    if (!User::find($userid)?->isAdmin()) {
-                        throw new ApiException('当前会话禁言');
+        $muteMsgTip = null;
+        $systemConfig = Base::setting('system');
+        switch ($this->type) {
+            case 'user':
+                if ($systemConfig['user_private_chat_mute'] === 'close') {
+                    $muteMsgTip = '个人会话禁言';
+                }
+                break;
+
+            case 'group':
+                if ($this->group_type === 'user') {
+                    if ($systemConfig['user_group_chat_mute'] === 'close') {
+                        $muteMsgTip = '个人群组禁言';
                     }
+                } elseif ($this->group_type === 'all') {
+                    if ($systemConfig['all_group_mute'] === 'close') {
+                        $muteMsgTip = '当前会话全员禁言';
+                    }
+                }
+                break;
+        }
+        if ($muteMsgTip === null) {
+            return;
+        }
+        if ($userid) {
+            $user = User::find($userid);
+            if ($user?->bot || $user?->isAdmin()) { // 机器人或管理员不受禁言
+                return;
             }
         }
+        throw new ApiException($muteMsgTip);
     }
 
     /**
@@ -504,6 +600,7 @@ class WebSocketDialog extends AbstractModel
             return $dialog;
         }
         if (!WebSocketDialogUser::whereDialogId($dialog->id)->whereUserid($userid)->exists()) {
+            WebSocketDialogMsgRead::forceRead($dialog_id, $userid);
             throw new ApiException('不在成员列表内', ['dialog_id' => $dialog_id], -4003);
         }
         return $dialog;

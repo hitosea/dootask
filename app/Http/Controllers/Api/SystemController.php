@@ -40,7 +40,7 @@ class SystemController extends AbstractController
      * @apiParam {String} type
      * - get: 获取（默认）
      * - all: 获取所有（需要管理员权限）
-     * - save: 保存设置（参数：['reg', 'reg_identity', 'reg_invite', 'login_code', 'password_policy', 'project_invite', 'chat_information', 'anon_message', 'auto_archived', 'archived_day', 'task_visible', 'task_default_time', 'all_group_mute', 'all_group_autoin', 'image_compress', 'image_save_local', 'start_home']）
+     * - save: 保存设置（参数：['reg', 'reg_identity', 'reg_invite', 'login_code', 'password_policy', 'project_invite', 'chat_information', 'anon_message', 'e2e_message', 'auto_archived', 'archived_day', 'task_visible', 'task_default_time', 'all_group_mute', 'all_group_autoin', 'user_private_chat_mute', 'user_group_chat_mute', 'image_compress', 'image_save_local', 'start_home']）
 
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -65,12 +65,15 @@ class SystemController extends AbstractController
                     'project_invite',
                     'chat_information',
                     'anon_message',
+                    'e2e_message',
                     'auto_archived',
                     'archived_day',
                     'task_visible',
                     'task_default_time',
                     'all_group_mute',
                     'all_group_autoin',
+                    'user_private_chat_mute',
+                    'user_group_chat_mute',
                     'image_compress',
                     'image_save_local',
                     'start_home',
@@ -108,18 +111,22 @@ class SystemController extends AbstractController
         $setting['project_invite'] = $setting['project_invite'] ?: 'open';
         $setting['chat_information'] = $setting['chat_information'] ?: 'optional';
         $setting['anon_message'] = $setting['anon_message'] ?: 'open';
+        $setting['e2e_message'] = $setting['e2e_message'] ?: 'close';
         $setting['auto_archived'] = $setting['auto_archived'] ?: 'close';
         $setting['archived_day'] = floatval($setting['archived_day']) ?: 7;
         $setting['task_visible'] = $setting['task_visible'] ?: 'close';
         $setting['task_default_time'] = $setting['task_default_time'] ? Base::json2array($setting['task_default_time']) : ['09:00', '18:00'];
         $setting['all_group_mute'] = $setting['all_group_mute'] ?: 'open';
         $setting['all_group_autoin'] = $setting['all_group_autoin'] ?: 'yes';
+        $setting['user_private_chat_mute'] = $setting['user_private_chat_mute'] ?: 'open';
+        $setting['user_group_chat_mute'] = $setting['user_group_chat_mute'] ?: 'open';
         $setting['image_compress'] = $setting['image_compress'] ?: 'open';
         $setting['image_save_local'] = $setting['image_save_local'] ?: 'open';
         $setting['start_home'] = $setting['start_home'] ?: 'close';
         $setting['file_upload_limit'] = $setting['file_upload_limit'] ?: '';
         $setting['unclaimed_task_reminder'] = $setting['unclaimed_task_reminder'] ?: 'close';
         $setting['unclaimed_task_reminder_time'] = $setting['unclaimed_task_reminder_time'] ?: '';
+        $setting['server_version'] = Base::getVersion();
         //
         return Base::retSuccess('success', $setting ?: json_decode('{}'));
     }
@@ -267,7 +274,10 @@ class SystemController extends AbstractController
             'wenxin_secret',
             'wenxin_model',
             'qianwen_key',
-            'qianwen_model'
+            'qianwen_model',
+            'gemini_key',
+            'gemini_model',
+            'gemini_agency',
         ];
 
         if ($type == 'save') {
@@ -307,11 +317,18 @@ class SystemController extends AbstractController
                     WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => "设置成功"], $botUser->userid, true, false, true);
                 }
             }
+            if ($backup['gemini_key'] != $setting['gemini_key']) {
+                $botUser = User::botGetOrCreate('ai-gemini');
+                if ($botUser && $dialog = WebSocketDialog::checkUserDialog($botUser, $user->userid)) {
+                    WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => "设置成功"], $botUser->userid, true, false, true);
+                }
+            }
         }
         //
         $setting['openai_model'] = $setting['openai_model'] ?: 'gpt-3.5-turbo';
         $setting['wenxin_model'] = $setting['wenxin_model'] ?: 'eb-instant';
         $setting['qianwen_model'] = $setting['qianwen_model'] ?: 'qwen-v1';
+        $setting['gemini_model'] = $setting['gemini_model'] ?: 'gemini-1.0-pro';
         if (env("SYSTEM_SETTING") == 'disabled') {
             foreach ($keys as $item) {
                 if (strlen($setting[$item]) > 12) {
@@ -385,6 +402,9 @@ class SystemController extends AbstractController
         $setting['edit'] = $setting['edit'] ?: 'close';
         $setting['modes'] = is_array($setting['modes']) ? $setting['modes'] : [];
         $setting['cmd'] = "curl -sSL '" . Base::fillUrl("api/public/checkin/install?key={$setting['key']}") . "' | sh";
+        if (Base::judgeClientVersion('0.34.67')) {
+            $setting['cmd'] = base64_encode($setting['cmd']);
+        }
         //
         return Base::retSuccess('success', $setting ?: json_decode('{}'));
     }
@@ -1191,7 +1211,7 @@ class SystemController extends AbstractController
         if (count($users) > 1) {
             $fileName .= "等" . count($userid) . "位成员";
         }
-        $fileName .= '签到记录_' . Base::time() . '.xls';
+        $fileName .= '签到记录_' . Base::time() . '.xlsx';
         $filePath = "temp/checkin/export/" . date("Ym", Base::time());
         $export = new BillMultipleExport($sheets);
         $res = $export->store($filePath . "/" . $fileName);
@@ -1199,7 +1219,7 @@ class SystemController extends AbstractController
             return Base::retError('导出失败，' . $fileName . '！');
         }
         $xlsPath = storage_path("app/" . $filePath . "/" . $fileName);
-        $zipFile = "app/" . $filePath . "/" . Base::rightDelete($fileName, '.xls') . ".zip";
+        $zipFile = "app/" . $filePath . "/" . Base::rightDelete($fileName, '.xlsx') . ".zip";
         $zipPath = storage_path($zipFile);
         if (file_exists($zipPath)) {
             Base::deleteDirAndFile($zipPath, true);
@@ -1256,8 +1276,14 @@ class SystemController extends AbstractController
      * @apiGroup system
      * @apiName version
      *
-     * @apiSuccess {String} version
-     * @apiSuccess {String} publish
+     * @apiSuccessExample {json} Success-Response:
+    {
+        "version": "0.0.1",
+        "publish": {
+            "provider": "generic",
+            "url": ""
+        }
+    }
      */
     public function version()
     {
@@ -1278,5 +1304,39 @@ class SystemController extends AbstractController
             }
         }
         return $array;
+    }
+
+    /**
+     * @api {get} api/system/prefetch          25. 预加载的资源
+     *
+     * @apiVersion 1.0.0
+     * @apiGroup system
+     * @apiName prefetch
+     *
+     * @apiSuccessExample {array} Success-Response:
+    [
+        "https://......",
+        "https://......",
+        "......",
+    ]
+     */
+    public function prefetch()
+    {
+        $file = base_path('.prefetch');
+        if (!file_exists($file)) {
+            return [];
+        }
+
+        $version = Base::getVersion();
+        $content = file_get_contents($file);
+
+        $array = explode("\n", $content);
+        $array = array_values(array_filter($array));
+
+        return array_map(function($item) use ($version) {
+            $url = trim($item);
+            $url = str_replace('{version}', $version, $url);
+            return url($url);
+        }, $array);
     }
 }

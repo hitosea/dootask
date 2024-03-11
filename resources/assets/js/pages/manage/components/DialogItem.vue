@@ -8,6 +8,11 @@
             {{$L(source.msg.action === 'remove' ? '取消标注' : '标注了')}}
             "{{$A.getMsgSimpleDesc(source.msg.data)}}"
         </div>
+        <div v-else-if="source.type === 'top'" class="dialog-top" @click="onViewTag">
+            <div class="tag-user"><UserAvatar :userid="source.userid" :show-name="true" :show-icon="false"/></div>
+            {{$L(source.msg.action === 'remove' ? '取消置顶' : '置顶了')}}
+            "{{$A.getMsgSimpleDesc(source.msg.data)}}"
+        </div>
         <div v-else-if="source.type === 'todo'" class="dialog-todo" @click="onViewTodo">
             <div class="todo-user"><UserAvatar :userid="source.userid" :show-name="true" :show-icon="false"/></div>
             {{$L(source.msg.action === 'remove' ? '取消待办' : (source.msg.action === 'done' ? '完成' : '设待办'))}}
@@ -96,7 +101,7 @@ export default {
             type: Number,
             default: 0
         },
-        unreadMsgId: {
+        unreadOne: {
             type: Number,
             default: 0
         },
@@ -104,7 +109,7 @@ export default {
             type: Number,
             default: 0
         },
-        msgReady: {
+        readEnabled: {
             type: Boolean,
             default: false
         },
@@ -126,7 +131,7 @@ export default {
         },
 
         isUnreadStart() {
-            return this.unreadMsgId === this.source.id
+            return this.unreadOne === this.source.id
         },
 
         hidePercentage() {
@@ -148,7 +153,7 @@ export default {
     },
 
     watch: {
-        msgReady() {
+        readEnabled() {
             this.msgRead();
         },
         windowActive() {
@@ -164,7 +169,7 @@ export default {
             if (this.isNoRead) {
                 return;
             }
-            if (!this.msgReady) {
+            if (!this.readEnabled) {
                 return;
             }
             if (!this.windowActive) {
@@ -175,15 +180,6 @@ export default {
             }
             // 标记已读
             this.$store.dispatch("dialogMsgRead", this.source);
-            // 阅读最早未读消息之后如何还有未读信息则标记为已读
-            if (this.isUnreadStart
-                && $A.getDialogUnread(this.dialogData, true) > 0) {
-                this.$store.dispatch("dialogMsgMark", {
-                    dialog_id: this.source.dialog_id,
-                    type: 'read',
-                    after_msg_id: this.source.id,
-                })
-            }
         },
 
         formatTodoUser(data) {

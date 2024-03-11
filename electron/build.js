@@ -126,6 +126,16 @@ function genericPublish({url, key, version, output}) {
         if (err) {
             console.warn(err)
         } else {
+            let uploadFileNum = 0;
+            for (const filename of files) {
+                const localFile = path.join(filePath, filename)
+                if (fs.existsSync(localFile)) {
+                    const fileStat = fs.statSync(localFile)
+                    if (fileStat.isFile()) {
+                        uploadFileNum += 1;
+                    }
+                }
+            }
             const uploadOras = {}
             for (const filename of files) {
                 const localFile = path.join(filePath, filename)
@@ -135,6 +145,7 @@ function genericPublish({url, key, version, output}) {
                         uploadOras[filename] = ora(`Upload [0%] ${filename}`).start()
                         const formData = new FormData()
                         formData.append("file", fs.createReadStream(localFile));
+                        formData.append("file_num", uploadFileNum);
                         await axiosAutoTry({
                             axios: {
                                 method: 'post',
@@ -203,8 +214,6 @@ function startBuild(data) {
     fs.writeFileSync(electronDir + "/config.js", "window.systemInfo = " + JSON.stringify(systemInfo), 'utf8');
     fs.writeFileSync(nativeCachePath, utils.formatUrl(data.url));
     fs.writeFileSync(devloadCachePath, "", 'utf8');
-    // default (fix "Failed to load resource: net::ERR_FILE_NOT_FOUND" report)
-    fs.writeFileSync(electronDir + "/default", "default", 'utf8');
     // index.html
     let manifestFile = path.resolve(electronDir, "manifest.json");
     if (!fs.existsSync(manifestFile)) {
@@ -220,14 +229,16 @@ function startBuild(data) {
     fs.writeFileSync(indexFile, indexString, 'utf8');
     //
     if (data.id === 'app') {
+        const eeuiDir = path.resolve(__dirname, "../resources/mobile");
+        const eeuiCli = "kuaifan/eeui-cli:0.0.1"
         const publicDir = path.resolve(__dirname, "../resources/mobile/src/public");
         fse.removeSync(publicDir)
         fse.copySync(electronDir, publicDir)
         if (argv[3] === "setting") {
-            child_process.spawnSync("eeui", ["setting"], {stdio: "inherit", cwd: "resources/mobile"});
+            child_process.spawnSync("docker", `run -it --rm -v ${eeuiDir}:/work -w /work ${eeuiCli} eeui setting`.split(" "), {stdio: "inherit", cwd: "resources/mobile"});
         }
         if (['setting', 'build'].includes(argv[3])) {
-            child_process.spawnSync("eeui", ["build", "--simple"], {stdio: "inherit", cwd: "resources/mobile"});
+            child_process.spawnSync("docker", `run -it --rm -v ${eeuiDir}:/work -w /work ${eeuiCli} eeui build --simple`.split(" "), {stdio: "inherit", cwd: "resources/mobile"});
         } else {
             [
                 path.resolve(publicDir, "../../platforms/ios/eeuiApp/bundlejs/eeui/public"),
@@ -262,8 +273,8 @@ function startBuild(data) {
     econfig.build.nsis.artifactName = appName + "-v${version}-${os}-${arch}.${ext}";
     // changelog
     econfig.build.releaseInfo.releaseNotes = changeLog()
-    if (release) {
-        econfig.build.releaseInfo.releaseNotes = econfig.build.releaseInfo.releaseNotes.replace(`## [${config.version}]`, `## [${config.version}-Release]`)
+    if (!release) {
+        econfig.build.releaseInfo.releaseNotes = econfig.build.releaseInfo.releaseNotes.replace(`## [${config.version}]`, `## [${config.version}-Silence]`)
     }
     // darwin notarize
     if (notarize && APPLEID && APPLEIDPASS) {
@@ -323,18 +334,20 @@ if (["dev"].includes(argv[2])) {
         configure: {
             platform: '',
             publish: false,
-            release: false,
+            release: true,
             notarize: false,
         }
     }, false, false)
-} else if (["all"].includes(argv[2])) {
+} else if (["all", "win", "mac"].includes(argv[2])) {
     // 自动编译
-    platforms.forEach(platform => {
+    platforms.filter(p => {
+        return argv[2] === "all" || p.indexOf(argv[2]) !== -1
+    }).forEach(platform => {
         config.app.forEach(data => {
             data.configure = {
                 platform,
                 publish: true,
-                release: false,
+                release: true,
                 notarize: false,
             }
             startBuild(data)
@@ -375,11 +388,11 @@ if (["dev"].includes(argv[2])) {
             name: 'release',
             message: "选择是否弹出升级提示框",
             choices: [{
-                name: "No",
-                value: false
-            }, {
                 name: "Yes",
                 value: true
+            }, {
+                name: "No",
+                value: false
             }]
         },
         {

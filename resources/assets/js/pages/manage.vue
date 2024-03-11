@@ -173,12 +173,11 @@
             <div
                 v-if="(projectSearchShow || projectTotal > 20) && windowHeight > 600"
                 class="manage-project-search">
-                <Input v-model="projectKeyValue" :placeholder="$L(`共${projectTotal || cacheProjects.length}个项目，搜索...`)" clearable>
-                    <div class="search-pre" slot="prefix">
-                        <Loading v-if="projectKeyLoading > 0"/>
-                        <Icon v-else type="ios-search" />
-                    </div>
-                </Input>
+                <div class="search-pre">
+                    <Loading v-if="projectKeyLoading > 0"/>
+                    <Icon v-else type="ios-search" />
+                </div>
+                <Input v-model="projectKeyValue" :placeholder="$L(`共${projectTotal || cacheProjects.length}个项目，搜索...`)" clearable/>
             </div>
             <ButtonGroup class="manage-box-new-group">
                 <Button class="manage-box-new" type="primary" icon="md-add" @click="onAddShow">{{$L('新建项目')}}</Button>
@@ -326,6 +325,7 @@ import ApproveExport from "./manage/components/ApproveExport";
 import notificationKoro from "notification-koro1";
 import {Store} from "le5le-store";
 import MicroApps from "../components/MicroApps.vue";
+import {MarkdownPreview} from "../store/markdown";
 
 export default {
     components: {
@@ -414,8 +414,8 @@ export default {
     activated() {
         this.$store.dispatch("getUserInfo").catch(_ => {})
         this.$store.dispatch("getTaskPriority").catch(_ => {})
-        this.$store.dispatch("getReportUnread", 0)
-        this.$store.dispatch("getApproveUnread", 0)
+        this.$store.dispatch("getReportUnread", 1000)
+        this.$store.dispatch("getApproveUnread", 1000)
         //
         this.$store.dispatch("needHome").then(_ => {
             this.needStartHome = true
@@ -452,8 +452,6 @@ export default {
             'projectTotal',
             'wsOpenNum',
             'columnTemplate',
-
-            'wsMsg',
 
             'clientNewVersion',
             'cacheTaskBrowse',
@@ -694,25 +692,6 @@ export default {
                 }
             },
             immediate: true
-        },
-
-        wsMsg: {
-            handler(info) {
-                const {type, action} = info;
-                switch (type) {
-                    case 'report':
-                        if (action == 'unreadUpdate') {
-                            this.$store.dispatch("getReportUnread", 1000)
-                        }
-                        break;
-                    case 'approve':
-                        if (action == 'unread') {
-                            this.$store.dispatch("getApproveUnread", 1000)
-                        }
-                        break;
-                }
-            },
-            deep: true,
         },
     },
 
@@ -986,7 +965,7 @@ export default {
             let body;
             switch (type) {
                 case 'text':
-                    body = $A.getMsgTextPreview(msg.text)
+                    body = $A.getMsgTextPreview(msg.type === 'md' ? MarkdownPreview(msg.text) : msg.text)
                     break;
                 case 'file':
                     body = '[' + this.$L(msg.type == 'img' ? '图片信息' : '文件信息') + ']'
@@ -1022,6 +1001,7 @@ export default {
             }
             const notificationFuncB = (title) => {
                 if (this.__notificationId === id) {
+                    this.__notificationId = null
                     if (this.$isEEUiApp) {
                         this.$refs.mobileNotification.open({
                             userid: userid,
@@ -1072,12 +1052,11 @@ export default {
             this.operateVisible = false;
             this.operateItem = $A.isJson(projectItem) ? projectItem : {};
             this.$nextTick(() => {
-                const projectRect = el.getBoundingClientRect();
-                const wrapRect = this.$refs.menuProject.getBoundingClientRect();
+                const rect = el.getBoundingClientRect();
                 this.operateStyles = {
-                    left: `${event.clientX - wrapRect.left}px`,
-                    top: `${projectRect.top + this.windowScrollY}px`,
-                    height: projectRect.height + 'px',
+                    left: `${event.clientX}px`,
+                    top: `${rect.top + this.windowScrollY}px`,
+                    height: rect.height + 'px',
                 }
                 this.operateVisible = true;
             })

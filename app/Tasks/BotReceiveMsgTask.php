@@ -316,7 +316,7 @@ class BotReceiveMsgTask extends AbstractTask
                     $nameKey = $isManager ? $array[2] : $array[1];
                     $data = $this->botManagerOne($botId, $msg->userid);
                     if ($data) {
-                        $list = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.color', 'u.updated_at as user_at'])
+                        $list = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.hide', 'u.color', 'u.updated_at as user_at'])
                             ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
                             ->where('web_socket_dialogs.name', 'LIKE', "%{$nameKey}%")
                             ->where('u.userid', $data->userid)
@@ -380,6 +380,7 @@ class BotReceiveMsgTask extends AbstractTask
                     'openai_agency' => $setting['openai_agency'],
                     'openai_model' => $setting['openai_model'],
                     'server_url' => $serverUrl,
+                    'chunk_size' => 7,
                 ];
                 if (empty($extras['openai_key'])) {
                     $error = 'Robot disabled.';
@@ -437,6 +438,24 @@ class BotReceiveMsgTask extends AbstractTask
                     $error = 'The client version is low (required version ≥ v0.29.12).';
                 }
                 break;
+            // Gemini 机器人
+            case 'ai-gemini@bot.system':
+                $setting = Base::setting('aibotSetting');
+                $webhookUrl = "{$serverUrl}/ai/gemini/send";
+                $extras = [
+                    'gemini_key' => $setting['gemini_key'],
+                    'gemini_model' => $setting['gemini_model'],
+                    'gemini_agency' => $setting['gemini_agency'],
+                    'gemini_timeout' => 20,
+                    'server_url' => $serverUrl,
+                ];
+                if (empty($extras['gemini_key'])) {
+                    $error = 'Robot disabled.';
+                } elseif (in_array($this->client['platform'], ['win', 'mac', 'web'])
+                    && !Base::judgeClientVersion("0.29.11", $this->client['version'])) {
+                    $error = 'The client version is low (required version ≥ v0.29.12).';
+                }
+                break;
             // 其他机器人
             default:
                 $userBot = UserBot::whereBotId($botUser->userid)->first();
@@ -452,7 +471,7 @@ class BotReceiveMsgTask extends AbstractTask
         }
         //
         try {
-            $res = Ihttp::ihttp_post($webhookUrl, [
+            $data = [
                 'text' => $command,
                 'token' => User::generateToken($botUser),
                 'dialog_id' => $dialog->id,
@@ -463,7 +482,8 @@ class BotReceiveMsgTask extends AbstractTask
                 'bot_uid' => $botUser->userid,
                 'version' => Base::getVersion(),
                 'extras' => Base::array2json($extras)
-            ], 10);
+            ];
+            $res = Ihttp::ihttp_post($webhookUrl, $data);
             if ($userBot) {
                 $userBot->webhook_num++;
                 $userBot->save();

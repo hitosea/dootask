@@ -1,8 +1,15 @@
 body.dark-mode-reverse {
     .ivu-btn-primary,
     .ivu-badge-count,
+    .ivu-btn-error,
+    .ivu-btn-warning,
     .common-right-bottom .common-right-bottom-link {
         color: #000;
+    }
+
+    .ivu-btn-error {
+        background-color: #ff9d84;
+        border-color: #ff9d84;
     }
 
     .ivu-modal-mask {
@@ -183,7 +190,7 @@ body.dark-mode-reverse {
                             .content-text,
                             .content-record,
                             .content-meeting {
-                                color: #ffffff;
+                                color: #ffffff !important;
                             }
 
                             .open-approve-details {
@@ -498,10 +505,6 @@ body.dark-mode-reverse {
                         &::before {
                             color: #333;
                         }
-                    }
-
-                    .mention {
-                        color: #333;
                     }
                 }
             }

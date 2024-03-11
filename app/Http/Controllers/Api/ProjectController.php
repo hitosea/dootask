@@ -32,10 +32,11 @@ use App\Models\ProjectTaskUser;
 use App\Models\WebSocketDialog;
 use App\Exceptions\ApiException;
 use App\Models\ProjectPermission;
-use App\Module\BillMultipleExport;
 use App\Models\WebSocketDialogMsg;
+use App\Module\BillMultipleExport;
 use Illuminate\Support\Facades\DB;
 use App\Models\ProjectTaskFlowChange;
+use App\Models\ProjectTaskVisibilityUser;
 
 /**
  * @apiDefine project
@@ -1027,17 +1028,25 @@ class ProjectController extends AbstractController
             $builder->orderBy('project_tasks.' . $column, $direction);
         }
         // 任务可见性条件
-        $builder->leftJoin('project_users', function ($query) {
-            $query->on('project_tasks.project_id', '=', 'project_users.project_id')->where('project_users.owner', 1);
+        $builder->leftJoin('project_users', function ($query) use($userid) {
+            $query->on('project_tasks.project_id', '=', 'project_users.project_id');
+            $query->where('project_users.owner', 1);
+            $query->where('project_users.userid', $userid);
         });
-        $builder->leftJoin('project_task_users as project_p_task_users', function ($query) {
-            $query->on('project_p_task_users.task_pid', '=', 'project_tasks.parent_id');
+        $builder->leftJoin('project_task_users as project_sub_task_users', function ($query) use($userid) {
+            $query->on('project_sub_task_users.task_pid', '=', 'project_tasks.parent_id');
+            $query->where('project_sub_task_users.userid', $userid);
+        });
+        $builder->leftJoin('project_task_visibility_users', function ($query) use($userid) {
+            $query->on('project_task_visibility_users.task_id', '=', 'project_tasks.id');
+            $query->where('project_task_visibility_users.userid', $userid);
         });
         $builder->where(function ($query) use ($userid) {
             $query->where("project_tasks.visibility", 1);
             $query->orWhere("project_users.userid", $userid);
             $query->orWhere("project_task_users.userid", $userid);
-            $query->orWhere("project_p_task_users.userid", $userid);
+            $query->orWhere("project_task_visibility_users.userid", $userid);
+            $query->orWhere("project_sub_task_users.userid", $userid);
         });
         // 优化子查询汇总
         $builder->leftJoinSub(function ($query) {
@@ -1191,7 +1200,13 @@ class ProjectController extends AbstractController
         if (Carbon::parse($time[1])->timestamp - Carbon::parse($time[0])->timestamp > 90 * 86400) {
             return Base::retError('时间范围限制最大90天');
         }
-        go(function() use ($user, $userid, $time, $type) {
+        $botUser = User::botGetOrCreate('system-msg');
+        if (empty($botUser)) {
+            return Base::retError('系统机器人不存在');
+        }
+        $dialog = WebSocketDialog::checkUserDialog($botUser, $user->userid);
+        //
+        go(function () use ($user, $userid, $time, $type, $botUser, $dialog) {
             Coroutine::sleep(0.1);
             $headings = [];
             $headings[] = '任务ID';
@@ -1211,6 +1226,9 @@ class ProjectController extends AbstractController
             $headings[] = '创建人';
             $headings[] = '状态';
             $datas = [];
+            //
+            $text = '<b>导出任务统计已完成。</b>';
+            $text .= "\n\n";
             //
             $builder = ProjectTask::select(['project_tasks.*', 'project_task_users.userid as ownerid'])
                 ->join('project_task_users', 'project_tasks.id', '=', 'project_task_users.task_id')
@@ -1309,31 +1327,36 @@ class ProjectController extends AbstractController
                 }
             });
             if (empty($datas)) {
-                return Base::retError('没有任何数据');
+                $text .= '没有任何数据';
+                WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
+                return;
             }
             //
             $sheets = [];
             foreach ($userid as $ownerid) {
                 $data = $datas[$ownerid] ?? [
-                        'nickname' => Base::filterEmoji(User::userid2nickname($ownerid)),
-                        'styles' => ["A1:P1" => ["font" => ["bold" => true]]],
-                        'data' => [],
-                    ];
+                    'nickname' => Base::filterEmoji(User::userid2nickname($ownerid)),
+                    'styles' => ["A1:P1" => ["font" => ["bold" => true]]],
+                    'data' => [],
+                ];
                 $title = (count($sheets) + 1) . "." . ($data['nickname'] ?: $ownerid);
                 $sheets[] = BillExport::create()->setTitle($title)->setHeadings($headings)->setData($data['data'])->setStyles($data['styles']);
             }
             //
             $fileName = User::userid2nickname($userid[0]) ?: $userid[0];
             if (count($userid) > 1) {
-                $fileName .= "等" . count($userid) . "位成员";
+                $fileName .= '等' . count($userid) . '位成员任务统计';
             }
-            $fileName .= '任务统计_' . Base::time() . '.xls';
+            $fileName .= '_' . Base::time() . '.xls';
             $filePath = "temp/task/export/" . date("Ym", Base::time());
             $export = new BillMultipleExport($sheets);
             $res = $export->store($filePath . "/" . $fileName);
             if ($res != 1) {
-                return Base::retError('导出失败，' . $fileName . '！');
+                $text .= "导出失败，{$fileName}！";
+                WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
+                return;
             }
+            //
             $xlsPath = storage_path("app/" . $filePath . "/" . $fileName);
             $zipFile = "app/" . $filePath . "/" . Base::rightDelete($fileName, '.xls') . ".zip";
             $zipPath = storage_path($zipFile);
@@ -1349,24 +1372,19 @@ class ProjectController extends AbstractController
                 $base64 = base64_encode(Base::array2string([
                     'file' => $zipFile,
                 ]));
+                $fileUrl = Base::fillUrl('api/project/task/down?key=' . urlencode($base64));
                 Session::put('task::export:userid', $user->userid);
-                $botUser = User::botGetOrCreate('system-msg');
-                if (empty($botUser)) {
-                    return;
-                }
-                if ($dialog = WebSocketDialog::checkUserDialog($botUser, $user->userid)) {
-                    $text = "<b>导出任务统计已完成。</b>";
-                    $text .= "\n\n";
-                    $text .= "文件名：{$fileName}";
-                    $text .= "\n";
-                    $text .= "文件大小：".Base::twoFloat(filesize($zipPath) / 1024, true)."KB";
-                    $text .= "\n";
-                    $text .= "下载地址：".Base::fillUrl('api/project/task/down?key=' . urlencode($base64));
-                    WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
-                }
+                $text .= "文件名：{$fileName}";
+                $text .= "\n";
+                $text .= "文件大小：" . Base::twoFloat(filesize($zipPath) / 1024, true) . "KB";
+                $text .= "\n";
+                $text .= '<a href="' . $fileUrl . '" target="_blank"><button type="button" class="ivu-btn ivu-btn-warning" style="margin-top: 10px;"><span>立即下载</span></button></a>';
+            } else {
+                $text .= '打包失败，请稍后再试...';
             }
+            WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => $text], $botUser->userid, false, false, true);
         });
-        return Base::retSuccess('success',['msg' => '正在打包，请留意系统消息']);
+        return Base::retSuccess('success', ['msg' => '正在打包，请留意系统消息。']);
     }
 
     /**
@@ -1534,9 +1552,11 @@ class ProjectController extends AbstractController
         // 项目可见性
         $project_userid = ProjectUser::whereProjectId($task->project_id)->whereOwner(1)->value('userid');     // 项目负责人
         if ($task->visibility != 1 && $user->userid != $project_userid) {
-            $visibleUserids = ProjectTaskUser::whereTaskId($task_id)->pluck('userid')->toArray();       // 是否任务负责人、协助人、可见人
-            $subVisibleUserids = ProjectTaskUser::whereTaskPid($task_id)->pluck('userid')->toArray();   // 是否子任务负责人、协助人
-            if (!in_array($user->userid, $visibleUserids) && !in_array($user->userid, $subVisibleUserids)) {
+            $taskUserids = ProjectTaskUser::whereTaskId($task_id)->pluck('userid')->toArray();                //任务负责人、协助人
+            $subTaskUserids = ProjectTaskUser::whereTaskPid($task_id)->pluck('userid')->toArray();            //子任务负责人、协助人
+            $visibleUserids = ProjectTaskVisibilityUser::whereTaskId($task_id)->pluck('userid')->toArray();   //可见人
+            $visibleUserids = array_merge($taskUserids, $subTaskUserids, $visibleUserids);
+            if (!in_array($user->userid, $visibleUserids)) {
                 return Base::retError('无任务权限');
             }
         }
@@ -1544,7 +1564,7 @@ class ProjectController extends AbstractController
         $data = $task->toArray();
         $data['project_name'] = $task->project?->name;
         $data['column_name'] = $task->projectColumn?->name;
-        $data['visibility_appointor'] = $task->visibility == 1 ? [0] : ProjectTaskUser::whereTaskId($task_id)->whereOwner(2)->pluck('userid');
+        $data['visibility_appointor'] = $task->visibility == 1 ? [0] : ProjectTaskVisibilityUser::whereTaskId($task_id)->pluck('userid');
         return Base::retSuccess('success', $data);
     }
 
@@ -1906,15 +1926,16 @@ class ProjectController extends AbstractController
         }
         //
         $taskUser = ProjectTaskUser::select(['userid', 'owner'])->whereTaskId($task_id)->get();
-        $owners = $taskUser->where('owner', 1)->pluck('userid')->toArray();         // 负责人
-        $assists = $taskUser->where('owner', 0)->pluck('userid')->toArray();         // 协助人
+        $owners = $taskUser->where('owner', 1)->pluck('userid')->toArray();
+        $assists = $taskUser->where('owner', 0)->pluck('userid')->toArray();
+        $visible = ProjectTaskVisibilityUser::whereTaskId($task->id)->pluck('userid')->toArray();
         // 更新任务
         $updateMarking = [];
         $task->updateTask($param, $updateMarking);
         //
         $data = ProjectTask::oneTask($task->id)->toArray();
         $data['update_marking'] = $updateMarking ?: json_decode('{}');
-        $data['visibility_appointor'] = $data['visibility'] == 1 ? [] : ProjectTaskUser::whereTaskId($task->id)->whereOwner(2)->pluck('userid');
+        $data['visibility_appointor'] = $data['visibility'] == 1 ? [] : ProjectTaskVisibilityUser::whereTaskId($task->id)->pluck('userid');
         $task->pushMsg('update', $data);
         // 可见性推送
         if ($task->parent_id == 0) {
@@ -1924,10 +1945,9 @@ class ProjectController extends AbstractController
                     $task->pushMsgVisibleAdd($data);
                 }
                 if ($param['visibility_appointor']) {
-                    $oldVisibleUserIds = $taskUser->where('owner', 2)->pluck('userid')->toArray() ?? [];
                     $newVisibleUserIds = $param['visibility_appointor'] ?? [];
-                    $deleteUserIds = array_diff($oldVisibleUserIds, $newVisibleUserIds, $subUserids);
-                    $addUserIds = array_diff($newVisibleUserIds, $oldVisibleUserIds);
+                    $deleteUserIds = array_diff($visible, $newVisibleUserIds, $subUserids);
+                    $addUserIds = array_diff($newVisibleUserIds, $visible);
                     $task->pushMsgVisibleUpdate($data, $deleteUserIds, $addUserIds);
                 }
                 if ($data['visibility'] != 1 && empty($param['visibility_appointor'])) {
@@ -2480,7 +2500,7 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/permission          43. 获取项目权限设置
+     * @api {get} api/project/permission          44. 获取项目权限设置
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -2506,7 +2526,7 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/permission/update          44. 项目权限设置
+     * @api {get} api/project/permission/update          45. 项目权限设置
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0

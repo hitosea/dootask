@@ -52,13 +52,41 @@ class DialogController extends AbstractController
         //
         $timerange = TimeRange::parse(Request::input());
         //
-        $data = (new WebSocketDialog)->getDialogList($user->userid, $timerange->updated, $timerange->deleted);
+        $data = WebSocketDialog::getDialogList($user->userid, $timerange->updated, $timerange->deleted);
         //
         return Base::retSuccess('success', $data);
     }
 
     /**
-     * @api {get} api/dialog/search          02. 搜索会话
+     * @api {get} api/dialog/unread          02. 未读对话列表
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName lists
+     *
+     * @apiParam {String} before_at            在这个时间之前未读的数据
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function unread()
+    {
+        $user = User::auth();
+        //
+        $beforeAt = Request::input('before_at');
+        if (empty($beforeAt)) {
+            return Base::retError('参数错误');
+        }
+        //
+        $data = WebSocketDialog::getDialogUnread($user->userid, Carbon::parse($beforeAt));
+        //
+        return Base::retSuccess('success', $data);
+    }
+
+    /**
+     * @api {get} api/dialog/search          03. 搜索会话
      *
      * @apiDescription 根据消息关键词搜索相关会话，需要token身份
      * @apiVersion 1.0.0
@@ -80,7 +108,7 @@ class DialogController extends AbstractController
             return Base::retError('请输入搜索关键词');
         }
         // 搜索会话
-        $dialogs = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.color', 'u.updated_at as user_at'])
+        $dialogs = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.hide', 'u.color', 'u.updated_at as user_at'])
             ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
             ->where('web_socket_dialogs.name', 'LIKE', "%{$key}%")
             ->where('u.userid', $user->userid)
@@ -117,7 +145,7 @@ class DialogController extends AbstractController
         }
         // 搜索消息会话
         if (count($list) < 20) {
-            $msgs = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.color', 'u.updated_at as user_at', 'm.id as search_msg_id'])
+            $msgs = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.hide', 'u.color', 'u.updated_at as user_at', 'm.id as search_msg_id'])
                 ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
                 ->join('web_socket_dialog_msgs as m', 'web_socket_dialogs.id', '=', 'm.dialog_id')
                 ->where('u.userid', $user->userid)
@@ -135,7 +163,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/search/tag          02. 搜索标注会话
+     * @api {get} api/dialog/search/tag          04. 搜索标注会话
      *
      * @apiDescription 根据消息关键词搜索相关会话，需要token身份
      * @apiVersion 1.0.0
@@ -150,7 +178,7 @@ class DialogController extends AbstractController
     {
         $user = User::auth();
         // 搜索会话
-        $msgs = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.color', 'u.updated_at as user_at', 'm.id as search_msg_id'])
+        $msgs = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.hide', 'u.color', 'u.updated_at as user_at', 'm.id as search_msg_id'])
             ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
             ->join('web_socket_dialog_msgs as m', 'web_socket_dialogs.id', '=', 'm.dialog_id')
             ->where('u.userid', $user->userid)
@@ -166,7 +194,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/one          03. 获取单个会话信息
+     * @api {get} api/dialog/one          05. 获取单个会话信息
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -185,19 +213,20 @@ class DialogController extends AbstractController
         //
         $dialog_id = intval(Request::input('dialog_id'));
         //
-        $item = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.color', 'u.updated_at as user_at'])
+        $item = WebSocketDialog::select(['web_socket_dialogs.*', 'u.top_at', 'u.mark_unread', 'u.silence', 'u.hide', 'u.color', 'u.updated_at as user_at'])
             ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
             ->where('web_socket_dialogs.id', $dialog_id)
             ->where('u.userid', $user->userid)
             ->first();
         if (empty($item)) {
+            WebSocketDialogMsgRead::forceRead($dialog_id, $user->userid);
             return Base::retError('会话不存在或已被删除', ['dialog_id' => $dialog_id], -4003);
         }
         return Base::retSuccess('success', $item->formatData($user->userid));
     }
 
     /**
-     * @api {get} api/dialog/user          04. 获取会话成员
+     * @api {get} api/dialog/user          06. 获取会话成员
      *
      * @apiDescription  需要token身份
      * @apiVersion 1.0.0
@@ -242,14 +271,14 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/todo          05. 获取会话待办
+     * @api {get} api/dialog/todo          07. 获取会话待办
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
      * @apiGroup dialog
      * @apiName todo
      *
-     * @apiParam {Number} dialog_id            会话ID
+     * @apiParam {Number} [dialog_id]            会话ID
      *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -261,14 +290,18 @@ class DialogController extends AbstractController
         //
         $dialog_id = intval(Request::input('dialog_id'));
         //
-        WebSocketDialog::checkDialog($dialog_id);
+        $builder = WebSocketDialogMsgTodo::whereUserid($user->userid)->whereDoneAt(null);
+        if ($dialog_id > 0) {
+            WebSocketDialog::checkDialog($dialog_id);
+            $builder->whereDialogId($dialog_id);
+        }
         //
-        $list = WebSocketDialogMsgTodo::whereDialogId($dialog_id)->whereUserid($user->userid)->whereDoneAt(null)->orderByDesc('id')->take(50)->get();
+        $list = $builder->orderByDesc('id')->take(50)->get();
         return Base::retSuccess("success", $list);
     }
 
     /**
-     * @api {get} api/dialog/top          06. 会话置顶
+     * @api {get} api/dialog/top          08. 会话置顶
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -297,8 +330,43 @@ class DialogController extends AbstractController
         ]);
     }
 
+
+
     /**
-     * @api {get} api/dialog/tel          07. 获取对方联系电话
+     * @api {get} api/dialog/hide          08. 会话隐藏
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName hide
+     *
+     * @apiParam {Number} dialog_id            会话ID
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function hide()
+    {
+        $user = User::auth();
+        $dialogId = intval(Request::input('dialog_id'));
+        $dialogUser = WebSocketDialogUser::whereUserid($user->userid)->whereDialogId($dialogId)->first();
+        if (!$dialogUser) {
+            return Base::retError("会话不存在");
+        }
+        if ($dialogUser->top_at) {
+            return Base::retError("置顶会话无法隐藏");
+        }
+        $dialogUser->hide = 1;
+        $dialogUser->save();
+        return Base::retSuccess("success", [
+            'id' => $dialogUser->dialog_id,
+            'hide' => 1,
+        ]);
+    }
+
+    /**
+     * @api {get} api/dialog/tel          09. 获取对方联系电话
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -348,7 +416,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/open/user          08. 打开会话
+     * @api {get} api/dialog/open/user          10. 打开会话
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -379,7 +447,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/list          09. 获取消息列表
+     * @api {get} api/dialog/msg/list          11. 获取消息列表
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -507,12 +575,78 @@ class DialogController extends AbstractController
         if ($reDialog) {
             $data['dialog'] = $dialog->formatData($user->userid, true);
             $data['todo'] = $data['dialog']->todo_num > 0 ? WebSocketDialogMsgTodo::whereDialogId($dialog->id)->whereUserid($user->userid)->whereDoneAt(null)->orderByDesc('id')->take(50)->get() : [];
+            $data['top'] = $dialog->top_msg_id ? WebSocketDialogMsg::whereId($dialog->top_msg_id)->first() : null;
         }
         return Base::retSuccess('success', $data);
     }
 
     /**
-     * @api {get} api/dialog/msg/search          10. 搜索消息位置
+     * @api {get} api/dialog/msg/latest          12. 获取最新消息列表
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName msg__latest
+     *
+     * @apiParam {Array} [dialogs]          对话ID列表
+     * - 格式：[{id:会话ID, latest_id:此消息ID之后的数据}, ...]
+     * @apiParam {Number} [take]            每个会话获取多少条，默认:25，最大:50
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function msg__latest()
+    {
+        if (!Base::judgeClientVersion('0.34.47')) {
+            return Base::retSuccess('success', ['data' => []]);
+        }
+        //
+        $user = User::auth();
+        //
+        $dialogs = Request::input('dialogs');
+        if (empty($dialogs) || !is_array($dialogs)) {
+            return Base::retError('参数错误');
+        }
+        $builder = WebSocketDialogMsg::select([
+            'web_socket_dialog_msgs.*',
+            'read.mention',
+            'read.read_at',
+        ])->leftJoin('web_socket_dialog_msg_reads as read', function ($leftJoin) use ($user) {
+            $leftJoin
+                ->on('read.userid', '=', DB::raw($user->userid))
+                ->on('read.msg_id', '=', 'web_socket_dialog_msgs.id');
+        });
+        $data = [];
+        $num = 0;
+        foreach ($dialogs as $item) {
+            $dialog_id = intval($item['id']);
+            $latest_id = intval($item['latest_id']);
+            if ($dialog_id <= 0) {
+                continue;
+            }
+            if ($num >= 5) {
+                break;
+            }
+            $num++;
+            WebSocketDialog::checkDialog($dialog_id);
+            //
+            $cloner = $builder->clone();
+            $cloner->where('web_socket_dialog_msgs.dialog_id', $dialog_id);
+            if ($latest_id > 0) {
+                $cloner->where('web_socket_dialog_msgs.id', '>', $latest_id);
+            }
+            $cloner->orderByDesc('web_socket_dialog_msgs.id');
+            $list = $cloner->take(Base::getPaginate(50, 25, 'take'))->get();
+            if ($list->isNotEmpty()) {
+                $data = array_merge($data, $list->toArray());
+            }
+        }
+        return Base::retSuccess('success', compact('data'));
+    }
+
+    /**
+     * @api {get} api/dialog/msg/search          13. 搜索消息位置
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -543,13 +677,11 @@ class DialogController extends AbstractController
             ->where('key', 'LIKE', "%{$key}%")
             ->take(200)
             ->pluck('id');
-        return Base::retSuccess('success', [
-            'data' => $data
-        ]);
+        return Base::retSuccess('success', compact('data'));
     }
 
     /**
-     * @api {get} api/dialog/msg/one          11. 获取单条消息
+     * @api {get} api/dialog/msg/one          14. 获取单条消息
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -578,14 +710,18 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/read          12. 已读聊天消息
+     * @api {get} api/dialog/msg/read          15. 已读聊天消息
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
      * @apiGroup dialog
      * @apiName msg__read
      *
-     * @apiParam {Number} id         消息ID（组）
+     * @apiParam {Object} id         消息ID（组）
+     * - 1、多个ID用逗号分隔，如：1,2,3
+     * - 2、另一种格式：{"id": "[会话ID]"}，如：{"2": 0, "3": 10}
+     * -- 会话ID：标记id之后的消息已读
+     * -- 其他：标记已读
      *
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -596,16 +732,30 @@ class DialogController extends AbstractController
         $user = User::auth();
         //
         $id = Request::input('id');
-        $ids = Base::explodeInt($id);
+        $ids = $id && is_array($id) ? $id : array_fill_keys(Base::explodeInt($id), 'r');
         //
         $dialogIds = [];
-        WebSocketDialogMsg::whereIn('id', $ids)->chunkById(20, function($list) use ($user, &$dialogIds) {
+        $markIds = [];
+        WebSocketDialogMsg::whereIn('id', array_keys($ids))->chunkById(100, function($list) use ($ids, $user, &$dialogIds, &$markIds) {
             /** @var WebSocketDialogMsg $item */
             foreach ($list as $item) {
                 $item->readSuccess($user->userid);
                 $dialogIds[$item->dialog_id] = $item->dialog_id;
+                if ($ids[$item->id] == $item->dialog_id) {
+                    $markIds[$item->dialog_id] = min($item->id, $markIds[$item->dialog_id] ?? 0);
+                }
             }
         });
+        //
+        foreach ($markIds as $dialogId => $msgId) {
+            WebSocketDialogMsgRead::whereDialogId($dialogId)
+                ->whereUserid($user->userid)
+                ->whereReadAt(null)
+                ->where('msg_id', '>=', $msgId)
+                ->chunkById(100, function ($list) {
+                    WebSocketDialogMsgRead::onlyMarkRead($list);
+                });
+        }
         //
         $data = [];
         $dialogUsers = WebSocketDialogUser::with(['webSocketDialog'])->whereUserid($user->userid)->whereIn('dialog_id', array_values($dialogIds))->get();
@@ -620,7 +770,9 @@ class DialogController extends AbstractController
             $data[] = [
                 'id' => $dialogUser->webSocketDialog->id,
                 'unread' => $dialogUser->webSocketDialog->unread,
+                'unread_one' => $dialogUser->webSocketDialog->unread_one,
                 'mention' => $dialogUser->webSocketDialog->mention,
+                'mention_ids' => $dialogUser->webSocketDialog->mention_ids,
                 'user_at' =>  Carbon::parse($dialogUser->updated_at)->toDateTimeString('millisecond'),
                 'user_ms' => Carbon::parse($dialogUser->updated_at)->valueOf()
             ];
@@ -629,7 +781,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/unread          13. 获取未读消息数据
+     * @api {get} api/dialog/msg/unread          16. 获取未读消息数据
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -663,14 +815,16 @@ class DialogController extends AbstractController
         return Base::retSuccess('success', [
             'id' => $dialogUser->webSocketDialog->id,
             'unread' => $dialogUser->webSocketDialog->unread,
+            'unread_one' => $dialogUser->webSocketDialog->unread_one,
             'mention' => $dialogUser->webSocketDialog->mention,
+            'mention_ids' => $dialogUser->webSocketDialog->mention_ids,
             'user_at' => Carbon::parse($dialogUser->updated_at)->toDateTimeString('millisecond'),
             'user_ms' => Carbon::parse($dialogUser->updated_at)->valueOf()
         ]);
     }
 
     /**
-     * @api {post} api/dialog/msg/stream          14. 通知成员监听消息
+     * @api {post} api/dialog/msg/stream          17. 通知成员监听消息
      *
      * @apiDescription 通知指定会员EventSource监听流动消息
      * @apiVersion 1.0.0
@@ -709,7 +863,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/msg/sendtext          15. 发送消息
+     * @api {post} api/dialog/msg/sendtext          18. 发送消息
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -737,18 +891,7 @@ class DialogController extends AbstractController
     public function msg__sendtext()
     {
         $user = User::auth();
-        //
-        if (!$user->bot) {
-            $chatInformation = Base::settingFind('system', 'chat_information');
-            if ($chatInformation == 'required') {
-                if (empty($user->getRawOriginal('nickname'))) {
-                    return Base::retError('请设置昵称', [], -2);
-                }
-                if (empty($user->getRawOriginal('tel'))) {
-                    return Base::retError('请设置联系电话', [], -3);
-                }
-            }
-        }
+        $user->checkChatInformation();
         //
         $dialog_id = intval(Request::input('dialog_id'));
         $dialog_ids = trim(Request::input('dialog_ids'));
@@ -762,7 +905,7 @@ class DialogController extends AbstractController
         //
         $result = [];
         $dialogIds = $dialog_ids ? explode(',', $dialog_ids) : [$dialog_id ?: 0];
-        foreach($dialogIds as $dialog_id) {
+        foreach ($dialogIds as $dialog_id) {
             //
             WebSocketDialog::checkDialog($dialog_id);
             //
@@ -809,19 +952,19 @@ class DialogController extends AbstractController
                     'ext' => $ext,
                 ];
                 $result = WebSocketDialogMsg::sendMsg($action, $dialog_id, 'file', $fileData, $user->userid, false, false, $silence);
+            } else {
+                $msgData = ['text' => $text];
+                if ($markdown) {
+                    $msgData['type'] = 'md';
+                }
+                $result = WebSocketDialogMsg::sendMsg($action, $dialog_id, 'text', $msgData, $user->userid, false, false, $silence);
             }
-            //
-            $msgData = ['text' => $text];
-            if ($markdown) {
-                $msgData['type'] = 'md';
-            }
-            $result = WebSocketDialogMsg::sendMsg($action, $dialog_id, 'text', $msgData, $user->userid, false, false, $silence);
         }
         return $result;
     }
 
     /**
-     * @api {post} api/dialog/msg/sendrecord          16. 发送语音
+     * @api {post} api/dialog/msg/sendrecord          19. 发送语音
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -840,6 +983,7 @@ class DialogController extends AbstractController
     public function msg__sendrecord()
     {
         $user = User::auth();
+        $user->checkChatInformation();
         //
         $dialog_id = intval(Request::input('dialog_id'));
         $reply_id = intval(Request::input('reply_id'));
@@ -868,7 +1012,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/msg/sendfile          17. 文件上传
+     * @api {post} api/dialog/msg/sendfile          20. 文件上传
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -889,6 +1033,7 @@ class DialogController extends AbstractController
     public function msg__sendfile()
     {
         $user = User::auth();
+        //
         $dialogIds = [intval(Request::input('dialog_id'))];
         $replyId = intval(Request::input('reply_id'));
         $imageAttachment = intval(Request::input('image_attachment'));
@@ -899,7 +1044,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/msg/sendfiles          18. 群发文件上传
+     * @api {post} api/dialog/msg/sendfiles          21. 群发文件上传
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -921,6 +1066,7 @@ class DialogController extends AbstractController
     public function msg__sendfiles()
     {
         $user = User::auth();
+        //
         $files = Request::file('files');
         $image64 = Request::input('image64');
         $fileName = Request::input('filename');
@@ -954,7 +1100,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/sendfileid          19. 通过文件ID发送文件
+     * @api {get} api/dialog/msg/sendfileid          22. 通过文件ID发送文件
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1024,7 +1170,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/msg/sendanon          20. 发送匿名消息
+     * @api {post} api/dialog/msg/sendanon          23. 发送匿名消息
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1077,7 +1223,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/readlist          21. 获取消息阅读情况
+     * @api {get} api/dialog/msg/readlist          24. 获取消息阅读情况
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1106,7 +1252,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/detail          22. 消息详情
+     * @api {get} api/dialog/msg/detail          25. 消息详情
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1154,7 +1300,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/download          23. 文件下载
+     * @api {get} api/dialog/msg/download          26. 文件下载
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1195,7 +1341,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/withdraw          24. 聊天消息撤回
+     * @api {get} api/dialog/msg/withdraw          27. 聊天消息撤回
      *
      * @apiDescription 消息撤回限制24小时内，需要token身份
      * @apiVersion 1.0.0
@@ -1221,7 +1367,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/mark          25. 消息标记操作
+     * @api {get} api/dialog/msg/mark          28. 消息标记操作
      *
      * @apiDescription  需要token身份
      * @apiVersion 1.0.0
@@ -1252,6 +1398,7 @@ class DialogController extends AbstractController
         }
         switch ($type) {
             case 'read':
+                // 标记已读
                 $builder = WebSocketDialogMsgRead::whereDialogId($dialog_id)->whereUserid($user->userid)->whereReadAt(null);
                 if ($after_msg_id > 0) {
                     $builder->where('msg_id', '>=', $after_msg_id);
@@ -1259,36 +1406,32 @@ class DialogController extends AbstractController
                 $builder->chunkById(100, function ($list) {
                     WebSocketDialogMsgRead::onlyMarkRead($list);
                 });
-                //
-                $dialogUser->webSocketDialog->generateUnread($user->userid);
-                $data = [
-                    'id' => $dialogUser->webSocketDialog->id,
-                    'unread' => $dialogUser->webSocketDialog->unread,
-                    'mention' => $dialogUser->webSocketDialog->mention,
-                    'mark_unread' => 0,
-                ];
                 break;
 
             case 'unread':
-                $data = [
-                    'id' => $dialogUser->webSocketDialog->id,
-                    'mark_unread' => 1,
-                ];
+                // 标记未读
                 break;
 
             default:
                 return Base::retError("参数错误");
         }
-        $dialogUser->mark_unread = $data['mark_unread'];
+        $dialogUser->mark_unread = $type == 'unread' ? 1 : 0;
         $dialogUser->save();
-        return Base::retSuccess("success", array_merge($data, [
+        $dialogUser->webSocketDialog->generateUnread($user->userid);
+        return Base::retSuccess("success", [
+            'id' => $dialogUser->webSocketDialog->id,
+            'unread' => $dialogUser->webSocketDialog->unread,
+            'unread_one' => $dialogUser->webSocketDialog->unread_one,
+            'mention' => $dialogUser->webSocketDialog->mention,
+            'mention_ids' => $dialogUser->webSocketDialog->mention_ids,
             'user_at' => Carbon::parse($dialogUser->updated_at)->toDateTimeString('millisecond'),
             'user_ms' => Carbon::parse($dialogUser->updated_at)->valueOf(),
-        ]));
+            'mark_unread' => $dialogUser->mark_unread,
+        ]);
     }
 
     /**
-     * @api {get} api/dialog/msg/silence          26. 消息免打扰
+     * @api {get} api/dialog/msg/silence          29. 消息免打扰
      *
      * @apiDescription  需要token身份
      * @apiVersion 1.0.0
@@ -1351,7 +1494,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/forward          27. 转发消息给
+     * @api {get} api/dialog/msg/forward          30. 转发消息给
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1392,7 +1535,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/emoji          28. emoji回复
+     * @api {get} api/dialog/msg/emoji          31. emoji回复
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1427,7 +1570,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/tag          29. 标注/取消标注
+     * @api {get} api/dialog/msg/tag          32. 标注/取消标注
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1456,7 +1599,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/todo          30. 设待办/取消待办
+     * @api {get} api/dialog/msg/todo          33. 设待办/取消待办
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1499,7 +1642,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/todolist          31. 获取消息待办情况
+     * @api {get} api/dialog/msg/todolist          34. 获取消息待办情况
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1529,7 +1672,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/done          32. 完成待办
+     * @api {get} api/dialog/msg/done          35. 完成待办
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1576,7 +1719,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/msg/color          33. 设置颜色
+     * @api {get} api/dialog/msg/color          36. 设置颜色
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -1617,7 +1760,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/group/add          34. 新增群组
+     * @api {get} api/dialog/group/add          37. 新增群组
      *
      * @apiDescription  需要token身份
      * @apiVersion 1.0.0
@@ -1679,7 +1822,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/group/edit          35. 修改群组
+     * @api {get} api/dialog/group/edit          38. 修改群组
      *
      * @apiDescription  需要token身份
      * @apiVersion 1.0.0
@@ -1706,6 +1849,7 @@ class DialogController extends AbstractController
             $user->checkAdmin();
             $dialog = WebSocketDialog::find($dialog_id);
             if (empty($dialog)) {
+                WebSocketDialogMsgRead::forceRead($dialog_id, $user->userid);
                 return Base::retError('对话不存在或已被删除', ['dialog_id' => $dialog_id], -4003);
             }
         } else {
@@ -1740,7 +1884,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/group/adduser          36. 添加群成员
+     * @api {get} api/dialog/group/adduser          39. 添加群成员
      *
      * @apiDescription  需要token身份
      * - 有群主时：只有群主可以邀请
@@ -1776,7 +1920,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/group/deluser          37. 移出（退出）群成员
+     * @api {get} api/dialog/group/deluser          40. 移出（退出）群成员
      *
      * @apiDescription  需要token身份
      * - 只有群主、邀请人可以踢人
@@ -1820,7 +1964,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/group/transfer          38. 转让群组
+     * @api {get} api/dialog/group/transfer          41. 转让群组
      *
      * @apiDescription  需要token身份
      * - 只有群主且是个人类型群可以解散
@@ -1869,7 +2013,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/group/disband          39. 解散群组
+     * @api {get} api/dialog/group/disband          42. 解散群组
      *
      * @apiDescription  需要token身份
      * - 只有群主且是个人类型群可以解散
@@ -1897,7 +2041,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {get} api/dialog/group/searchuser          40. 搜索个人群（仅限管理员）
+     * @api {get} api/dialog/group/searchuser          43. 搜索个人群（仅限管理员）
      *
      * @apiDescription  需要token身份，用于创建部门搜索个人群组
      * @apiVersion 1.0.0
@@ -1926,7 +2070,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/okr/add          41. 创建OKR评论会话
+     * @api {post} api/dialog/okr/add          44. 创建OKR评论会话
      *
      * @apiDescription  需要token身份
      * @apiVersion 1.0.0
@@ -1965,7 +2109,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/okr/push          42. 推送OKR相关信息
+     * @api {post} api/dialog/okr/push          45. 推送OKR相关信息
      *
      * @apiDescription  需要token身份
      * @apiVersion 1.0.0
@@ -2001,7 +2145,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/msg/wordchain          44. 发送接龙消息
+     * @api {post} api/dialog/msg/wordchain          46. 发送接龙消息
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -2054,6 +2198,10 @@ class DialogController extends AbstractController
             $list = array_reverse(array_values($list));
         }
         //
+        usort($list, function($a, $b) {
+            return $a['id'] - $b['id'];
+        });
+        //
         $msgData = [
             'text' => $text,
             'list' => $list,
@@ -2064,7 +2212,7 @@ class DialogController extends AbstractController
     }
 
     /**
-     * @api {post} api/dialog/msg/vote          45. 发起投票
+     * @api {post} api/dialog/msg/vote          47. 发起投票
      *
      * @apiDescription 需要token身份
      * @apiVersion 1.0.0
@@ -2174,4 +2322,90 @@ class DialogController extends AbstractController
         return Base::retSuccess('发送成功', $result);
     }
 
+    /**
+     * @api {get} api/dialog/msg/top          48. 置顶/取消置顶
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName msg__top
+     *
+     * @apiParam {Number} msg_id            消息ID
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function msg__top()
+    {
+        $user = User::auth();
+        //
+        $msg_id = intval(Request::input("msg_id"));
+        //
+        $msg = WebSocketDialogMsg::whereId($msg_id)->first();
+        if (empty($msg)) {
+            return Base::retError("消息不存在或已被删除");
+        }
+        $dialog = WebSocketDialog::checkDialog($msg->dialog_id);
+        //
+        $before = $dialog->top_msg_id;
+        $beforeTopUserid = $dialog->top_userid;
+        $dialog->top_msg_id = $msg->id == $before ? 0 : $msg->id;
+        $dialog->top_userid = $dialog->top_msg_id ? $user->userid : 0;
+        $dialog->save();
+        //
+        $data = [
+            'add' => null,
+            'update' => [
+                'dialog_id' => $dialog->id,
+                'top_msg_id' => $dialog->top_msg_id,
+                'top_userid' => $dialog->top_userid,
+            ]
+        ];
+        $res = WebSocketDialogMsg::sendMsg(null, $dialog->id, 'top', [
+            'action' => $dialog->top_msg_id ? 'add' : 'remove',
+            'data' => [
+                'id' => $msg->id,
+                'type' => $msg->type,
+                'msg' => $msg->quoteTextMsg()
+            ]
+        ], $user->userid);
+        if (Base::isSuccess($res)) {
+            $data['add'] = $res['data'];
+            $dialog->pushMsg('updateTopMsg', $data['update']);
+        } else {
+            $dialog->top_msg_id = $before;
+            $dialog->top_userid = $beforeTopUserid;
+            $dialog->save();
+        }
+        //
+        return Base::retSuccess($dialog->top_msg_id ? '置顶成功' : '取消成功', $data);
+    }
+
+    /**
+     * @api {get} api/dialog/msg/topinfo          49. 获取置顶消息
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName msg__topinfo
+     *
+     * @apiParam {Number} dialog_id            会话ID
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function msg__topinfo()
+    {
+        User::auth();
+        //
+        $dialog_id = intval(Request::input('dialog_id'));
+        //
+        $dialog = WebSocketDialog::checkDialog($dialog_id);
+        //
+        $topMsg = WebSocketDialogMsg::whereId($dialog->top_msg_id)->first();
+        //
+        return Base::retSuccess('success', $topMsg);
+    }
 }

@@ -1,8 +1,30 @@
 const isElectron = !!(window && window.process && window.process.type);
 const isEEUiApp = window && window.navigator && /eeui/i.test(window.navigator.userAgent);
+const isSoftware = isElectron || isEEUiApp;
+
+const urlParams = $A.urlParameterAll()
+if (urlParams.language
+    || urlParams.theme
+    || urlParams.userid
+    || urlParams.token) {
+    if (urlParams.language) {
+        window.localStorage.setItem("__system:languageName__", urlParams.language)
+    }
+    if (urlParams.theme) {
+        window.localStorage.setItem("__system:themeConf__", urlParams.language)
+    }
+    if (urlParams.userid) {
+        window.localStorage.setItem("__system:userId__", urlParams.userid)
+    }
+    if (urlParams.token) {
+        window.localStorage.setItem("__system:userToken__", urlParams.token)
+    }
+    const newUrl = $A.removeURLParameter(window.location.href, ['theme', 'language', 'userid', 'token'])
+    window.history.replaceState(null, '', newUrl)
+}
 
 import microappInit from "./microapp"
-import {switchLanguage as $L, setLanguage, getLanguage} from "./language";
+import {switchLanguage as $L} from "./language";
 
 import './functions/common'
 import './functions/eeui'
@@ -75,12 +97,12 @@ VueRouter.prototype.push = function push(location) {
 }
 
 const router = new VueRouter({
-    mode: isElectron || isEEUiApp ? 'hash' : 'history',
+    mode: isSoftware && !/https*:/i.test(window.location.protocol) ? 'hash' : 'history',
     routes
 });
 
 // 进度条配置
-if (!isElectron && !isEEUiApp) {
+if (!isSoftware) {
     ViewUI.LoadingBar.config({
         color: '#3fcc25',
         failedColor: '#ff0000'
@@ -91,18 +113,6 @@ if (!isElectron && !isEEUiApp) {
             ViewUI.LoadingBar._load = true;
             ViewUI.LoadingBar.start();
         }, 300)
-        //
-        if (to.query?.theme) {
-            store.dispatch("setTheme", typeof to.query?.theme == 'string' ? to.query?.theme : to.query?.theme[0])
-        }
-        if (to.query?.lang) {
-            let lang = typeof to.query?.lang == 'string' ? to.query?.lang : to.query?.lang[0]
-            if(lang && lang != getLanguage()){
-                setLanguage(lang, true)
-                return;
-            }
-        }
-        //
         next();
     });
     router.afterEach(() => {
@@ -159,6 +169,7 @@ $A.isMainElectron = false;
 $A.isSubElectron = false;
 $A.isEEUiApp = isEEUiApp;
 $A.isElectron = isElectron;
+$A.isSoftware = isSoftware;
 $A.openLog = false;
 if (isElectron) {
     $A.Electron = electron;
@@ -204,6 +215,7 @@ Vue.prototype.$Platform = $A.Platform;
 Vue.prototype.$isMainElectron = $A.isMainElectron;
 Vue.prototype.$isSubElectron = $A.isSubElectron;
 Vue.prototype.$isEEUiApp = $A.isEEUiApp;
+Vue.prototype.$isSoftware = $A.isSoftware;
 
 Vue.config.productionTip = false;
 Vue.mixin(mixin)

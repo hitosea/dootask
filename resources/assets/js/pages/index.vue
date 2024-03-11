@@ -3,29 +3,30 @@
 </template>
 
 <script>
-import {languageType} from "../language";
+import {languageName} from "../language";
 
 export default {
     data() {
         return {}
     },
 
-    computed: {
-        isSoftware() {
-            return this.$Electron || this.$isEEUiApp;
-        },
-    },
-
     mounted() {
         if (/^https*:/i.test(window.location.protocol)) {
+            let redirect = null
             if (this.$router.mode === "hash") {
                 if ($A.stringLength(window.location.pathname) > 2) {
-                    window.location.href = `${window.location.origin}/#${window.location.pathname}${window.location.search}`
+                    redirect = `${window.location.origin}/#${window.location.pathname}${window.location.search}`
                 }
             } else if (this.$router.mode === "history") {
                 if ($A.strExists(window.location.href, "/#/")) {
-                    window.location.href = window.location.href.replace("/#/", "/")
+                    redirect = window.location.href.replace("/#/", "/")
                 }
+            }
+            if (redirect) {
+                this.$store.dispatch("userUrl", redirect).then(redirect => {
+                    window.location.href = redirect
+                })
+                throw SyntaxError()
             }
         }
     },
@@ -36,7 +37,7 @@ export default {
 
     methods: {
         start() {
-            if (this.isSoftware) {
+            if (this.$isSoftware) {
                 this.goNext()
                 return;
             }
@@ -52,7 +53,7 @@ export default {
         },
 
         goIndex() {
-            if (languageType === "zh" || languageType === "zh-CHT") {
+            if (languageName === "zh" || languageName === "zh-CHT") {
                 window.location.href = $A.apiUrl("../site/zh/index.html")
             } else {
                 window.location.href = $A.apiUrl("../site/en/index.html")

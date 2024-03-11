@@ -36,6 +36,7 @@ services:
     image: "nginx:alpine"
     ports:
       - "${APP_PORT}:80"
+      - "${APP_SSL_PORT:-}:443"
     volumes:
       - ./docker/nginx:/etc/nginx/conf.d
       - ./public:/var/www/public
@@ -103,7 +104,7 @@ services:
 
   fileview:
     container_name: "dootask-fileview-${APP_ID}"
-    image: "kuaifan/fileview:4.2.0-SNAPSHOT-RC22"
+    image: "kuaifan/fileview:4.2.0-SNAPSHOT-RC24"
     environment:
       KK_CONTEXT_PATH: "/fileview"
       KK_OFFICE_PREVIEW_SWITCH_DISABLED: true
@@ -150,7 +151,7 @@ services:
 
   approve:
     container_name: "dootask-approve-${APP_ID}"
-    image: "kuaifan/dooapprove:0.0.9"
+    image: "kuaifan/dooapprove:0.0.10"
     environment:
       TZ: "${TIMEZONE:-PRC}"
       MYSQL_HOST: "${DB_HOST}"
@@ -160,6 +161,7 @@ services:
       MYSQL_PASSWORD: "${DB_PASSWORD}"
       MYSQL_Prefix: "${DB_PREFIX}approve_"
       DEMO_DATA: true
+      KEY: ${APP_KEY}
     networks:
       extnetwork:
         ipv4_address: "${APP_IPPR}.11"
@@ -169,7 +171,7 @@ services:
 
   ai:
     container_name: "dootask-ai-${APP_ID}"
-    image: "kuaifan/dooai:0.0.8"
+    image: "kuaifan/dooai:0.1.8"
     networks:
       extnetwork:
         ipv4_address: "${APP_IPPR}.12"
@@ -186,8 +188,9 @@ services:
       MYSQL_DBNAME: "${DB_DATABASE}"
       MYSQL_USERNAME: "${DB_USERNAME}"
       MYSQL_PASSWORD: "${DB_PASSWORD}"
-      KEY: "${APP_KEY}"
+      MYSQL_PREFIX: "${DB_PREFIX}"
       DEMO_DATA: true
+      KEY: ${APP_KEY}
     networks:
       extnetwork:
         ipv4_address: "${APP_IPPR}.13"

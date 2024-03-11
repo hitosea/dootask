@@ -43,7 +43,6 @@
 <script>
 import MarkdownPreview from "./MDEditor/components/preview";
 import axios from "axios";
-import {mapState} from "vuex";
 import {Store} from "le5le-store";
 
 export default {
@@ -68,6 +67,7 @@ export default {
     },
 
     mounted() {
+        this.prefetchResources()
         this.checkVersion()
         //
         if (this.$Electron) {
@@ -78,7 +78,7 @@ export default {
                 this.$store.state.clientNewVersion = info.version
                 this.updateVersion = info.version;
                 this.updateNote = info.releaseNotes || this.$L('没有更新描述。');
-                this.updateShow = $A.strExists(this.updateNote, `[${this.updateVersion}-Release]`);
+                this.updateShow = !$A.strExists(this.updateNote, `[${this.updateVersion}-Silence]`);
             })
         }
     },
@@ -99,12 +99,8 @@ export default {
     },
 
     computed: {
-        isSoftware() {
-            return this.$Electron || this.$isEEUiApp;
-        },
-
         showSSO() {
-            return this.isSoftware && ['login'].includes(this.$route.name)
+            return this.$isSoftware && ['login'].includes(this.$route.name)
         },
 
         showDown() {
@@ -119,7 +115,35 @@ export default {
     methods: {
         isNotServer() {
             let apiHome = $A.getDomain(window.systemInfo.apiUrl)
-            return this.isSoftware && (apiHome == "" || apiHome == "public")
+            return this.$isSoftware && (apiHome == "" || apiHome == "public")
+        },
+
+        prefetchResources() {
+            if (this.isNotServer()) {
+                return;
+            }
+            if (this.$Electron && $A.$isSubElectron) {
+                return; // 客户端子窗口 不预加载
+            }
+            if (this.$isEEUiApp) {
+                return; // 移动端 不预加载
+            }
+            axios.get($A.apiUrl('system/prefetch')).then(({status, data}) => {
+                if (status === 200) {
+                    data.forEach(url => {
+                        const script = document.createElement('link')
+                        script.rel = 'prefetch'
+                        script.href = url
+                        script.onload = () => {
+                            document.head.removeChild(script)
+                        }
+                        script.onerror = () => {
+                            document.head.removeChild(script)
+                        }
+                        document.head.appendChild(script)
+                    })
+                }
+            }).catch(_ => { })
         },
 
         checkVersion() {
@@ -133,7 +157,7 @@ export default {
                     if (this.compareVersion(this.apiVersion, '0.19.0') === -1) {
                         $A.modalWarning({
                             title: '温馨提示',
-                            message: '服务器接口版本过低，部分功能可能无法正常使用。',
+                            message: `服务器（${$A.getDomain($A.apiUrl('../'))}）接口版本过低，部分功能可能无法正常使用。`,
                         });
                     }
                     if (this.$Electron) {

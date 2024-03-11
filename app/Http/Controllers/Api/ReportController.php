@@ -13,7 +13,6 @@ use App\Module\Doo;
 use App\Tasks\PushTask;
 use Carbon\Carbon;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Validation\Rule;
 use Request;
@@ -317,13 +316,16 @@ class ReportController extends AbstractController
         // 未完成的任务
         $unfinishedContent = "";
         $unfinished_task = ProjectTask::query()
-            ->whereNull("complete_at")
-            ->whereNotNull("start_at")
-            ->where("end_at", "<", $end_time->toDateTimeString())
+            ->join("projects", "projects.id", "=", "project_tasks.project_id")
+            ->whereNull("projects.archived_at")
+            ->whereNull("project_tasks.complete_at")
+            ->whereNotNull("project_tasks.start_at")
+            ->where("project_tasks.end_at", "<", $end_time->toDateTimeString())
             ->whereHas("taskUser", function ($query) use ($user) {
                 $query->where("userid", $user->userid);
             })
-            ->orderByDesc("id")
+            ->select("project_tasks.*")
+            ->orderByDesc("project_tasks.id")
             ->get();
         if ($unfinished_task->isNotEmpty()) {
             foreach ($unfinished_task as $task) {
@@ -474,10 +476,13 @@ class ReportController extends AbstractController
     {
         $user = User::auth();
         //
-        $data = Report::whereHas("Receives", function (Builder $query) use ($user) {
-            $query->where("userid", $user->userid)->where("read", 0);
-        })->orderByDesc('created_at')->paginate(Base::getPaginate(50, 20));
-        return Base::retSuccess("success", $data);
+        $total = Report::select('reports.id')
+            ->join('report_receives', 'report_receives.rid', '=', 'reports.id')
+            ->where('report_receives.userid', $user->userid)
+            ->where('report_receives.read', 0)
+            ->count();
+        //
+        return Base::retSuccess("success", compact("total"));
     }
 
     /**

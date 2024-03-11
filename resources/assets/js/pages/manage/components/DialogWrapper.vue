@@ -10,9 +10,9 @@
         @touchmove="onTouchMove"
         @touchend="onTouchEnd">
         <!--顶部导航-->
-        <div class="dialog-nav" :style="navStyle">
+        <div ref="nav" class="dialog-nav">
             <slot name="head">
-                <div class="nav-wrapper" :class="{completed: $A.dialogCompleted(dialogData)}">
+                <div class="nav-wrapper" :class="navClass">
                     <div class="dialog-back" @click="onBack">
                         <i class="taskfont">&#xe676;</i>
                         <div v-if="msgUnreadOnly" class="back-num">{{msgUnreadOnly}}</div>
@@ -48,7 +48,7 @@
                                 <Tag v-if="dialogData.type === 'user' && approvaUserStatus" class="after" color="red" :fade="false">{{$L(approvaUserStatus)}}</Tag>
                                 <Tag v-if="dialogData.group_type=='all'" class="after pointer" :fade="false" @on-click="onDialogMenu('groupInfo')">{{$L('全员')}}</Tag>
                                 <Tag v-else-if="dialogData.group_type=='department'" class="after pointer" :fade="false" @on-click="onDialogMenu('groupInfo')">{{$L('部门')}}</Tag>
-                                <div v-if="msgLoadIng > 0" class="load"><Loading/></div>
+                                <div v-if="msgLoadIng > 0 && allMsgs.length > 0" class="load"><Loading/></div>
                             </div>
                             <ul class="title-desc">
                                 <li v-if="dialogData.type === 'user'" :class="[dialogData.online_state === true ? 'online' : 'offline']">
@@ -122,13 +122,12 @@
                             <i class="taskfont" @click="onSearchSwitch('next')">&#xe705;</i>
                         </div>
                         <div class="search-input">
-                            <Input ref="searchInput" v-model="searchKey" :placeholder="$L('搜索消息')" @on-keyup="onSearchKeyup" clearable>
-                                <div class="search-pre" slot="prefix">
-                                    <Loading v-if="searchLoad > 0"/>
-                                    <Icon v-else type="ios-search" />
-                                </div>
-                            </Input>
-                            <div v-if="searchLoad === 0 && searchResult.length > 0" class="search-total" slot="append">{{searchLocation}}/{{searchResult.length}}</div>
+                            <div class="search-pre">
+                                <Loading v-if="searchLoad > 0"/>
+                                <Icon v-else type="ios-search" />
+                            </div>
+                            <Input ref="searchInput" v-model="searchKey" :placeholder="$L('搜索消息')" @on-keyup="onSearchKeyup" clearable/>
+                            <div v-if="searchLoad === 0 && searchResult.length > 0" class="search-total">{{searchLocation}}/{{searchResult.length}}</div>
                         </div>
                         <div class="search-cancel" @click="onSearchKeyup(null)">{{$L('取消')}}</div>
                     </div>
@@ -136,57 +135,90 @@
             </slot>
         </div>
 
-        <!--跳转提示-->
-        <div v-if="positionMsg" class="dialog-position" :class="{'down': tagShow}">
-            <div class="position-label" @click="onPositionMark">
-                <Icon v-if="positionLoad > 0" type="ios-loading" class="icon-loading"></Icon>
-                <i v-else class="taskfont">&#xe624;</i>
-                {{positionMsg.label}}
+        <!--置顶消息-->
+        <div v-if="topShow" class="dialog-top-message" @click="onPosTop">
+            <div class="dialog-top-message-warp">
+                <div class="dialog-top-message-font">
+                    <i class="taskfont">&#xe7e6;</i>
+                </div>
+                <div class="dialog-top-message-content">
+                    <p class="content">
+                        <UserAvatar :userid="topMsg.userid" showName :showIcon="false"/>:
+                        <span>{{$A.getMsgSimpleDesc(topMsg)}}</span>
+                    </p>
+                    <p class="personnel">
+                        {{ $L('置顶人员') }}
+                        <UserAvatar :userid="dialogData.top_userid" showName :showIcon="false"/>
+                    </p>
+                </div>
+                <div class="dialog-top-message-btn">
+                    <Loading v-if="topPosLoad > 0" type="pure"/>
+                    <i v-else class="taskfont">&#xee15;</i>
+                    <i class="taskfont" @click.stop="onCancelTop(topMsg)">&#xe6e5;</i>
+                </div>
             </div>
         </div>
 
-        <!--消息列表-->
-        <VirtualList
-            ref="scroller"
-            class="dialog-scroller scrollbar-virtual"
-            active-prefix="item"
-            :class="scrollerClass"
-            :data-key="'id'"
-            :data-sources="allMsgs"
-            :data-component="msgItem"
-
-            :item-class-add="itemClassAdd"
-            :extra-props="{dialogData, operateVisible, operateItem, isMyDialog, msgId, unreadMsgId, scrollIng, msgReady}"
-            :estimate-size="dialogData.type=='group' ? 105 : 77"
-            :keeps="25"
-            :disabled="scrollDisabled"
-            @activity="onActivity"
-            @scroll="onScroll"
-            @range="onRange"
-            @totop="onPrevPage"
-
-            @on-mention="onMention"
-            @on-longpress="onLongpress"
-            @on-view-reply="onViewReply"
-            @on-view-text="onViewText"
-            @on-view-file="onViewFile"
-            @on-down-file="onDownFile"
-            @on-reply-list="onReplyList"
-            @on-error="onError"
-            @on-emoji="onEmoji"
-            @on-show-emoji-user="onShowEmojiUser">
-            <template #header>
-                <div v-if="(allMsgs.length === 0 && loadIng) || prevId > 0" class="dialog-item loading">
-                    <div v-if="scrollOffset < 100" class="dialog-wrapper-loading"></div>
+        <!--消息部分-->
+        <div ref="msgs" class="dialog-msgs">
+            <!--定位提示-->
+            <div v-if="positionShow && positionMsg" class="dialog-position">
+                <div class="position-label" @click="onPositionMark(positionMsg.msg_id)">
+                    <Icon v-if="positionLoad > 0" type="ios-loading" class="icon-loading"></Icon>
+                    <i v-else class="taskfont">&#xe624;</i>
+                    {{positionMsg.label}}
                 </div>
-                <div v-else-if="allMsgs.length === 0" class="dialog-item nothing">{{$L('暂无消息')}}</div>
-            </template>
-        </VirtualList>
+            </div>
+
+            <!--消息列表-->
+            <VirtualList
+                ref="scroller"
+                class="dialog-scroller scrollbar-virtual"
+                active-prefix="item"
+                :data-key="'id'"
+                :data-sources="allMsgs"
+                :data-component="msgItem"
+
+                :extra-props="{dialogData, operateVisible, operateItem, isMyDialog, msgId, unreadOne, scrollIng, readEnabled}"
+                :estimate-size="dialogData.type=='group' ? 105 : 77"
+                :keeps="dialogMsgKeep"
+                :disabled="scrollDisabled"
+                @activity="onActivity"
+                @scroll="onScroll"
+                @range="onRange"
+                @totop="onPrevPage"
+
+                @on-mention="onMention"
+                @on-longpress="onLongpress"
+                @on-view-reply="onViewReply"
+                @on-view-text="onViewText"
+                @on-view-file="onViewFile"
+                @on-down-file="onDownFile"
+                @on-reply-list="onReplyList"
+                @on-error="onError"
+                @on-emoji="onEmoji"
+                @on-show-emoji-user="onShowEmojiUser">
+                <template #header>
+                    <div class="dialog-item head-box">
+                        <div v-if="loadIng > 0 || prevId > 0" class="loading" :class="{filled: allMsgs.length === 0}">
+                            <span v-if="scrollOffset < 100"></span>
+                        </div>
+                        <div v-else-if="allMsgs.length === 0" class="describe filled">{{$L('暂无消息')}}</div>
+                    </div>
+                </template>
+            </VirtualList>
+        </div>
 
         <!--底部输入-->
-        <div ref="footer" class="dialog-footer" :class="footerClass" :style="footerStyle" @click="onActive">
-            <div class="dialog-newmsg" @click="onToBottom">{{$L(`有${msgNew}条新消息`)}}</div>
-            <div class="dialog-goto" @click="onToBottom"><i class="taskfont">&#xe72b;</i></div>
+        <div ref="footer" class="dialog-footer" @click="onActive">
+            <div
+                v-if="scrollTail > 500 || (msgNew > 0 && allMsgs.length > 0)"
+                class="dialog-goto"
+                @click="onToBottom">
+                <Badge :overflow-count="999" :count="msgNew">
+                    <i class="taskfont">&#xe72b;</i>
+                </Badge>
+            </div>
             <DialogUpload
                 ref="chatUpload"
                 class="chat-upload"
@@ -220,16 +252,14 @@
                 :dialog-id="dialogId"
                 :emoji-bottom="windowPortrait"
                 :maxlength="200000"
+                :placeholder="$L('输入消息...')"
                 @on-focus="onEventFocus"
                 @on-blur="onEventBlur"
                 @on-more="onEventMore"
                 @on-file="sendFileMsg"
                 @on-send="sendMsg"
                 @on-record="sendRecord"
-                @on-record-state="onRecordState"
-                @on-emoji-visible-change="onEventEmojiVisibleChange"
-                @on-height-change="onHeightChange"
-                :placeholder="$L('输入消息...')"/>
+                @on-record-state="onRecordState"/>
         </div>
 
         <!--长按、右键-->
@@ -287,6 +317,10 @@
                                 <i class="taskfont">&#xe7b7;</i>
                                 <span>{{ $L(operateItem.todo ? '取消待办' : '设待办') }}</span>
                             </li>
+                            <li @click="onOperate('top')">
+                                <i class="taskfont" v-html="dialogData.top_msg_id == operateItem.id ? '&#xe7e3;' : '&#xe7e6;'"></i>
+                                <span>{{ $L(dialogData.top_msg_id == operateItem.id ? '取消置顶' : '置顶') }}</span>
+                            </li>
                             <li v-if="msgType !== ''" @click="onOperate('pos')">
                                 <i class="taskfont">&#xee15;</i>
                                 <span>{{ $L('完整对话') }}</span>
@@ -326,7 +360,7 @@
             :closable="false"
             :mask-closable="false"
             @on-ok="pasteSend">
-            <ul class="dialog-wrapper-paste" :class="pasteWrapperClass">
+            <ul class="dialog-wrapper-paste" :class="pasteClass">
                 <li v-for="item in pasteItem">
                     <img v-if="item.type == 'image'" :src="item.result"/>
                     <div v-else>{{$L('文件')}}: {{item.name}} ({{$A.bytesToSize(item.size)}})</div>
@@ -386,39 +420,66 @@
             </div>
         </Modal>
 
-        <!-- 转发 -->
+        <!-- 转发选择 -->
         <UserSelect
             ref="forwardSelect"
-            v-model="forwardData"
             :multiple-max="50"
             :title="$L('转发')"
-            :twice-affirm="true"
-            :twice-affirm-title="$L('转发给:')"
-            :before-submit="onForward"
+            :before-submit="onForwardBefore"
             :show-select-all="false"
-            :multiple-choice="false"
             show-dialog
-            module>
-            <template #twice-affirm-body-extend>
+            module/>
+
+        <!-- 转发确认 -->
+        <Modal
+            v-model="forwardhow"
+            :title="$L('转发给:')"
+            class-name="common-user-select-modal dialog-forward-message-modal"
+            :mask-closable="false"
+            width="420">
+            <div class="user-modal-search">
+                <Scrollbar class="search-selected" enable-x :enable-y="false">
+                    <ul>
+                        <li v-for="item in forwardData" :data-id="item.userid">
+                            <div v-if="item.type=='group'" class="user-modal-avatar">
+                                <EAvatar v-if="item.avatar" class="img-avatar" :src="item.avatar" :size="32"></EAvatar>
+                                <i v-else-if="item.group_type=='department'" class="taskfont icon-avatar department">&#xe75c;</i>
+                                <i v-else-if="item.group_type=='project'" class="taskfont icon-avatar project">&#xe6f9;</i>
+                                <i v-else-if="item.group_type=='task'" class="taskfont icon-avatar task">&#xe6f4;</i>
+                                <i v-else-if="item.group_type=='okr'" class="taskfont icon-avatar task">&#xe6f4;</i>
+                                <Icon v-else class="icon-avatar" type="ios-people" />
+                                <div v-if="forwardData.length == 1" class="avatar-name">
+                                    <span>{{item.name}}</span>
+                                </div>
+                            </div>
+                            <UserAvatar v-else :userid="item.userid" :size="32" :show-name="forwardData.length == 1"/>
+                        </li>
+                    </ul>
+                </Scrollbar>
+            </div>
+            <div class="twice-affirm-body-extend">
                 <div class="dialog-wrapper-forward-body">
-                    <div class="dialog-wrapper ">
+                    <div class="dialog-wrapper">
                         <div class="dialog-scroller">
                             <DialogItem :source="operateItem" simpleView :dialogAvatar="false"/>
                         </div>
                     </div>
                     <div class="leave-message">
-                        <Input type="textarea" :autosize="{minRows: 1,maxRows: 3}" v-model="forwardLeaveMessage" :placeholder="$L('留言')" clearable />
+                        <Input type="textarea" :autosize="{minRows: 1,maxRows: 3}" v-model="forwardMessage" :placeholder="$L('留言')" clearable />
                     </div>
                 </div>
-            </template>
-            <template #twice-affirm-footer-extend>
-                <div class="dialog-wrapper-forward-footer" :class="{'selected': !forwardShowOriginal}" @click="forwardShowOriginal = !forwardShowOriginal">
-                    <Icon v-if="!forwardShowOriginal" class="user-modal-icon" type="ios-checkmark-circle" />
-                    <Icon v-else class="user-modal-icon" type="ios-radio-button-off" />
+            </div>
+            <template #footer>
+                <div class="dialog-wrapper-forward-footer" :class="{selected: !forwardSource}" @click="forwardSource = !forwardSource">
+                    <Icon class="user-modal-icon" :type="forwardSource ? 'ios-radio-button-off' : 'ios-checkmark-circle'" />
                     {{$L('不显示原发送者信息')}}
                 </div>
+                <Button type="primary" :loading="forwardLoad > 0" @click="onForwardAffirm">
+                    {{$L('确定')}}
+                    <template v-if="forwardData.length > 0">({{forwardData.length}})</template>
+                </Button>
             </template>
-        </UserSelect>
+        </Modal>
 
         <!-- 设置待办 -->
         <Modal
@@ -561,7 +622,6 @@ import UserAvatarTip from "../../../components/UserAvatar/tip.vue";
 import DialogGroupWordChain from "./DialogGroupWordChain";
 import DialogGroupVote from "./DialogGroupVote";
 
-
 export default {
     name: "DialogWrapper",
     components: {
@@ -602,17 +662,23 @@ export default {
 
     data() {
         return {
+            loadIng: 0,
+
             msgItem: DialogItem,
             msgText: '',
-            msgNew: 0,
-            msgType: '',
-            loadIng: 0,
+            msgNew: 0,              // 新消息数
+            msgType: '',            // 消息类型
+            msgActivity: false,     // 消息活动中
+            msgPrepared: false,     // 消息已准备
+
+            focusLazy: false,
+            focusTimer: null,
 
             allMsgs: [],
             tempMsgs: [],
             tempId: $A.randNum(1000000000, 9999999999),
             msgLoadIng: 0,
-            msgActiveIndex: -1,
+            msgActiveId: 0,
 
             pasteShow: false,
             pasteFile: [],
@@ -632,9 +698,11 @@ export default {
             modifyData: {},
             modifyLoad: 0,
 
+            forwardhow: false,
             forwardData: [],
-            forwardShowOriginal: true,
-            forwardLeaveMessage: '',
+            forwardLoad: 0,
+            forwardMessage: '',
+            forwardSource: true,
 
             openId: 0,
             dialogDrag: false,
@@ -647,8 +715,6 @@ export default {
                 disabledChoice: []
             },
 
-            navStyle: {},
-
             operateClient: {x: 0, y: 0},
             operateVisible: false,
             operatePreventScroll: 0,
@@ -659,11 +725,8 @@ export default {
             recordState: '',
             wrapperStart: null,
 
-            scrollOffset: 0,
             scrollTail: 0,
-
-            preventMoreLoad: false,
-            preventToBottom: false,
+            scrollOffset: 0,
 
             replyListShow: false,
             replyListId: 0,
@@ -691,16 +754,24 @@ export default {
             scrollAction: 0,
             scrollTmp: 0,
             scrollIng: 0,
+            scrollGroup: null,
 
             approveDetails: {id: 0},
             approveDetailsShow: false,
             approvaUserStatus: '',
 
-            positionLoad: 0,            // 定位跳转加载中
-            msgReady: false,            // 消息准备完成
-            unreadMsgId: 0,             // 最早未读消息id
-            toBottomReGetMsg: false,    // 滚动到底部重新获取消息
-            selectionRange: false,      // 是否选择文本
+            observers: [],
+            msgChangeCache: {},
+
+            unreadOne: 0,                       // 最早未读消息id
+            topPosLoad: 0,                      // 置顶跳转加载中
+            positionLoad: 0,                    // 定位跳转加载中
+            positionShow: false,                // 定位跳转显示
+            preventMoreLoad: false,             // 阻止加载更多
+            preventToBottom: false,             // 阻止滚动到底部
+            selectedTextStatus: false,          // 是否选择文本
+            scrollToBottomRefresh: false,       // 滚动到底部重新获取消息
+            androidKeyboardVisible: false,      // Android键盘是否可见
         }
     },
 
@@ -717,7 +788,15 @@ export default {
             this.msgSubscribe.unsubscribe();
             this.msgSubscribe = null;
         }
+        this.observers.forEach(({observer}) => observer.disconnect())
+        this.observers = []
+        //
         document.removeEventListener('selectionchange', this.onSelectionchange);
+        //
+        const scroller = this.$refs.scroller;
+        if (scroller) {
+            scroller.virtual.destroy()
+        }
     },
 
     computed: {
@@ -728,15 +807,19 @@ export default {
             'dialogSearchMsgId',
             'dialogMsgs',
             'dialogTodos',
+            'dialogMsgTops',
             'dialogMsgTransfer',
+            'dialogMsgKeep',
+            'dialogIns',
             'cacheDialogs',
             'wsOpenNum',
             'touchBackInProgress',
-            'dialogIns',
             'cacheUserBasic',
             'fileLinks',
             'cacheEmojis',
 
+            'readLoadNum',
+            'readTimeout',
             'keyboardType',
             'keyboardHeight',
             'safeAreaBottom'
@@ -749,7 +832,11 @@ export default {
         },
 
         dialogData() {
-            return this.cacheDialogs.find(({id}) => id == this.dialogId) || {};
+            const data = this.cacheDialogs.find(({id}) => id == this.dialogId) || {}
+            if (this.unreadOne === 0) {
+                this.unreadOne = data.unread_one || 0
+            }
+            return data
         },
 
         dialogList() {
@@ -828,43 +915,43 @@ export default {
             return '发送文件'
         },
 
-        msgTags() {
+        msgTags({dialogData}) {
             const array = [
                 {type: '', label: '消息'},
             ];
-            if (this.dialogData.has_tag) {
+            if (dialogData.has_tag) {
                 array.push({type: 'tag', label: '标注'})
             }
-            if (this.dialogData.has_todo) {
+            if (dialogData.has_todo) {
                 array.push({type: 'todo', label: '事项'})
             }
-            if (this.dialogData.has_image) {
+            if (dialogData.has_image) {
                 array.push({type: 'image', label: '图片'})
             }
-            if (this.dialogData.has_file) {
+            if (dialogData.has_file) {
                 array.push({type: 'file', label: '文件'})
             }
-            if (this.dialogData.has_link) {
+            if (dialogData.has_link) {
                 array.push({type: 'link', label: '链接'})
             }
-            if (this.dialogData.group_type === 'project') {
+            if (dialogData.group_type === 'project') {
                 array.push({type: 'project', label: '打开项目'})
             }
-            if (this.dialogData.group_type === 'task') {
+            if (dialogData.group_type === 'task') {
                 array.push({type: 'task', label: '打开任务'})
             }
-            if (this.dialogData.group_type === 'okr') {
+            if (dialogData.group_type === 'okr') {
                 array.push({type: 'okr', label: '打开OKR'})
             }
             return array
         },
 
-        quickMsgs() {
-            return this.dialogData.quick_msgs || []
+        topMsg() {
+            return this.dialogData.top_msg_id && this.dialogMsgTops.find(({id}) => id == this.dialogData.top_msg_id)
         },
 
-        quickShow() {
-            return this.quickMsgs.length > 0 && this.windowScrollY === 0 && this.quoteId === 0
+        quickMsgs() {
+            return this.dialogData.quick_msgs || []
         },
 
         todoList() {
@@ -876,44 +963,50 @@ export default {
             });
         },
 
+        isDefaultSize() {
+            return this.windowScrollY === 0 && !this.androidKeyboardVisible
+        },
+
+        quickShow() {
+            return this.quickMsgs.length > 0 && this.isDefaultSize && this.quoteId === 0
+        },
+
         todoShow() {
-            return this.todoList.length > 0 && this.windowScrollY === 0 && this.quoteId === 0
+            return this.todoList.length > 0 && this.isDefaultSize && this.quoteId === 0
+        },
+
+        tagShow() {
+            return this.msgTags.length > 1 && this.isDefaultSize && !this.searchShow
+        },
+
+        topShow() {
+            return this.topMsg && this.isDefaultSize && !this.searchShow && this.msgType === ''
         },
 
         wrapperClass() {
             if (['ready', 'ing'].includes(this.recordState)) {
-                return ['record-ready']
+                return 'record-ready'
             }
             return null
         },
 
-        tagShow() {
-            return this.msgTags.length > 1 && this.windowScrollY === 0 && !this.searchShow
+        navClass() {
+            return {
+                'completed': $A.dialogCompleted(this.dialogData),
+                'tagged': this.tagShow
+            }
         },
 
-        scrollerClass() {
-            return !this.$slots.head && this.tagShow ? 'default-header' : null
-        },
-
-        pasteWrapperClass() {
+        pasteClass() {
             if (this.pasteItem.find(({type}) => type !== 'image')) {
                 return ['multiple'];
             }
             return [];
         },
 
-        footerClass() {
-            if (this.msgNew > 0 && this.allMsgs.length > 0) {
-                return 'newmsg'
-            }
-            if (this.scrollTail > 500) {
-                return 'goto'
-            }
-            return null
-        },
-
-        footerPaddingBottom({keyboardType, keyboardHeight, safeAreaBottom, windowScrollY, isMessenger}) {
+        footerPaddingBottom({keyboardType, keyboardHeight, safeAreaBottom, windowScrollY, isMessenger, focusLazy}) {
             if (windowScrollY === 0
+                && focusLazy
                 && isMessenger
                 && keyboardType === "show"
                 && keyboardHeight > 0
@@ -921,14 +1014,6 @@ export default {
                 return keyboardHeight + safeAreaBottom;
             }
             return 0;
-        },
-
-        footerStyle({footerPaddingBottom}) {
-            const style = {};
-            if (footerPaddingBottom) {
-                style.paddingBottom = `${footerPaddingBottom}px`;
-            }
-            return style;
         },
 
         msgUnreadOnly() {
@@ -962,14 +1047,8 @@ export default {
         },
 
         isMute() {
-            if (this.dialogData.group_type === 'all') {
-                if (this.dialogData.all_group_mute === 'all') {
-                    return true
-                } else if (this.dialogData.all_group_mute === 'user') {
-                    if (!this.userIsAdmin) {
-                        return true
-                    }
-                }
+            if (this.dialogData.dialog_mute === 'close') {
+                return !this.userIsAdmin
             }
             return false
         },
@@ -979,10 +1058,6 @@ export default {
                 return this.msgId
             }
             return this.dialogData.extra_quote_id || 0
-        },
-
-        quoteUpdate() {
-            return this.dialogData.extra_quote_type === 'update'
         },
 
         quoteData() {
@@ -1002,25 +1077,34 @@ export default {
             return null
         },
 
-        positionMsg() {
-            const {mention, unread, position_msgs} = this.dialogData
-            if (!position_msgs || position_msgs.length === 0 || unread === 0 || this.allMsgs.length === 0) {
+        positionMsg({msgNew, dialogData, allMsgs}) {
+            const {unread, unread_one, mention, mention_ids} = dialogData
+            const not = unread - msgNew
+            const array = []
+            if (unread_one) {
+                array.push({
+                    type: 'unread',
+                    label: this.$L(`未读消息${not}条`),
+                    msg_id: unread_one
+                })
+            }
+            if (mention_ids && mention_ids.length > 0) {
+                array.push(...mention_ids.map(msg_id => {
+                    return {
+                        type: 'mention',
+                        label: this.$L(`@我的消息`),
+                        msg_id
+                    }
+                }))
+            }
+            if (not <= 0 || array.length === 0 || allMsgs.length === 0) {
                 return null
             }
-            const item = $A.cloneJSON(position_msgs.find(item => {
-                if (mention === 0) {
-                    return item.label === '{UNREAD}'
-                }
-                return true
-            }))
-            if (item.label === '{UNREAD}') {
-                item.label = this.$L(`未读消息${unread}条`)
-            }
-            return item
+            return array.find(item => item.type === (mention === 0 ? 'unread' : 'mention')) || array[0]
         },
 
-        operateEmojis() {
-            const list = this.cacheEmojis.slice(0, 3)
+        operateEmojis({cacheEmojis}) {
+            const list = cacheEmojis.slice(0, 3)
             Object.values(['👌', '👍', '😂', '🎉', '❤️', '🥳️', '🥰', '😥', '😭']).some(item => {
                 if (!list.includes(item)) {
                     list.push(item)
@@ -1029,35 +1113,68 @@ export default {
             return list
         },
 
-        maxSize() {
-            if(this.systemConfig?.file_upload_limit){
-                return this.systemConfig.file_upload_limit * 1024
+        maxSize({systemConfig}) {
+            if(systemConfig?.file_upload_limit){
+                return systemConfig.file_upload_limit * 1024
             }
             return 1024000
+        },
+
+        readEnabled({msgActivity, msgPrepared}) {
+            return msgActivity === 0 && msgPrepared
+        },
+
+        stickToBottom({windowActive, scrollTail, preventToBottom}) {
+            return windowActive && scrollTail <= 0 && !preventToBottom
         }
     },
 
     watch: {
+        '$route': {
+            handler(data) {
+                const { name, params } = data || {}
+                if (name != 'manage-messenger') {
+                    return
+                }
+                if (params.dialog_id && params.open && ['word-chain', 'vote'].includes(params.open)) {
+                    this.$nextTick(_ => {
+                        this.$store.state[params.open == 'word-chain' ? 'dialogDroupWordChain' : 'dialogGroupVote'] = {
+                            type: 'create',
+                            dialog_id: params.dialog_id
+                        }
+                        params.open = "";
+                    })
+                }
+            },
+            immediate: true
+        },
+
         dialogId: {
             handler(dialog_id, old_id) {
                 if (dialog_id) {
                     this.msgNew = 0
                     this.msgType = ''
+                    this.unreadOne = 0
+                    this.scrollTail = 0
+                    this.scrollOffset = 0
                     this.searchShow = false
-                    this.unreadMsgId = 0
-                    this.toBottomReGetMsg = false
+                    this.positionShow = false
+                    this.msgPrepared = false
+                    this.scrollToBottomRefresh = false
+                    this.allMsgs = this.allMsgList
                     //
-                    if (this.allMsgList.length > 0) {
-                        this.allMsgs = this.allMsgList
-                        requestAnimationFrame(this.onToBottom)
-                    }
                     this.getMsgs({
                         dialog_id,
                         msg_id: this.msgId,
                         msg_type: this.msgType,
                     }).then(_ => {
-                        this.openId = dialog_id;
-                        setTimeout(this.onSearchMsgId, 100)
+                        this.openId = dialog_id
+                        this.msgPrepared = true
+                        //
+                        setTimeout(_ => {
+                            this.onSearchMsgId()
+                            this.positionShow = this.readTimeout === null
+                        }, 100)
                     }).catch(_ => {});
                     //
                     this.$store.dispatch('saveInDialog', {
@@ -1068,9 +1185,13 @@ export default {
                     if (this.autoFocus) {
                         this.inputFocus()
                     }
+                    //
+                    this.getUserApproveStatus()
                 }
+                //
                 this.$store.dispatch('closeDialog', old_id)
-                this.getUserApproveStatus();
+                //
+                window.localStorage.removeItem('__cache:vote__')
             },
             immediate: true
         },
@@ -1084,6 +1205,34 @@ export default {
                         this.loadIng--
                     }, 300)
                 }
+            },
+            immediate: true
+        },
+
+        isReady: {
+            handler(ready) {
+                if (!ready) {
+                    return
+                }
+                this.$nextTick(_ => {
+                    if (this.$refs.msgs) {
+                        if (!this.observers.find(({key}) => key === 'scroller')) {
+                            const scrollerObserver = new ResizeObserver(this.onResizeEvent)
+                            scrollerObserver.observe(this.$refs.msgs);
+                            this.observers.push({key: 'scroller', observer: scrollerObserver})
+                        }
+                    }
+                    if (this.$refs.scroller) {
+                        this.scrollGroup = this.$refs.scroller.$el.querySelector('[role="group"]')
+                        if (this.scrollGroup) {
+                            if (!this.observers.find(({key}) => key === 'scrollGroup')) {
+                                const groupObserver = new ResizeObserver(this.onResizeEvent)
+                                groupObserver.observe(this.scrollGroup);
+                                this.observers.push({key: 'scrollGroup', observer: groupObserver})
+                            }
+                        }
+                    }
+                })
             },
             immediate: true
         },
@@ -1167,49 +1316,45 @@ export default {
             const lastMsg = this.allMsgs[this.allMsgs.length - 1]
             const lastEl = $A(this.$refs.scroller.$el).find(`[data-id="${lastMsg.id}"]`)
             if (lastEl.length === 0) {
-                this.toBottomReGetMsg = true
+                this.scrollToBottomRefresh = true
                 return;
             }
             // 开始请求重新获取消息
             this.onReGetMsg()
         },
 
-        allMsgList(newList, oldList) {
-            if(JSON.stringify(newList) == JSON.stringify(oldList)){
+        allMsgList(list) {
+            if (JSON.stringify(list) == JSON.stringify(this.allMsgs)) {
                 return;
             }
-            const {tail} = this.scrollInfo();
-            if ($A.isIos() && newList.length !== oldList.length) {
+            const historyLength = this.allMsgs.length
+            const historyLastId = historyLength > 0 ? this.allMsgs[historyLength - 1].id : 0
+            if ($A.isIos() && list.length !== historyLength && this.$refs.scroller) {
                 // 隐藏区域，让iOS断触
-                this.$refs.scroller.$el.style.visibility = 'hidden'
-                this.allMsgs = newList;
+                const scrollEl = this.$refs.scroller.$el
+                scrollEl.style.visibility = 'hidden'
+                this.allMsgs = list;
                 this.$nextTick(_ => {
-                    this.$refs.scroller.$el.style.visibility = 'visible'
+                    scrollEl.style.visibility = 'visible'
                 })
             } else {
-                this.allMsgs = newList;
+                this.allMsgs = list;
             }
             //
-            if (!this.windowActive || (tail > 55 && oldList.length > 0)) {
-                const lastId = oldList[oldList.length - 1] ? oldList[oldList.length - 1].id : 0
-                const tmpList = newList.filter(item => item.id && item.id > lastId)
-                this.msgNew += tmpList.length
-            } else {
-                if (!this.preventToBottom) {
-                    this.$nextTick(this.onToBottom)
-                }
+            if (!this.stickToBottom) {
+                this.msgNew += list.filter(item => item.id && item.id > historyLastId && item.userid != this.userId && !item.read_at).length
+            }
+        },
+
+        'allMsgs.length' () {
+            if (this.stickToBottom) {
+                this.onToBottom()
             }
         },
 
         windowScrollY(val) {
             if ($A.isIos() && !this.$slots.head) {
-                const {tail} = this.scrollInfo();
-                this.navStyle = {
-                    marginTop: val + 'px'
-                }
-                if (tail <= 55) {
-                    requestAnimationFrame(this.onToBottom)
-                }
+                this.$refs.nav.style.marginTop = `${val}px`
             }
         },
 
@@ -1222,16 +1367,9 @@ export default {
             }
         },
 
-        windowHeight(current, before) {
-            if (current < before
-                && $A.isEEUiApp
-                && $A.isAndroid()
-                && this.$refs.input.isFocus) {
-                const {tail} = this.scrollInfo();
-                if (tail <= 55 + (before - current)) {
-                    requestAnimationFrame(this.onToBottom)
-                }
-            }
+        windowHeight() {
+            this.androidKeyboardVisible = $A.isAndroid() && $A.eeuiAppKeyboardStatus()
+            requestAnimationFrame(this.$refs.input.updateTools)
         },
 
         dialogDrag(val) {
@@ -1240,31 +1378,28 @@ export default {
             }
         },
 
-        msgActiveIndex(index) {
-            if (index > -1) {
-                setTimeout(_ => this.msgActiveIndex = -1, 800)
-            }
-        },
-
-        footerPaddingBottom(val) {
-            if (val) {
-                const {tail} = this.scrollInfo();
-                if (tail <= 55) {
-                    requestAnimationFrame(this.onToBottom)
+        msgActiveId(val) {
+            if (val > 0) {
+                this.msgActiveId = 0
+                const element = this.$refs.scroller.$el.querySelector(`[data-id="${val}"]`)?.querySelector(".dialog-head")
+                if (element) {
+                    $A.scrollIntoViewIfNeeded(element)
+                    element.classList.add("common-shake")
+                    setTimeout(_ => element.classList.remove("common-shake"), 800)
                 }
             }
         },
 
-        positionMsg() {
-            const {unread, position_msgs} = this.dialogData
-            if (!$A.isArray(position_msgs) || unread < 2) {
-                return
-            }
-            const msg = position_msgs.find(item => item.label === '{UNREAD}')
-            if (msg) {
-                this.unreadMsgId = msg.msg_id
-            }
-        }
+        footerPaddingBottom(val) {
+            this.$refs.footer.style.paddingBottom = `${val}px`;
+            requestAnimationFrame(_ => {
+                this.$refs.input.updateTools()
+            })
+        },
+
+        readLoadNum() {
+            this.positionShow = true
+        },
     },
 
     methods: {
@@ -1295,10 +1430,12 @@ export default {
                 return;
             }
             if (textType === "text") {
-                textBody = textBody.replace(/<\/span> <\/p>$/, "</span></p>")
+                textBody = textBody
+                    .replace(/<\/span> <\/p>$/, "</span></p>")
+                    .replace(/(<span\s+class="mention"(.*?)>.*?<\/span>.*?<\/span>.*?<\/span>)(\x20)?/, "$1 ")
             }
             //
-            if (this.quoteUpdate) {
+            if (this.dialogData.extra_quote_type === 'update') {
                 // 修改
                 if (textType === "text") {
                     textBody = textBody.replace(new RegExp(`src=(["'])${$A.apiUrl('../')}`, "g"), "src=$1{{RemoteURL}}")
@@ -1323,7 +1460,7 @@ export default {
                     method: 'post',
                     complete: _ => this.$store.dispatch("cancelLoad", `msg-${update_id}`)
                 }).then(({data}) => {
-                    this.sendSuccess(data)
+                    this.sendSuccess(data, 0, true)
                     this.onPositionId(update_id)
                 }).catch(({msg}) => {
                     $A.modalError(msg)
@@ -1360,8 +1497,7 @@ export default {
                     },
                     method: 'post',
                 }).then(({data}) => {
-                    this.tempMsgs = this.tempMsgs.filter(({id}) => id != tempMsg.id)
-                    this.sendSuccess(data)
+                    this.sendSuccess(data, tempMsg.id)
                 }).catch(error => {
                     this.$set(tempMsg, 'error', true)
                     this.$set(tempMsg, 'errorData', {type: 'text', mType: type, content: error.msg, msg: textBody})
@@ -1400,8 +1536,7 @@ export default {
                 }),
                 method: 'post',
             }).then(({data}) => {
-                this.tempMsgs = this.tempMsgs.filter(({id}) => id != tempMsg.id)
-                this.sendSuccess(data);
+                this.sendSuccess(data, tempMsg.id);
             }).catch(error => {
                 this.$set(tempMsg, 'error', true)
                 this.$set(tempMsg, 'errorData', {type: 'record', mType: 'record', content: error.msg, msg})
@@ -1450,31 +1585,86 @@ export default {
             this.sendMsg(`<p><span data-quick-key="${item.key}">${item.label}</span></p>`)
         },
 
+        /**
+         * 消息变化处理
+         * @param data
+         */
         onMsgChange(data) {
             const item = this.allMsgs.find(({type, id}) => type == "text" && id == data.id)
             if (item) {
-                const {tail} = this.scrollInfo()
-                if (data.type === 'append') {
-                    item.msg.text += data.text
-                } else if (data.type === 'replace') {
-                    item.msg.text = data.text
+                if (typeof this.msgChangeCache[data.id] === "undefined") {
+                    this.msgChangeCache[data.id] = []
+                    this.msgChangeCache[`${data.id}_load`] = false
                 }
+                if (data.type === 'append') {
+                    this.msgChangeCache[data.id].push(...`${data.text}`.split("").map(text => {
+                        return {
+                            type: 'append',
+                            text
+                        }
+                    }))
+                } else if (data.type === 'replace') {
+                    this.msgChangeCache[data.id] = [{
+                        type: 'replace',
+                        text: data.text
+                    }]
+                }
+                this.onMsgOutput(data.id, item.msg)
+            }
+        },
+
+        /**
+         * 追加或替换消息
+         * @param id
+         * @param msg
+         */
+        onMsgOutput(id, msg) {
+            const load = `${id}_load`
+            const arr = this.msgChangeCache[id]
+            if (!arr || arr.length === 0) return
+
+            if (this.msgChangeCache[load] === true) return
+            this.msgChangeCache[load] = true
+
+            try {
+                const data = arr.shift()
+                if (!data) {
+                    this.msgChangeCache[load] = false
+                    return
+                }
+
+                const {type, text} = data
+                const {tail} = this.scrollInfo()
+                if (type === 'append') {
+                    msg.text += text
+                } else if (type === 'replace') {
+                    msg.text = text
+                }
+
                 this.$nextTick(_ => {
-                    const {tail: newTail} = this.scrollInfo()
-                    if (tail <= 10 && newTail != tail) {
+                    if (tail <= 10 && tail != this.scrollInfo().tail) {
                         this.operatePreventScroll++
-                        this.$refs.scroller.scrollToBottom();
-                        setTimeout(_ => {
-                            this.operatePreventScroll--
-                        }, 50)
+                        this.$refs.scroller.scrollToBottom()
+                        setTimeout(_ => this.operatePreventScroll--, 50)
                     }
+
+                    if (arr.length === 0) {
+                        this.msgChangeCache[load] = false
+                        return
+                    }
+                    setTimeout(_ => {
+                        this.msgChangeCache[load] = false
+                        this.onMsgOutput(id, msg)
+                    }, 5)
                 })
+            } catch (e) {
+                this.msgChangeCache[load] = false
             }
         },
 
         onSelectionchange() {
             const selectionType = window.getSelection().type;
-            this.selectionRange = selectionType === "Range"
+            this.selectedTextStatus = selectionType === "Range"
         },
 
         getTempId() {
@@ -1558,7 +1748,7 @@ export default {
                 const gtpos = this.prevId > 0 ? 0 : -1  // 如果还有更多消息时定位的消息必须不是第一条是为了避免定位后又有新加载
                 if (index > gtpos) {
                     setTimeout(_ => {
-                        this.onToIndex(index)
+                        this.onToIndex(index, position_id)
                         resolve()
                     }, 200)
                 } else {
@@ -1568,23 +1758,29 @@ export default {
                             delay: 600
                         })
                     }
-                    this.preventToBottom = true;
                     this.getMsgs({
                         dialog_id: this.dialogId,
                         msg_id: this.msgId,
                         msg_type: this.msgType,
                         position_id,
-                        spinner: 2000
+                        spinner: 2000,
+                        save_before: _ => {
+                            this.preventToBottom = true
+                        },
+                        save_after: _ => {
+                            this.$nextTick(_ => {
+                                this.preventToBottom = false
+                            })
+                        }
                     }).finally(_ => {
                         const index = this.allMsgs.findIndex(item => item.id === position_id)
                         if (index > -1) {
-                            this.onToIndex(index)
+                            this.onToIndex(index, position_id)
                             resolve()
                         }
                         if (msg_id > 0) {
                             this.$store.dispatch("cancelLoad", `msg-${msg_id}`)
                         }
-                        this.preventToBottom = false;
                     })
                 }
             })
@@ -1663,10 +1859,6 @@ export default {
             });
         },
 
-        itemClassAdd(index) {
-            return index === this.msgActiveIndex ? 'common-shake' : '';
-        },
-
         inputFocus() {
             this.$nextTick(_ => {
                 this.$refs.input && this.$refs.input.focus()
@@ -1693,10 +1885,10 @@ export default {
         },
 
         chatDragOver(show, e) {
-            let random = (this.__dialogDrag = $A.randomString(8));
+            let random = (this.__dialog_drag = $A.randomString(8));
             if (!show) {
                 setTimeout(() => {
-                    if (random === this.__dialogDrag) {
+                    if (random === this.__dialog_drag) {
                         this.dialogDrag = show;
                     }
                 }, 150);
@@ -1714,7 +1906,7 @@ export default {
 
         onTouchStart(e) {
             this.wrapperStart = null;
-            if (this.selectionRange) {
+            if (this.selectedTextStatus) {
                 this.wrapperStart = window.scrollY
                 return
             }
@@ -1764,8 +1956,8 @@ export default {
         },
 
         onTouchEnd() {
-            if ($A.isIos()) {
-                $A.scrollToView(this.$refs.footer)
+            if (typeof this.wrapperStart === 'number' && $A.isIos()) {
+                $A.scrollToView(this.$refs.footer, false)
             }
         },
 
@@ -1801,29 +1993,48 @@ export default {
                     break;
 
                 case 'error':
-                    this.tempMsgs = this.tempMsgs.filter(({id}) => id != file.tempId)
+                    this.forgetTempMsg(file.tempId)
                     break;
 
                 case 'success':
-                    this.tempMsgs = this.tempMsgs.filter(({id}) => id != file.tempId)
-                    this.sendSuccess(file.data)
+                    this.sendSuccess(file.data, file.tempId)
                     break;
             }
         },
 
-        sendSuccess(data) {
+        sendSuccess(data, tempId = 0, isUpdate = false) {
             if ($A.isArray(data)) {
-                data.some(this.sendSuccess)
+                data.some(item => {
+                    this.sendSuccess(item, tempId)
+                })
                 return;
             }
+            if (tempId > 0) {
+                const index = this.tempMsgs.findIndex(({id}) => id == tempId)
+                if (index > -1) {
+                    this.tempMsgs.splice(index, 1, data)
+                }
+                setTimeout(_ => {
+                    this.forgetTempMsg(tempId)
+                    this.forgetTempMsg(data.id)
+                }, 1000)
+            }
+            this.$store.dispatch("saveDialog", {
+                id: this.dialogId,
+                hide: 0,
+            })
             this.$store.dispatch("saveDialogMsg", data);
-            if (!this.quoteUpdate) {
+            if (!isUpdate) {
                 this.$store.dispatch("increaseTaskMsgNum", data);
                 this.$store.dispatch("increaseMsgReplyNum", data);
                 this.$store.dispatch("updateDialogLastMsg", data);
             }
             this.cancelQuote();
             this.onActive();
+        },
+
+        forgetTempMsg(tempId) {
+            this.tempMsgs = this.tempMsgs.filter(({id}) => id != tempId)
         },
 
         setQuote(id, type) {
@@ -1835,10 +2046,13 @@ export default {
         },
 
         onEventFocus() {
+            this.focusTimer && clearTimeout(this.focusTimer)
+            this.focusLazy = true
             this.$emit("on-focus")
         },
 
         onEventBlur() {
+            this.focusTimer = setTimeout(_ => this.focusLazy = false, 10)
             this.$emit("on-blur")
         },
 
@@ -1919,19 +2133,34 @@ export default {
             });
         },
 
-        onEventEmojiVisibleChange(val) {
-            if (val && this.windowPortrait) {
-                this.onToBottom();
-            }
+        onResizeEvent(entries) {
+            entries.some(({target, contentRect}) => {
+                if (target === this.$refs.msgs) {
+                    this.onMsgsResize(contentRect)
+                } else if (target === this.scrollGroup) {
+                    this.onScrollGroupResize(contentRect)
+                }
+            })
         },
 
-        onHeightChange({newVal, oldVal}) {
-            const diff = newVal - oldVal;
-            if (diff !== 0) {
-                const {offset, tail} = this.scrollInfo()
-                if (tail > 0) {
-                    this.onToOffset(offset + diff)
+        onMsgsResize({height}) {
+            this.$refs.scroller.$el.style.height = `${height}px`
+            //
+            if (typeof this.__msgs_height !== "undefined") {
+                const size = this.__msgs_height - height;
+                if (size !== 0) {
+                    const {offset, tail} = this.scrollInfo()
+                    if (tail > 0) {
+                        this.onToOffset(offset + size)
+                    }
                 }
+            }
+            this.__msgs_height = height;
+        },
+
+        onScrollGroupResize() {
+            if (this.stickToBottom) {
+                this.onToBottom()
             }
         },
 
@@ -1948,22 +2177,32 @@ export default {
             }
         },
 
-        onToIndex(index) {
+        onToIndex(index, id) {
             const scroller = this.$refs.scroller;
             if (scroller) {
                 scroller.stopToBottom();
-                scroller.scrollToIndex(index, -100);
-                requestAnimationFrame(_ => scroller.scrollToIndex(index, -100))    // 确保滚动到
+                const element = scroller.$el.querySelector(`[data-id="${id}"]`)
+                if (!element?.parentNode.parentNode.classList.contains('item-enter')) {
+                    scroller.scrollToIndex(index, -80);
+                    requestAnimationFrame(_ => scroller.scrollToIndex(index, -80))    // 确保滚动到
+                }
             }
-            requestAnimationFrame(_ => this.msgActiveIndex = index)
+            requestAnimationFrame(_ => this.msgActiveId = id)
         },
 
-        onToOffset(offset) {
+        onToOffset(offset, forceFront = false) {
             const scroller = this.$refs.scroller;
             if (scroller) {
+                const front = scroller.getOffset() > offset
                 scroller.stopToBottom();
                 scroller.scrollToOffset(offset);
-                setTimeout(_ => scroller.scrollToOffset(offset), 10)  // 预防出现白屏的情况
+                setTimeout(_ => {
+                    if (front || forceFront) {
+                        scroller.virtual.handleFront()
+                    } else {
+                        scroller.virtual.handleBehind()
+                    }
+                }, 10)
             }
         },
 
@@ -2013,7 +2252,7 @@ export default {
         },
 
         onReGetMsg() {
-            this.toBottomReGetMsg = false
+            this.scrollToBottomRefresh = false
             this.getMsgs({
                 dialog_id: this.dialogId,
                 msg_id: this.msgId,
@@ -2040,12 +2279,7 @@ export default {
                         const previousSize = typeof previousValue === "object" ? previousValue.size : scroller.getSize(previousValue)
                         return {size: previousSize + scroller.getSize(currentId)}
                     })
-                    let offset = scroller.getOffset() + reducer.size
-                    if (this.prevId === 0) {
-                        offset -= 36
-                    }
-                    this.onToOffset(offset)
-                    setTimeout(_ => scroller.virtual.handleFront(), 10)
+                    this.onToOffset(scroller.getOffset() + reducer.size, true)
                 });
             }).catch(() => {})
         },
@@ -2275,38 +2509,63 @@ export default {
             }
         },
 
-        onForward() {
+        onForwardBefore() {
             return new Promise((resolve, reject) => {
+                this.forwardData = this.$refs.forwardSelect.formatSelect(this.$refs.forwardSelect.selects);
                 if (this.forwardData.length === 0) {
                     $A.messageError("请选择转发对话或成员");
-                    reject();
-                    return
+                } else {
+                    this.forwardMessage = '';
+                    this.forwardSource = true;
+                    this.forwardhow = true;
                 }
-                const dialogids = this.forwardData.filter(value => $A.leftExists(value, 'd:')).map(value => value.replace('d:', ''));
-                const userids = this.forwardData.filter(value => !$A.leftExists(value, 'd:'));
-                this.$store.dispatch("call", {
-                    url: 'dialog/msg/forward',
-                    data: {
-                        dialogids,
-                        userids,
-                        msg_id: this.operateItem.id,
-                        show_source: this.forwardShowOriginal ? 1 : 0,
-                        leave_message: this.forwardLeaveMessage
-                    }
-                }).then(({data, msg}) => {
-                    this.$store.dispatch("saveDialogMsg", data.msgs);
-                    this.$store.dispatch("updateDialogLastMsg", data.msgs);
-                    $A.messageSuccess(msg);
-                    resolve();
-                }).catch(({msg}) => {
-                    $A.modalError(msg);
-                    reject();
-                });
+                reject();
             })
         },
 
+        onForwardAffirm() {
+            const selects = this.$refs.forwardSelect.selects;
+            if (selects.length === 0) {
+                $A.messageError("请选择转发对话或成员");
+                return
+            }
+            const dialogids = selects.filter(value => $A.leftExists(value, 'd:')).map(value => value.replace('d:', ''));
+            const userids = selects.filter(value => !$A.leftExists(value, 'd:'));
+            this.forwardLoad++;
+            this.$store.dispatch("call", {
+                url: 'dialog/msg/forward',
+                data: {
+                    dialogids,
+                    userids,
+                    msg_id: this.operateItem.id,
+                    show_source: this.forwardSource ? 1 : 0,
+                    leave_message: this.forwardMessage
+                }
+            }).then(({data, msg}) => {
+                this.$store.dispatch("saveDialogMsg", data.msgs);
+                this.$store.dispatch("updateDialogLastMsg", data.msgs);
+                $A.messageSuccess(msg);
+                this.$refs.forwardSelect.hide()
+                this.forwardhow = false;
+            }).catch(({msg}) => {
+                $A.modalError(msg);
+            }).finally(_ => {
+                this.forwardLoad--;
+            });
+        },
+
         onActivity(activity) {
-            this.msgReady = !activity
+            if (this.msgActivity === false) {
+                if (activity) {
+                    this.msgActivity = 1
+                }
+                return
+            }
+            if (activity) {
+                this.msgActivity++
+            } else {
+                this.msgActivity--
+            }
         },
 
         onScroll(event) {
@@ -2317,9 +2576,9 @@ export default {
             const {offset, tail} = this.scrollInfo();
             this.scrollOffset = offset;
             this.scrollTail = tail;
-            if (this.scrollTail <= 55) {
+            if (tail <= 10) {
                 this.msgNew = 0;
-                this.toBottomReGetMsg && this.onReGetMsg()
+                this.scrollToBottomRefresh && this.onReGetMsg()
             }
             //
             this.scrollAction = event.target.scrollTop;
@@ -2336,20 +2595,24 @@ export default {
             }
             const key = this.scrollDirection === 'down' ? 'next_id' : 'prev_id';
             for (let i = range.start; i <= range.end; i++) {
+                if (!this.allMsgs[i]) {
+                    continue
+                }
                 const rangeValue = this.allMsgs[i][key]
-                if (rangeValue) {
-                    const nearMsg = this.allMsgs[i + (key === 'next_id' ? 1 : -1)]
-                    if (nearMsg && nearMsg.id != rangeValue) {
-                        this.preventMoreLoad = true
-                        this.getMsgs({
-                            dialog_id: this.dialogId,
-                            msg_id: this.msgId,
-                            msg_type: this.msgType,
-                            [key]: rangeValue,
-                        }).finally(_ => {
-                            this.preventMoreLoad = false
-                        })
-                    }
+                if (!rangeValue) {
+                    continue
+                }
+                const nearMsg = this.allMsgs[i + (key === 'next_id' ? 1 : -1)]
+                if (nearMsg && nearMsg.id != rangeValue) {
+                    this.preventMoreLoad = true
+                    this.getMsgs({
+                        dialog_id: this.dialogId,
+                        msg_id: this.msgId,
+                        msg_type: this.msgType,
+                        [key]: rangeValue,
+                    }).finally(_ => {
+                        this.preventMoreLoad = false
+                    })
                 }
             }
         },
@@ -2424,21 +2687,14 @@ export default {
                     value: $A.thumbRestore(event.target.currentSrc),
                 })
             } else if (event.target.nodeName === 'A') {
-                let href = event.target.href;
                 if (event.target.classList.contains("mention") && event.target.classList.contains("file")) {
-                    if(this.isEEUiApp || this.$Electron){
-                        const url = new URL(href);
-                        const params = new URLSearchParams(url.search);
-                        params.delete('theme'); params.delete('lang');
-                        href = url.origin + url.pathname + (params.toString() ? ('?' + params.toString()) : '');
-                    }
-                    this.findOperateFile(this.operateItem.id, href)
+                    this.findOperateFile(this.operateItem.id, event.target.href)
                 }
                 this.operateCopys.push({
                     type: 'link',
                     icon: '&#xe7cb;',
                     label: '复制链接',
-                    value: href,
+                    value: event.target.href,
                 })
             }
             if (msgData.type === 'text') {
@@ -2473,12 +2729,11 @@ export default {
                 }
             }
             this.$nextTick(() => {
-                const projectRect = el.getBoundingClientRect();
-                const wrapRect = this.$el.getBoundingClientRect();
+                const rect = el.getBoundingClientRect();
                 this.operateStyles = {
-                    left: `${event.clientX - wrapRect.left}px`,
-                    top: `${projectRect.top + this.windowScrollY}px`,
-                    height: projectRect.height + 'px',
+                    left: `${event.clientX}px`,
+                    top: `${rect.top + this.windowScrollY}px`,
+                    height: rect.height + 'px',
                 }
                 this.operateClient = {x: event.clientX, y: event.clientY};
                 this.operateVisible = true;
@@ -2502,9 +2757,6 @@ export default {
                         break;
 
                     case "forward":
-                        this.forwardData = [];
-                        this.forwardLeaveMessage = '';
-                        this.forwardShowOriginal = true;
                         this.$refs.forwardSelect.onSelection()
                         break;
 
@@ -2545,17 +2797,17 @@ export default {
                             this.onEmoji(value)
                         }
                         break;
+
+                    case "top":
+                        this.onTopOperate()
+                        break;
                 }
             })
         },
 
         onReply(type) {
-            const {tail} = this.scrollInfo()
             this.setQuote(this.operateItem.id, type)
             this.inputFocus()
-            if (tail <= 55) {
-                requestAnimationFrame(this.onToBottom)
-            }
         },
 
         onUpdate() {
@@ -2574,6 +2826,7 @@ export default {
                     text = text.replace(/<img[^>]*>/gi, match => {
                         return match.replace(/(width|height)="\d+"\s*/ig, "");
                     })
+                    text = text.replace(/<p><\/p>/g, '<p><br/></p>')
                     this.msgText = $A.formatMsgBasic(text)
                 }
                 this.$nextTick(_ => this.$refs.input.setPasteMode(true))
@@ -2725,7 +2978,7 @@ export default {
             }
             const path = `/single/file/msg/${data.id}`;
             if (this.$Electron) {
-                this.$Electron.sendMessage('windowRouter', {
+                this.$store.dispatch('openChildWindow', {
                     name: `file-msg-${data.id}`,
                     path: path,
                     userAgent: "/hideenOfficeTitle/",
@@ -2742,7 +2995,7 @@ export default {
                     },
                 });
             } else if (this.$isEEUiApp) {
-                $A.eeuiAppOpenPage({
+                this.$store.dispatch('openAppChildPage', {
                     pageType: 'app',
                     pageTitle: `${msg.name} (${$A.bytesToSize(msg.size)})`,
                     url: 'web.js',
@@ -2751,7 +3004,7 @@ export default {
                         allowAccess: true,
                         url: $A.rightDelete(window.location.href, window.location.hash) + `#${path}`
                     },
-                });
+                })
             } else {
                 window.open($A.apiUrl(`..${path}`))
             }
@@ -2824,19 +3077,19 @@ export default {
                 content,
                 cancelText: '取消发送',
                 onCancel: _ => {
-                    this.tempMsgs = this.tempMsgs.filter(({id}) => id != data.id)
+                    this.forgetTempMsg(data.id)
                 }
             }
             if (type === 'text') {
                 config.okText = '重新发送'
                 config.onOk = () => {
-                    this.tempMsgs = this.tempMsgs.filter(({id}) => id != data.id)
+                    this.forgetTempMsg(data.id)
                     this.sendMsg(msg, mType)
                 }
             } else if (type === 'record') {
                 config.okText = '重新发送'
                 config.onOk = () => {
-                    this.tempMsgs = this.tempMsgs.filter(({id}) => id != data.id)
+                    this.forgetTempMsg(data.id)
                     this.sendRecord(msg)
                 }
             } else {
@@ -3050,36 +3303,13 @@ export default {
             }
         },
 
-        onPositionMark() {
+        onPositionMark(id) {
             if (this.positionLoad > 0) {
                 return;
             }
             this.positionLoad++
             //
-            const positionMsgs = []
-            this.dialogData.position_msgs.forEach(item => {
-                if (!this.allMsgs.find(({id}) => id == item.msg_id)?.read_at) {
-                    positionMsgs.push(item)
-                }
-            })
-            this.$store.dispatch("saveDialog", {
-                id: this.dialogData.id,
-                position_msgs: positionMsgs
-            });
-            //
-            const {msg_id} = this.positionMsg;
-            this.$store.dispatch("dialogMsgMark", {
-                dialog_id: this.dialogId,
-                type: 'read',
-                after_msg_id: msg_id,
-            }).then(_ => {
-                this.positionLoad++
-                this.onPositionId(msg_id).finally(_ => {
-                    this.positionLoad--
-                })
-            }).catch(({msg}) => {
-                $A.modalError(msg)
-            }).finally(_ => {
+            this.onPositionId(id).finally(_ => {
                 this.positionLoad--
             })
         },
@@ -3174,6 +3404,77 @@ export default {
             if (src) {
                 this.$store.dispatch("previewImage", src)
             }
+        },
+
+        onTopOperate() {
+            if (this.operateVisible) {
+                return
+            }
+            if (this.operateItem.top_at) {
+                this.onCancelTop(this.operateItem)
+            } else {
+                this.onTopSubmit(this.operateItem)
+            }
+        },
+
+        onTopSubmit(data) {
+            return new Promise((resolve, reject) => {
+                this.$store.dispatch("setLoad", {
+                    key: `msg-${data.msg_id}`,
+                    delay: 600
+                })
+                this.$store.dispatch("call", {
+                    url: 'dialog/msg/top',
+                    data: {
+                        msg_id: data.id
+                    },
+                }).then(({ data, msg }) => {
+                    resolve(msg)
+                    // 取消置顶
+                    this.$store.dispatch("saveDialog", {
+                        'id' : this.dialogId,
+                        'top_msg_id' : data.update?.top_msg_id || 0,
+                        'top_userid' : data.update?.top_userid || 0
+                    });
+                    // 置顶
+                    if (data.update?.top_msg_id) {
+                        const index = this.dialogMsgs.findIndex(({ id }) => id == data.update.top_msg_id);
+                        if (index > -1) {
+                            this.$store.dispatch("saveDialogMsgTop", Object.assign({}, this.dialogMsgs[index]))
+                        }
+                    }
+                    // 添加消息
+                    if (data.add) {
+                        this.$store.dispatch("saveDialogMsg", data.add);
+                        this.$store.dispatch("updateDialogLastMsg", data.add);
+                        this.onActive();
+                    }
+                }).catch(({ msg }) => {
+                    reject(msg);
+                }).finally(_ => {
+                    this.$store.dispatch("cancelLoad", `msg-${data.msg_id}`)
+                });
+            })
+        },
+
+        onPosTop() {
+            if (!this.topMsg) {
+                return
+            }
+            this.topPosLoad++
+            this.onPositionId(this.topMsg.id).finally(_ => {
+                this.topPosLoad--
+            })
+        },
+
+        onCancelTop(info) {
+            $A.modalConfirm({
+                content: "你确定取消置顶吗？",
+                cancelText: '取消',
+                okText: '确定',
+                loading: true,
+                onOk: () => this.onTopSubmit(info)
+            });
         },
 
         getUserApproveStatus() {

@@ -2,7 +2,7 @@
 
 English | **[中文文档](./README_CN.md)**
 
-- [Screenshot Preview](README_PREVIEW.md)
+- [Screenshot preview](./README_PREVIEW.md)
 - [Demo site](http://www.dootask.com/)
 
 **QQ Group**
@@ -12,8 +12,9 @@ Group No.: `546574618`
 ## Setup
 
 - `Docker v20.10+` & `Docker Compose v2.0+` must be installed
-- System: `Centos/Debian/Ubuntu/macOS`
+- System: `Centos/Debian/Ubuntu/macOS/Windows`
 - Hardware suggestion: 2 cores and above 4G memory
+- Special note: Windows users please use `git bash` or `cmder` to run the command
 
 ### Deployment (Pro Edition)
 
@@ -28,7 +29,7 @@ git clone -b pro --depth=1 https://gitee.com/aipaw/dootask.git
 # 2、Enter directory
 cd dootask
 
-# 3、Installation（Custom port installation: ./cmd install --port 2222）
+# 3、Installation（Custom port installation, as: ./cmd install --port 80）
 ./cmd install
 ```
 
@@ -42,7 +43,8 @@ cd dootask
 ### Change port
 
 ```bash
-./cmd port 2222
+# This method only replaces the HTTP port. To replace the HTTPS port, please read the SSL configuration below
+./cmd port 80
 ```
 
 ### Change App Url
@@ -66,11 +68,13 @@ cd dootask
 
 ### Development compilation
 
+- `NodeJs 20+` must be installed
+
 ```bash
-# Development mode, Mac OS only
+# Development
 ./cmd dev
    
-# Production projects, macOS only
+# Production (This is web client. For App/PC/Mac clients, Please read README-CLIENT.md)
 ./cmd prod  
 ```
 
@@ -84,11 +88,19 @@ cd dootask
 ./cmd redis "your command"            # To run a redis command
 ./cmd composer "your command"         # To run a composer command
 ./cmd supervisorctl "your command"    # To run a supervisorctl command
-./cmd test "your command"             # To run a phpunit command
 ./cmd mysql "your command"            # To run a mysql command (backup: Backup database, recovery: Restore database)
 ```
 
-### NGINX PROXY SSL
+### SSL configuration
+
+#### Method 1: Automatic configuration
+
+```bash 
+# Running commands in a project
+./cmd https
+```
+
+#### Or Method 2: Nginx Agent Configuration
 
 ```bash 
 # 1、Nginx config add
@@ -96,8 +108,8 @@ proxy_set_header X-Forwarded-Host $http_host;
 proxy_set_header X-Forwarded-Proto $scheme;
 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
-# 2、Running commands in a project
-./cmd https
+# 2、Running commands in a project (If you unconfigure the NGINX agent, run: ./cmd https close)
+./cmd https agent
 ```
 
 ## Upgrade

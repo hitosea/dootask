@@ -11,12 +11,16 @@
             v-longpress="{callback: handleLongpress, delay: 300}">
             <!--回复-->
             <div v-if="!hideReply && msgData.reply_data" class="dialog-reply no-dark-content" @click="viewReply">
-                <UserAvatar :userid="msgData.reply_data.userid" :show-icon="false" :show-name="true"/>
+                <div class="reply-avatar">
+                    <UserAvatar :userid="msgData.reply_data.userid" :show-icon="false" :show-name="true"/>
+                </div>
                 <div class="reply-desc" v-html="$A.getMsgSimpleDesc(msgData.reply_data, 'image-preview')"></div>
             </div>
             <!--转发-->
             <div v-if="msgData.forward_show && msgData.forward_data && msgData.forward_data.userid" class="dialog-reply no-dark-content" @click="openDialog(msgData.forward_data.userid)">
-                <UserAvatar :userid="msgData.forward_data.userid" :show-icon="false" :show-name="true" :tooltip-disabled="true"/>
+                <div class="reply-avatar">
+                    <UserAvatar :userid="msgData.forward_data.userid" :show-icon="false" :show-name="true"/>
+                </div>
             </div>
             <!--详情-->
             <div ref="content" class="dialog-content" :class="contentClass">
@@ -81,31 +85,35 @@
                                 {{index + 1}}. {{item.text}}
                             </span>
                         </li>
-                        <li @click="onWordChain" class="participate">{{ $L('参与接龙') }}<span>></span></li>
+                        <li @click="onWordChain" class="participate">
+                            {{ $L('参与接龙') }}
+                            <i class="taskfont">&#xe703;</i>
+                        </li>
                     </ul>
                 </div>
                 <!--投票-->
                 <div v-else-if="msgData.type === 'vote'" class="content-text content-word-vote no-dark-content">
                     <div class="vote-msg-head">
-                        <i class="taskfont">&#xe7fd;</i> {{ $L('投票') }}
+                        <i class="taskfont">&#xe7fd;</i>
+                        <em>{{ $L('投票') }}</em>
                         <span>{{ msgData.msg.multiple == 1 ? $L('多选') : $L('单选')}}</span>
                         <span>{{ msgData.msg.multiple == 1 ? $L('匿名') : $L('实名')}}</span>
                     </div>
                     <pre v-html="$A.formatTextMsg(msgData.msg.text, userId)"></pre>
                     <template v-if="(msgData.msg.votes || []).filter(h=>h.userid == userId).length == 0">
-                        <RadioGroup v-if="msgData.msg.multiple == 0" v-model="msgData.msg._vote" vertical>
+                        <RadioGroup v-if="msgData.msg.multiple == 0" v-model="voteData[msgData.msg.uuid]" vertical>
                             <Radio v-for="(item,index) in (msgData.msg.list || [])" :label="item.id" :key="index">
                                 {{item.text}}
                             </Radio>
                         </RadioGroup>
-                        <CheckboxGroup v-else v-model="msgData.msg._vote">
+                        <CheckboxGroup v-else v-model="voteData[msgData.msg.uuid]">
                             <Checkbox v-for="(item,index) in (msgData.msg.list || [])" :label="item.id" :key="index">
                                 {{item.text}}
                             </Checkbox>
                         </CheckboxGroup>
-                        <div class="btn-row no-dark-content">
-                            <Button v-if="(msgData.msg._vote || []).length == 0" class="ivu-btn" disabled>{{$L("请选择后投票")}}</Button>
-                            <Button v-else class="ivu-btn" :loading="msgData.msg._loadIng > 0"  @click="onVote('vote',msgData)">{{$L("立即投票")}}</Button>
+                        <div class="btn-row">
+                            <Button v-if="(voteData[msgData.msg.uuid] || []).length == 0" disabled>{{$L("请选择后投票")}}</Button>
+                            <Button v-else type="warning" :loading="msgData.msg._loadIng > 0"  @click="onVote('vote',msgData)">{{$L("立即投票")}}</Button>
                         </div>
                     </template>
                     <template v-else>
@@ -126,9 +134,9 @@
                                 </li>
                             </ul>
                         </div>
-                        <div class="btn-row no-dark-content" v-if="msgData.msg.state == 1 && msgData.msg.userid == userId">
-                            <Button class="ivu-btn" :loading="msgData.msg._loadIng > 0" @click="onVote('again',msgData)">{{$L("再次发送")}}</Button>
-                            <Button class="ivu-btn" :loading="msgData.msg._loadIng > 0" @click="onVote('finish',msgData)">{{$L("结束投票")}}</Button>
+                        <div class="btn-row" v-if="msgData.msg.state == 1 && msgData.msg.userid == userId">
+                            <Button type="warning" :loading="msgData.msg._loadIng > 0" @click="onVote('again',msgData)">{{$L("再次发送")}}</Button>
+                            <Button type="warning" :loading="msgData.msg._loadIng > 0" @click="onVote('finish',msgData)">{{$L("结束投票")}}</Button>
                         </div>
                     </template>
                 </div>
@@ -207,7 +215,7 @@
             <div v-if="msgData.error === true" class="error" @click="onError">
                 <Icon type="ios-alert" />
             </div>
-            <Loading v-else-if="isLoading"/>
+            <Loading v-else-if="isLoading" :delay="300"/>
             <template v-else>
                 <!--时间-->
                 <div v-if="timeShow" class="time" @click="timeShow=false">{{msgData.created_at}}</div>
@@ -308,16 +316,21 @@ export default {
             todoShow: false,
             todoList: [],
 
-            emojiUsersNum: 5
+            emojiUsersNum: 5,
+
+            voteData: {}
         }
     },
 
     mounted() {
         this.emojiUsersNum = Math.min(6, Math.max(2, Math.floor((this.windowWidth - 180) / 52)))
+        if (Object.keys(this.voteData).length === 0) {
+            this.voteData = JSON.parse(window.localStorage.getItem(`__cache:vote__`)) || {};
+        }
     },
 
     beforeDestroy() {
-        this.$store.dispatch("audioStop", this.msgData.msg.path)
+        this.$store.dispatch("audioStop", this.msgData.msg?.path)
     },
 
     computed: {
@@ -403,6 +416,18 @@ export default {
             if (val) {
                 setTimeout(_ => this.operateEnter = true, 500)
             }
+        },
+        voteData: {
+            handler(val) {
+                const voteData = JSON.parse(window.localStorage.getItem('__cache:vote__')) || {}
+                for (const key in val) {
+                    voteData[key] = val[key];
+                }
+                if (Object.keys(voteData).length > 0) {
+                    window.localStorage.setItem('__cache:vote__', JSON.stringify(voteData))
+                }
+            },
+            deep: true
         }
     },
 
@@ -571,7 +596,7 @@ export default {
             this.$emit("on-show-emoji-user", item)
         },
 
-        onWordChain(){
+        onWordChain() {
             this.$store.state.dialogDroupWordChain = {
                 type: 'participate',
                 dialog_id: this.msgData.dialog_id,
@@ -579,57 +604,54 @@ export default {
             }
         },
 
-        unfoldWordChain(e){
+        unfoldWordChain(e) {
             e.target.parentNode?.parentNode?.classList.add('expand')
         },
 
-        onVote(type,msgData){
-            if(type != 'vote'){
+        onVote(type, msgData) {
+            if (type != 'vote') {
                 $A.modalConfirm({
-                    content: type == 'finish' ? '确定结束投票？': '再次发送投票？',
+                    content: type == 'finish' ? '确定结束投票？' : '再次发送投票？',
                     cancelText: '取消',
                     okText: '确定',
                     onOk: () => {
-                        this.vote(type,msgData);
+                        this.vote(type, msgData);
                     }
                 });
                 return;
             }
-            this.vote(type,msgData);
+            this.vote(type, msgData);
         },
 
-        vote(type,msgData){
-            this.$set(msgData.msg,'_loadIng',1)
+        vote(type, msgData) {
+            this.$set(msgData.msg, '_loadIng', 1)
             this.$store.dispatch("call", {
                 url: 'dialog/msg/vote',
                 method: 'post',
                 data: {
                     dialog_id: msgData.dialog_id,
                     uuid: msgData.msg.uuid,
-                    vote: msgData.msg._vote || [],
+                    vote: this.voteData[msgData.msg.uuid] || [],
                     type: type
                 }
-            }).then(({data}) => {
-                if(type == 'again'){
+            }).then(({ data }) => {
+                if (type == 'again') {
                     $A.messageSuccess("已发送");
                 }
                 data.forEach(d => {
-                    this.$store.dispatch("saveDialogMsg", d );
+                    this.$store.dispatch("saveDialogMsg", d);
                 });
-            }).catch(({msg}) => {
+            }).catch(({ msg }) => {
                 $A.modalError(msg);
             }).finally(_ => {
-                this.$set(msgData.msg,'_loadIng',0)
+                this.$set(msgData.msg, '_loadIng', 0)
             });
         },
 
-        getVoteProgress(msgData, id){
-            const num = msgData.votes.filter(h=>(h.votes || '').indexOf(id) != -1).length
-            let progress = '0.00';
-            if(num){
-                progress = (msgData.votes.length / num * 100).toFixed(2)
-            }
-            return {num, progress};
+        getVoteProgress(msgData, id) {
+            const num = msgData.votes.filter(h => (h.votes || '').indexOf(id) != -1).length
+            const progress = !num ? '0.00' : (num / msgData.votes.length * 100).toFixed(2);
+            return { num, progress };
         }
     }
 }

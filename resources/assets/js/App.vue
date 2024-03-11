@@ -19,9 +19,6 @@
         <!--网络提示-->
         <NetworkException v-if="windowLandscape"/>
 
-        <!--Hidden IFrame-->
-        <iframe v-for="item in iframes" :key="item.key" v-if="item.url" v-show="false" :src="item.url"></iframe>
-
         <!--引导页-->
         <GuidePage/>
     </div>
@@ -44,7 +41,6 @@ import NetworkException from "./components/NetworkException";
 import GuidePage from "./components/GuidePage";
 import TaskOperation from "./pages/manage/components/TaskOperation";
 import {mapState} from "vuex";
-import {languageType} from "./language";
 
 export default {
     components: {TaskOperation, NetworkException, PreviewImageState, RightBottom, FloatSpinner, GuidePage},
@@ -53,7 +49,6 @@ export default {
         return {
             routePath: null,
             searchInter: null,
-            iframes: [],
         }
     },
 
@@ -61,28 +56,24 @@ export default {
         this.electronEvents();
         this.eeuiEvents();
         this.otherEvents();
-        this.synchThemeLanguage();
-        this.synchAppTheme();
     },
 
     mounted() {
         window.addEventListener('resize', this.windowSizeListener);
         window.addEventListener('scroll', this.windowScrollListener);
+        window.addEventListener('message', this.windowHandleMessage)
         this.searchInter = setInterval(this.searchEnter, 1000);
     },
 
     beforeDestroy() {
         window.removeEventListener('resize', this.windowSizeListener);
         window.removeEventListener('scroll', this.windowScrollListener);
+        window.removeEventListener('message', this.windowHandleMessage)
         this.searchInter && clearInterval(this.searchInter);
     },
 
     computed: {
-        ...mapState(['ws', 'themeMode', 'themeIsDark', 'windowOrientation']),
-
-        isSoftware() {
-            return this.$Electron || this.$isEEUiApp;
-        },
+        ...mapState(['ws', 'themeConf', 'windowOrientation']),
     },
 
     watch: {
@@ -184,10 +175,6 @@ export default {
                 this.$store.dispatch("audioStop", true)
             }
         },
-
-        themeIsDark() {
-            this.synchThemeLanguage();
-        }
     },
 
     methods: {
@@ -224,28 +211,8 @@ export default {
         },
 
         autoTheme() {
-            if (this.themeMode === "auto") {
+            if (this.themeConf === "auto") {
                 this.$store.dispatch("synchTheme")
-            }
-        },
-
-        synchThemeLanguage() {
-            if (this.isSoftware) {
-                this.iframes = this.iframes.filter(({key}) => key != 'synchThemeLanguage')
-                this.iframes.push({
-                    key: 'synchThemeLanguage',
-                    url: $A.apiUrl(`../setting/theme_language?theme=${this.themeIsDark ? 'dark' : 'light'}&language=${languageType}`)
-                })
-            }
-            this.synchAppTheme()
-        },
-
-        synchAppTheme() {
-            if (this.$isEEUiApp) {
-                $A.eeuiAppSendMessage({
-                    action: 'updateTheme',
-                    themeName: this.themeIsDark ? 'dark' : 'light',
-                });
             }
         },
 
@@ -271,6 +238,16 @@ export default {
             this.$store.state.windowScrollY = window.scrollY
         },
 
+        windowHandleMessage({data}) {
+            data = $A.jsonParse(data);
+            if (data.action === 'eeuiAppSendMessage') {
+                const items = $A.isArray(data.data) ? data.data : [data.data];
+                items.forEach(item => {
+                    $A.eeuiAppSendMessage(item);
+                })
+            }
+        },
+
         electronEvents() {
             if (!this.$Electron) {
                 return;
@@ -279,6 +256,18 @@ export default {
                 if (this.$Modal.removeLast()) {
                     return true;
                 }
+            }
+            window.__onBeforeOpenWindow = ({url}) => {
+                if ($A.getDomain(url) == $A.getDomain($A.apiUrl('../'))) {
+                    try {
+                        // 下载文件不使用内置浏览器打开
+                        if (/^\/uploads\//i.test(new URL(url).pathname)) {
+                            return false;
+                        }
+                    } catch (e) { }
+                }
+                this.$store.dispatch("openWebTabWindow", url)
+                return true;
             }
             this.$Electron.registerMsgListener('dispatch', args => {
                 if (!$A.isJson(args)) {
@@ -292,10 +281,6 @@ export default {
             })
             this.$Electron.registerMsgListener('browserWindowFocus', _ => {
                 this.$store.state.windowActive = true;
-            })
-            this.iframes.push({
-                key: 'manifest',
-                url: $A.apiUrl("../manifest")
             })
             $A.bindScreenshotKey(this.$store.state.cacheKeyboard);
             //
@@ -332,6 +317,24 @@ export default {
                 } else {
                     this.autoTheme()
                 }
+                $A.eeuiAppSendMessage({
+                    action: 'outerSize',
+                    outerWidth: window.outerWidth,
+                    outerHeight: window.outerHeight,
+                });
+            }
+            // 新窗口打开
+            window.__onCreateTarget = (url) => {
+                this.$store.dispatch('openAppChildPage', {
+                    pageType: 'app',
+                    pageTitle: ' ',
+                    url: 'web.js',
+                    params: {
+                        url,
+                        browser: true,
+                        showProgress: true,
+                    },
+                })
             }
             // 会议事件
             window.__onMeetingEvent = ({act,uuid,meetingid}) => {
@@ -395,10 +398,21 @@ export default {
             window.__handleLink = (path) => {
                 this.goForward({ path: (path || '').indexOf('/') !==0 ? "/" + path : path });
             }
+            // 发送网页尺寸
+            $A.eeuiAppSendMessage({
+                action: 'outerSize',
+                outerWidth: window.outerWidth,
+                outerHeight: window.outerHeight,
+            });
+            // 取消长按振动
+            $A.eeuiAppSetHapticBackEnabled(false)
+            // 设置语言
+            $A.eeuiAppSetVariate("languageWebBrowser", this.$L("浏览器打开"))
+            $A.eeuiAppSetVariate("languageWebRefresh", this.$L("刷新"))
         },
 
         otherEvents() {
-            if (!this.isSoftware) {
+            if (!this.$isSoftware) {
                 // 非客户端监听窗口激活
                 const hiddenProperty = 'hidden' in document ? 'hidden' : 'webkitHidden' in document ? 'webkitHidden' : 'mozHidden' in document ? 'mozHidden' : null;
                 const visibilityChangeEvent = hiddenProperty.replace(/hidden/i, 'visibilitychange');
