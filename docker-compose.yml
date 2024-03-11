@@ -179,7 +179,7 @@ services:
 
   okr:
     container_name: "dootask-okr-${APP_ID}"
-    image: "hitosea2020/okr:0.0.47"
+    image: "hitosea2020/okr:0.5.1"
     environment:
       TZ: "${TIMEZONE:-PRC}"
       DOO_TASK_URL: "http://${APP_IPPR}.3"
