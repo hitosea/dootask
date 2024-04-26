@@ -582,7 +582,7 @@ class UsersController extends AbstractController
                     $tags[] = Doo::translate("系统管理员");
                 }
                 if ($userInfo->isTemp()) {
-                    $tags[] = Doo::translate("临时帐号");
+                    $tags[] = User::tempAccountAlias(); // 临时帐号
                 }
                 if ($userInfo->userid > 3 && Carbon::parse($userInfo->created_at)->isAfter(Carbon::now()->subDays(30))) {
                     $tags[] = Doo::translate("新帐号");
@@ -615,7 +615,7 @@ class UsersController extends AbstractController
     public function basic()
     {
         $sharekey = Request::header('sharekey');
-        if(empty($sharekey) || !Meeting::getShareInfo($sharekey)){
+        if (empty($sharekey) || !Meeting::getShareInfo($sharekey)) {
             User::auth();
         }
         //
@@ -768,7 +768,7 @@ class UsersController extends AbstractController
         //
         if ($getCheckinMac) {
             $list->transform(function (User $user) use ($getCheckinMac) {
-                if($getCheckinMac){
+                if ($getCheckinMac) {
                     $user->checkin_macs = UserCheckinMac::select(['id', 'mac', 'remark'])->whereUserid($user->userid)->orderBy('id')->get();
                 }
                 return $user;
@@ -1101,10 +1101,17 @@ class UsersController extends AbstractController
         ];
         $row = UmengAlias::where($inArray);
         if ($row->exists()) {
-            $row->update(['updated_at' => Carbon::now()]);
+            $row->update([
+                'ua' => $data['userAgent'],
+                'device' => $data['deviceModel'],
+                'updated_at' => Carbon::now()
+            ]);
             return Base::retSuccess('别名已存在');
         }
-        $row = UmengAlias::createInstance($inArray);
+        $row = UmengAlias::createInstance(array_merge($inArray, [
+            'ua' => $data['userAgent'],
+            'device' => $data['deviceModel'],
+        ]));
         if ($row->save()) {
             return Base::retSuccess('添加成功');
         } else {
@@ -1136,17 +1143,17 @@ class UsersController extends AbstractController
     public function meeting__open()
     {
         $type = trim(Request::input('type'));
-        $meetingid = trim(Request::input('meetingid'));
+        $meetingid = str_replace(' ', '', trim(Request::input('meetingid')));
         $name = trim(Request::input('name'));
         $userids = Request::input('userids');
         $sharekey = trim(Request::input('sharekey'));
         $username = trim(Request::input('username'));
         $user = null;
-        if(!empty($sharekey) && $type === 'join'){
-            if(!Meeting::getShareInfo($sharekey)){
+        if (!empty($sharekey) && $type === 'join') {
+            if (!Meeting::getShareInfo($sharekey)) {
                 return Base::retError('分享链接已过期');
             }
-        }else{
+        } else {
             $user = User::auth();
         }
         $isCreate = false;
@@ -1156,6 +1163,11 @@ class UsersController extends AbstractController
             if (empty($meeting)) {
                 return Base::retError('频道ID不存在');
             }
+            if ($meeting->end_at) {
+                return Base::retError('会议已结束');
+            }
+            $meeting->updated_at = Carbon::now();
+            $meeting->save();
         } elseif ($type === 'create') {
             $meetingid = strtoupper(Base::generatePassword(11, 1));
             $name = $name ?: "{$user?->nickname} 发起的会议";
@@ -1180,9 +1192,9 @@ class UsersController extends AbstractController
         if (empty($meetingSetting['appid']) || empty($meetingSetting['app_certificate'])) {
             return Base::retError('会议功能配置错误，请联系管理员');
         }
-        $uid = intval(str_pad(Base::generatePassword(4,1), 9, 8, STR_PAD_LEFT));
-        if($user){
-            $uid = intval(str_pad(Base::generatePassword(5,1), 6, 9, STR_PAD_LEFT).$user->userid);
+        $uid = intval(str_pad(Base::generatePassword(4, 1), 9, 8, STR_PAD_LEFT));
+        if ($user) {
+            $uid = intval(str_pad(Base::generatePassword(5, 1), 6, 9, STR_PAD_LEFT) . $user->userid);
         }
         try {
             $service = new AgoraTokenGenerator($meetingSetting['appid'], $meetingSetting['app_certificate'], $meeting->channel, $uid);
@@ -1213,7 +1225,7 @@ class UsersController extends AbstractController
         //
         $data['appid'] = $meetingSetting['appid'];
         $data['uid'] = $uid;
-        $data['userimg'] = $sharekey ? Base::fillUrl('avatar/'.$username.'.png') : $user?->userimg;
+        $data['userimg'] = $sharekey ? Base::fillUrl('avatar/' . $username . '.png') : $user?->userimg;
         $data['nickname'] = $sharekey ? $username : $user?->nickname;
         $data['token'] = $token;
         $data['msgs'] = $msgs;
@@ -1242,7 +1254,7 @@ class UsersController extends AbstractController
     {
         $meetingid = trim(Request::input('meetingid'));
         $sharekey = trim(Request::input('sharekey'));
-        if(empty($sharekey) || !Meeting::getShareInfo($sharekey)){
+        if (empty($sharekey) || !Meeting::getShareInfo($sharekey)) {
             User::auth();
         }
         $meeting = Meeting::whereMeetingid($meetingid)->first();
@@ -1963,7 +1975,7 @@ class UsersController extends AbstractController
                 }
             }
         } else {
-            if($type == 'file'){
+            if ($type == 'file') {
                 $lists[] = [
                     'type' => 'children',
                     'url' => Base::fillUrl("api/users/share/list") . "?pid=0",

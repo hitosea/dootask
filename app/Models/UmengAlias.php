@@ -14,15 +14,25 @@ use Hedeqiang\UMeng\IOS;
  * @property int|null $userid 会员ID
  * @property string|null $alias 别名
  * @property string|null $platform 平台类型
+ * @property string|null $device 设备类型
+ * @property string|null $ua userAgent
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelAppend()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelHidden()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel change($array)
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel getKeyValue()
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias query()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel remove()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel saveOrIgnore()
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias whereAlias($value)
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias whereDevice($value)
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias wherePlatform($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias whereUa($value)
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|UmengAlias whereUserid($value)
  * @mixin \Eloquent
@@ -142,7 +152,13 @@ class UmengAlias extends AbstractModel
                     'mi_activity' => 'app.eeui.umeng.activity.MfrMessageActivity',
                     'policy' => [
                         'expire_time' => Carbon::now()->addSeconds($seconds)->toDateTimeString(),
-                    ]
+                    ],
+                    'channel_properties' => [
+                        'vivo_category' => 'IM',
+                        'huawei_channel_importance' => 'NORMAL',
+                        'huawei_channel_category' => 'IM',
+                        'channel_fcm' => 1,
+                    ],
                 ]);
 
             default:

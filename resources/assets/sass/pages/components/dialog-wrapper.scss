@@ -13,7 +13,7 @@
         overflow: hidden;
     }
 
-    &.drawer-list {
+    &.inde-list {
         border-radius: 18px 0 0 18px;
         overflow: hidden;
 
@@ -401,6 +401,7 @@
                     justify-content: center;
 
                     .search-pre {
+                        flex-shrink: 0;
                         width: 32px;
                         height: 32px;
                         margin-right: -6px;
@@ -577,7 +578,9 @@
         }
 
         .item-leave {
-            pre, code {
+            pre,
+            code,
+            .markdown-body {
                 visibility: hidden;
             }
         }
@@ -728,6 +731,11 @@
                         align-items: flex-start;
                         position: relative;
 
+                        a,
+                        img {
+                            -webkit-user-drag: none;
+                        }
+
                         &.an-emoji {
                             .content-text {
                                 > pre {
@@ -768,6 +776,7 @@
                             }
 
                             .markdown-body {
+                                min-height: 20px;
                                 line-height: 20px;
                             }
 
@@ -820,6 +829,31 @@
                                             width: auto;
                                             min-width: 1.2em;
                                             content: counter(list-0, decimal) '. ';
+                                        }
+
+                                        &[data-list=bullet] {
+                                            &:before {
+                                                content: '\2022';
+                                                font-weight: 900;
+                                                text-align: center;
+                                            }
+                                        }
+
+                                        &[data-list=checked],
+                                        &[data-list=unchecked] {
+                                            &:before {
+                                                font-family: "taskfont", "serif" !important;
+                                                font-size: 14px;
+                                                content: "\e6ed";
+                                                font-weight: normal;
+                                                transform: scale(1.12);
+                                            }
+                                        }
+
+                                        &[data-list=unchecked] {
+                                            &:before {
+                                                content: "\e6f1";
+                                            }
                                         }
                                     }
                                 }
@@ -936,6 +970,27 @@
                         }
 
                         .content-file {
+                            position: relative;
+
+                            .file-percentage {
+                                position: absolute;
+                                left: 2px;
+                                right: 2px;
+                                bottom: 2px;
+                                height: 2px;
+                                border-radius: 3px;
+                                overflow: hidden;
+
+                                > span {
+                                    position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                    bottom: 0;
+                                    width: 0;
+                                    background-color: $flow-status-end-color;
+                                }
+                            }
+
                             &.file {
                                 display: inline-block;
 
@@ -1049,6 +1104,15 @@
                             color: $primary-title-color;
                             .dialog-meeting {
                                 min-width: 220px;
+                                &.meeting-end {
+                                    opacity: .7;
+                                    > li {
+                                        &.meeting-operation {
+                                            justify-content: center;
+                                            cursor: default;
+                                        }
+                                    }
+                                }
                                 > li {
                                     list-style: none;
                                     display: flex;
@@ -1226,9 +1290,9 @@
 
                                         .avatar-row {
                                             gap: 2px;
-                                            margin-top: 2px;
                                             display: flex;
                                             overflow: auto;
+                                            margin-top: 4px;
                                             padding-bottom: 4px;
 
                                             &::-webkit-scrollbar {
@@ -1406,6 +1470,17 @@
                         align-items: center;
                         position: relative;
                         cursor: pointer;
+                    }
+                }
+            }
+
+            &.self {
+                .dialog-view{
+                    .open-approve-details {
+                        .ivu-btn-grey {
+                            background-color: #efefef;
+                            border-color: #f3f3f3;
+                        }
                     }
                 }
             }
@@ -1608,6 +1683,18 @@
                 }
             }
         }
+    }
+
+    .dialog-float-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255, 255, 255, 0.8);
     }
 
     .dialog-footer {
@@ -1821,6 +1908,11 @@ body:not(.window-touch) {
                 .dialog-wrapper-forward-body {
                     .dialog-wrapper {
                         position: relative;
+                        z-index: 1;
+
+                        &.inde-list {
+                            border-radius: 0;
+                        }
 
                         .dialog-scroller {
                             position: relative;
@@ -1835,71 +1927,34 @@ body:not(.window-touch) {
                                     .dialog-head {
                                         width: 100%;
                                         border-radius: 8px;
+
+                                        .dialog-content {
+                                            .content-file.file {
+                                                width: 100%;
+
+                                                .file-box {
+                                                    width: 100%;
+                                                }
+                                            }
+                                        }
                                     }
 
                                     .dialog-foot {
                                         display: none;
                                     }
-
-                                    .dialog-content {
-                                        .content-file.file {
-                                            width: 100%;
-                                            .file-box{
-                                                width: 100%;
-                                            }
-                                        }
-                                        .content-meeting {
-                                            color: #303133;
-                                        }
-                                    }
-
                                 }
 
                                 .dialog-avatar {
                                     display: none;
                                 }
 
-                                &.self {
-                                    .dialog-head {
-                                        background-color: #F4F5F7;
-
-                                        .content-text {
-                                            color: #303133;
-
-                                            .markdown-body {
-                                                color: #303133;
-                                            }
-                                        }
-
-                                        .dialog-reply {
-                                            &:after {
-                                                background-color: rgba(132, 197, 106, 0.7);
-                                            }
-
-                                            .reply-avatar {
-                                                .bot,
-                                                .common-avatar {
-                                                    color: #84C56A;
-                                                }
-                                            }
-                                        }
-
-                                        .dialog-emoji {
-                                            .avatar-name {
-                                                color: #818181;
-                                            }
-
-                                            > li.hasme {
-                                                background-color: #e1e1e1;
-                                            }
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
 
                     .leave-message {
+                        position: relative;
+                        z-index: 2;
                         padding-bottom: 16px;
 
                         textarea {
@@ -2088,6 +2143,14 @@ body:not(.window-touch) {
         display: grid;
         justify-content: space-between;
         grid-template-columns: repeat(auto-fill, 60px);
+        &.cancel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            margin-top: 2px;
+            margin-bottom: -14px;
+        }
         > li {
             list-style: none;
             width: 60px;
@@ -2209,7 +2272,7 @@ body.window-touch {
 body.window-portrait {
     .dialog-wrapper {
         background-color: #f8f8f8;
-        &.drawer-list {
+        &.inde-list {
             .dialog-nav {
                 .drawer-title {
                     height: 52px;
@@ -2431,6 +2494,9 @@ body.window-portrait {
         .dialog-wrapper-operate {
             .operate-action {
                 width: 376px;
+                &.cancel {
+                    width: auto;
+                }
             }
             .operate-emoji {
                 width: 376px;

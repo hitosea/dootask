@@ -14,7 +14,7 @@ export default {
         return new Promise(async resolve => {
             let action = null
 
-            // 清理缓存
+            // 清理缓存、读取缓存
             const clearCache = await $A.IDBString("clearCache")
             if (clearCache) {
                 if (clearCache === "handle") {
@@ -26,44 +26,8 @@ export default {
             const cacheVersion = await $A.IDBString("cacheVersion")
             if (cacheVersion !== state.cacheVersion) {
                 await dispatch("handleClearCache")
-            }
-
-            // 读取缓存
-            state.clientId = await $A.IDBString("clientId")
-            state.cacheServerUrl = await $A.IDBString("cacheServerUrl")
-            state.cacheUserBasic = await $A.IDBArray("cacheUserBasic")
-            state.cacheDialogs = (await $A.IDBArray("cacheDialogs")).map(item => Object.assign(item, {loading: false, extra_draft_has: item.extra_draft_content ? 1 : 0}))
-            state.cacheProjects = await $A.IDBArray("cacheProjects")
-            state.cacheColumns = await $A.IDBArray("cacheColumns")
-            state.cacheTasks = await $A.IDBArray("cacheTasks")
-            state.cacheProjectParameter = await $A.IDBArray("cacheProjectParameter")
-            state.cacheTaskBrowse = await $A.IDBArray("cacheTaskBrowse")
-            state.dialogMsgs = await $A.IDBArray("dialogMsgs")
-            state.fileLists = await $A.IDBArray("fileLists")
-            state.userInfo = await $A.IDBJson("userInfo")
-            state.callAt = await $A.IDBArray("callAt")
-            state.cacheEmojis = await $A.IDBArray("cacheEmojis")
-
-            // 会员信息
-            if (state.userInfo.userid) {
-                state.userId = state.userInfo.userid = $A.runNum(state.userInfo.userid)
-                state.userToken = state.userInfo.token
-                state.userIsAdmin = $A.inArray("admin", state.userInfo.identity)
-            }
-            const localId = $A.runNum(window.localStorage.getItem("__system:userId__"))
-            const localToken = window.localStorage.getItem("__system:userToken__") || ""
-            if (localId || localToken) {
-                if (!state.userId && !state.userToken) {
-                    state.userId = localId
-                    state.userToken = localToken
-                }
-                window.localStorage.removeItem("__system:userId__")
-                window.localStorage.removeItem("__system:userToken__")
-            }
-
-            // ServerUrl
-            if (state.cacheServerUrl) {
-                window.systemInfo.apiUrl = state.cacheServerUrl
+            } else {
+                await dispatch("handleReadCache")
             }
 
             // 主题皮肤
@@ -252,12 +216,14 @@ export default {
             }
             params.error = (xhr, status) => {
                 const networkException = window.navigator.onLine === false || (status === 0 && xhr.readyState === 4)
-                if (networkException && cloneParams.__networkFailureRetry !== true) {
+                if (networkException
+                    && cloneParams.method !== "post"
+                    && cloneParams.__networkFailureRetry !== true) {
                     // 网络异常，重试一次
                     setTimeout(_ => {
                         cloneParams.__networkFailureRetry = true
                         dispatch("call", cloneParams).then(resolve).catch(reject)
-                    }, 300)
+                    }, 1000)
                     return
                 }
                 if (params.checkNetwork !== false) {
@@ -326,6 +292,22 @@ export default {
             }
             //
             $A.ajaxc(params)
+        })
+    },
+
+    /**
+     * 取消请求
+     * @param state
+     * @param requestId
+     * @returns {Promise<unknown>}
+     */
+    callCancel({state}, requestId) {
+        return new Promise((resolve, reject) => {
+            if ($A.ajaxcCancel(requestId)) {
+                resolve()
+            } else {
+                reject()
+            }
         })
     },
 
@@ -662,13 +644,13 @@ export default {
             $A.eeuiAppSendMessage({
                 action: 'userChatList',
                 token: state.userToken,
-                url: $A.apiUrl('../api/users/share/list') + `?token=${state.userToken}`
+                url: $A.mainUrl('api/users/share/list') + `?token=${state.userToken}`
             });
             $A.eeuiAppSendMessage({
                 action:"userUploadUrl",
                 token: state.userToken,
-                dirUrl: $A.apiUrl('../api/file/content/upload') + `?token=${state.userToken}`,
-                chatUrl: $A.apiUrl('../api/dialog/msg/sendfiles') + `?token=${state.userToken}`,
+                dirUrl: $A.mainUrl('api/file/content/upload') + `?token=${state.userToken}`,
+                chatUrl: $A.mainUrl('api/dialog/msg/sendfiles') + `?token=${state.userToken}`,
             });
             //
             resolve()
@@ -875,41 +857,87 @@ export default {
      */
     handleClearCache({state, dispatch}, userData) {
         return new Promise(async resolve => {
-            try {
-                // localStorage
-                const themeConf = window.localStorage.getItem("__system:themeConf__");
-                const languageName = window.localStorage.getItem("__system:languageName__");
-                const keyboardConf = window.localStorage.getItem("__system:keyboardConf__");
-                window.localStorage.clear();
-                window.localStorage.setItem("__system:themeConf__", themeConf)
-                window.localStorage.setItem("__system:languageName__", languageName)
-                window.localStorage.setItem("__system:keyboardConf__", keyboardConf)
+            // localStorage
+            const themeConf = window.localStorage.getItem("__system:themeConf__");
+            const languageName = window.localStorage.getItem("__system:languageName__");
+            const keyboardConf = window.localStorage.getItem("__system:keyboardConf__");
+            window.localStorage.clear();
+            window.localStorage.setItem("__system:themeConf__", themeConf)
+            window.localStorage.setItem("__system:languageName__", languageName)
+            window.localStorage.setItem("__system:keyboardConf__", keyboardConf)
 
-                // localForage
-                const clientId = await $A.IDBString("clientId")
-                const cacheServerUrl = await $A.IDBString("cacheServerUrl")
-                const cacheProjectParameter = await $A.IDBArray("cacheProjectParameter")
-                const cacheLoginEmail = await $A.IDBString("cacheLoginEmail");
-                const cacheFileSort = await $A.IDBJson("cacheFileSort");
-                const cacheTaskBrowse = await $A.IDBArray("cacheTaskBrowse")
-                const cacheEmojis = await $A.IDBArray("cacheEmojis")
-                const userInfo = await $A.IDBJson("userInfo")
-                await $A.IDBClear();
-                await $A.IDBSet("clientId", clientId);
-                await $A.IDBSet("cacheServerUrl", cacheServerUrl);
-                await $A.IDBSet("cacheProjectParameter", cacheProjectParameter);
-                await $A.IDBSet("cacheLoginEmail", cacheLoginEmail);
-                await $A.IDBSet("cacheFileSort", cacheFileSort);
-                await $A.IDBSet("cacheTaskBrowse", cacheTaskBrowse);
-                await $A.IDBSet("cacheEmojis", cacheEmojis);
-                await $A.IDBSet("cacheVersion", state.cacheVersion)
+            // localForage
+            const clientId = await $A.IDBString("clientId")
+            const cacheServerUrl = await $A.IDBString("cacheServerUrl")
+            const cacheProjectParameter = await $A.IDBArray("cacheProjectParameter")
+            const cacheLoginEmail = await $A.IDBString("cacheLoginEmail");
+            const cacheFileSort = await $A.IDBJson("cacheFileSort");
+            const cacheTaskBrowse = await $A.IDBArray("cacheTaskBrowse")
+            const cacheEmojis = await $A.IDBArray("cacheEmojis")
+            const userInfo = await $A.IDBJson("userInfo")
+            await $A.IDBClear();
+            await $A.IDBSet("clientId", clientId);
+            await $A.IDBSet("cacheServerUrl", cacheServerUrl);
+            await $A.IDBSet("cacheProjectParameter", cacheProjectParameter);
+            await $A.IDBSet("cacheLoginEmail", cacheLoginEmail);
+            await $A.IDBSet("cacheFileSort", cacheFileSort);
+            await $A.IDBSet("cacheTaskBrowse", cacheTaskBrowse);
+            await $A.IDBSet("cacheEmojis", cacheEmojis);
+            await $A.IDBSet("cacheVersion", state.cacheVersion)
 
-                // userInfo
-                dispatch("saveUserInfoBase", $A.isJson(userData) ? userData : userInfo).then(resolve);
-            } catch (e) {
-                resolve()
-            }
+            // userInfo
+            await dispatch("saveUserInfoBase", $A.isJson(userData) ? userData : userInfo)
+
+            // readCache
+            await dispatch("handleReadCache")
+
+            resolve()
         });
+    },
+
+    /**
+     * 读取缓存
+     * @param state
+     * @param dispatch
+     * @returns {Promise<unknown>}
+     */
+    handleReadCache({state}) {
+        return new Promise(async resolve => {
+            state.clientId = await $A.IDBString("clientId")
+            state.cacheServerUrl = await $A.IDBString("cacheServerUrl")
+            state.cacheUserBasic = await $A.IDBArray("cacheUserBasic")
+            state.cacheDialogs = (await $A.IDBArray("cacheDialogs")).map(item => Object.assign(item, {loading: false, extra_draft_has: item.extra_draft_content ? 1 : 0}))
+            state.cacheProjects = await $A.IDBArray("cacheProjects")
+            state.cacheColumns = await $A.IDBArray("cacheColumns")
+            state.cacheTasks = await $A.IDBArray("cacheTasks")
+            state.cacheProjectParameter = await $A.IDBArray("cacheProjectParameter")
+            state.cacheTaskBrowse = await $A.IDBArray("cacheTaskBrowse")
+            state.dialogMsgs = await $A.IDBArray("dialogMsgs")
+            state.fileLists = await $A.IDBArray("fileLists")
+            state.userInfo = await $A.IDBJson("userInfo")
+            state.callAt = await $A.IDBArray("callAt")
+            state.cacheEmojis = await $A.IDBArray("cacheEmojis")
+
+            // 会员信息
+            if (state.userInfo.userid) {
+                state.userId = state.userInfo.userid = $A.runNum(state.userInfo.userid)
+                state.userToken = state.userInfo.token
+                state.userIsAdmin = $A.inArray("admin", state.userInfo.identity)
+            }
+            const localId = $A.runNum(window.localStorage.getItem("__system:userId__"))
+            const localToken = window.localStorage.getItem("__system:userToken__") || ""
+            if (state.userId === 0 && localId && localToken) {
+                state.userId = localId
+                state.userToken = localToken
+            }
+
+            // ServerUrl
+            if (state.cacheServerUrl) {
+                window.systemInfo.apiUrl = state.cacheServerUrl
+            }
+
+            resolve()
+        })
     },
 
     /** *****************************************************************************************/
@@ -963,7 +991,7 @@ export default {
      * @param url
      */
     openWebTabWindow({dispatch}, url) {
-        if ($A.getDomain(url) != $A.getDomain($A.apiUrl('../'))) {
+        if ($A.getDomain(url) != $A.getDomain($A.mainUrl())) {
             $A.Electron.sendMessage('openWebTabWindow', {url})
             return
         }
@@ -1202,9 +1230,9 @@ export default {
                 url: 'project/lists',
                 data: callData.get()
             }).then(({data}) => {
-                state.projectTotal = data.total_all;
                 dispatch("saveProject", data.data);
                 callData.save(data).then(ids => dispatch("forgetProject", ids))
+                state.projectTotal = data.total_all;
                 //
                 resolve(data)
             }).catch(e => {
@@ -2548,7 +2576,7 @@ export default {
                     dispatch("getDialogs", requestData).then(resolve).catch(reject)
                 } else {
                     resolve()
-                    dispatch("getDialogUnreads").catch(() => {})
+                    dispatch("getDialogBeyonds")
                 }
             }).catch(e => {
                 console.warn(e);
@@ -2563,30 +2591,38 @@ export default {
      * @param dispatch
      * @returns {Promise<unknown>}
      */
-    getDialogUnreads({state, dispatch}) {
-        return new Promise(async resolve => {
-            const key = await $A.IDBString("dialogUnread")
-            const val = "v2:" + $A.formatDate("Y-m-d")
-            if (key == val) {
-                return  // 一天取一次
+    async getDialogBeyonds({state, dispatch}) {
+        const key = await $A.IDBString("dialogBeyond")
+        const val = $A.formatDate("Y-m-d H")
+        if (key == val) {
+            return  // 一小时取一次
+        }
+        await $A.IDBSet("dialogBeyond", val)
+        //
+        const filter = (func) => {
+            return state.cacheDialogs
+                .filter(func)
+                .sort((a, b) => {
+                    return $A.Date(a.last_at) - $A.Date(b.last_at);
+                })
+                .find(({id}) => id > 0)
+        }
+        const unreadDialog = filter(({unread, last_at}) => {
+            return unread > 0 && last_at
+        });
+        const todoDialog = filter(({todo_num, last_at}) => {
+            return todo_num > 0 && last_at
+        });
+        //
+        dispatch("call", {
+            url: 'dialog/beyond',
+            data: {
+                unread_at: unreadDialog ? unreadDialog.last_at : $A.Time(),
+                todo_at: todoDialog ? todoDialog.last_at : $A.Time()
             }
-            await $A.IDBSet("dialogUnread", val)
-            //
-            const dialog = $A.cloneJSON(state.cacheDialogs).filter(({last_at}) => last_at).sort((a, b) => {
-                return $A.Date(a.last_at) - $A.Date(b.last_at);
-            }).find(({id}) => id > 0);
-            if (dialog) {
-                dispatch("call", {
-                    url: 'dialog/unread',
-                    data: {
-                        before_at: dialog.last_at,
-                    }
-                }).then(({data}) => {
-                    dispatch("saveDialog", data);
-                });
-            }
-            resolve()
-        })
+        }).then(({data}) => {
+            dispatch("saveDialog", data);
+        });
     },
 
     /**
@@ -3262,7 +3298,7 @@ export default {
      */
     streamDialogMsg({state, dispatch}, streamUrl) {
         if (!/^https*:\/\//i.test(streamUrl)) {
-            streamUrl = $A.apiUrl(`..${streamUrl}`)
+            streamUrl = $A.mainUrl(streamUrl.substring(1))
         }
         if (state.dialogSseList.find(item => item.streamUrl == streamUrl)) {
             return
@@ -3452,7 +3488,7 @@ export default {
             return;
         }
         //
-        let url = $A.apiUrl('../ws');
+        let url = $A.mainUrl('ws');
         url = url.replace("https://", "wss://");
         url = url.replace("http://", "ws://");
         url += `?action=web&token=${state.userToken}&language=${languageName}`;
@@ -3844,6 +3880,10 @@ export default {
      * @param params {name, callback}
      */
     websocketMsgListener({state}, params) {
+        if (typeof params === "string") {
+            state.wsListener[params] && delete state.wsListener[params];
+            return;
+        }
         const {name, callback} = params;
         if (typeof callback === "function") {
             state.wsListener[name] = callback;

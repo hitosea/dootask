@@ -123,11 +123,11 @@
         <span>事由：{{$data->description}}</span>
     </div><div class="btn-raw no-dark-content">
         @if ($action === 'pass')
-            <button class="ivu-btn">已同意</button>
+            <button class="ivu-btn ivu-btn-grey">已同意</button>
         @elseif ($action === 'refuse')
-            <button class="ivu-btn">已拒绝</button>
+            <button class="ivu-btn ivu-btn-grey">已拒绝</button>
         @elseif ($action === 'withdraw')
-            <button class="ivu-btn">已撤销</button>
+            <button class="ivu-btn ivu-btn-grey">已撤销</button>
         @else
             <button class="ivu-btn ivu-btn-primary">同意</button>
             <button class="ivu-btn ivu-btn-error">拒绝</button>
@@ -145,9 +145,9 @@
         <span>事由：{{$data->description}}</span>
     </div><div class="btn-raw no-dark-content">
         @if ($is_finished == 1)
-        <button class="ivu-btn">已同意</button>
+        <button class="ivu-btn ivu-btn-grey">已同意</button>
         @else
-        <button class="ivu-btn">查看详情</button>
+        <button class="ivu-btn ivu-btn-grey">查看详情</button>
         @endif
     </div></span>
 @elseif ($type === 'approve_comment_notifier')
@@ -155,11 +155,14 @@
     <div class="cause"><span>申请人：<span style="color:#84c56a">{{'@'}}{{$data->nickname}}</span> {{$data->department}}</span>
         <b>评论内容</b>
         <span>{{$data->comment_content}}</span>
+        @if ($data->comment_pictures)
+        <span>[图片]</span>
+        @endif
     </div><div class="btn-raw no-dark-content">
         @if ($is_finished == 1)
-        <button class="ivu-btn">已同意</button>
+        <button class="ivu-btn ivu-btn-grey">已同意</button>
         @else
-        <button class="ivu-btn">查看详情</button>
+        <button class="ivu-btn ivu-btn-grey">查看详情</button>
         @endif
     </div></span>
 @elseif ($type === 'approve_submitter')
@@ -174,11 +177,11 @@
         <span>事由：{{$data->description}}</span>
     </div><div class="btn-raw no-dark-content">
     @if ($action === 'pass')
-            <button class="ivu-btn">已同意</button>
+            <button class="ivu-btn ivu-btn-grey">已同意</button>
         @elseif ($action === 'refuse')
-            <button class="ivu-btn">已拒绝</button>
+            <button class="ivu-btn ivu-btn-grey">已拒绝</button>
         @elseif ($action === 'withdraw')
-            <button class="ivu-btn">已撤销</button>
+            <button class="ivu-btn ivu-btn-grey">已撤销</button>
         @endif
     </div></span>
 @else

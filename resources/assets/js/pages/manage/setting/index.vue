@@ -64,7 +64,7 @@ export default {
     },
 
     computed: {
-        ...mapState(['userInfo', 'userIsAdmin', 'clientNewVersion']),
+        ...mapState(['userInfo', 'userIsAdmin', 'clientNewVersion', 'systemConfig']),
 
         routeName() {
             return this.$route.name
@@ -209,7 +209,7 @@ export default {
         onVersion() {
             const array = []
             this.getServerVersion().then(version => {
-                array.push(`${this.$L('服务器')}: ${$A.getDomain($A.apiUrl('../'))}`)
+                array.push(`${this.$L('服务器')}: ${$A.getDomain($A.mainUrl())}`)
                 array.push(`${this.$L('服务器版本')}: v${version}`)
                 array.push(`${this.$L('客户端版本')}: v${this.version}`)
                 $A.modalInfo({
@@ -222,8 +222,8 @@ export default {
 
         getServerVersion() {
             return new Promise(resolve => {
-                if (/^\d+\.\d+\.\d+$/.test(window.systemInfo.server_version)) {
-                    resolve(window.systemInfo.server_version)
+                if (/^\d+\.\d+\.\d+$/.test(this.systemConfig.server_version)) {
+                    resolve(this.systemConfig.server_version)
                     return;
                 }
                 axios.get($A.apiUrl('system/version')).then(({status, data}) => {

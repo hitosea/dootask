@@ -15,6 +15,7 @@
                     ref="emojiWrapper"
                     :enable-x="true"
                     :enable-y="false"
+                    :touch-content-blur="false"
                     class-name="chat-quick-emoji-wrapper scrollbar-hidden">
                     <li v-for="item in emojiQuickItems" @click="onEmojiQuick(item)">
                         <img :title="item.name" :alt="item.name" :src="item.src"/>
@@ -27,9 +28,9 @@
             <!-- 回复、修改 -->
             <div v-if="quoteData" class="chat-quote">
                 <div v-if="quoteUpdate" class="quote-label">{{$L('编辑消息')}}</div>
-                <UserAvatar v-else :userid="quoteData.userid" :show-icon="false" :show-name="true"/>
+                <UserAvatar v-else :userid="quoteData.userid" :userResult="onQuoteUserResult" :show-icon="false" :show-name="true"/>
                 <div class="quote-desc no-dark-content">{{$A.getMsgSimpleDesc(quoteData)}}</div>
-                <i class="taskfont" @click.stop="cancelQuote">&#xe6e5;</i>
+                <i class="taskfont" v-touchclick="cancelQuote">&#xe6e5;</i>
             </div>
 
             <!-- 输入框 -->
@@ -40,7 +41,9 @@
                 @paste="handlePaste"></div>
 
             <!-- 工具栏占位 -->
-            <div class="chat-space"></div>
+            <div class="chat-space">
+                <input class="space-input" @focus="onSpaceInputFocus"/>
+            </div>
 
             <!-- 工具栏 -->
             <ul class="chat-toolbar" @click.stop>
@@ -156,7 +159,11 @@
                         </div>
                         <div class="chat-input-popover-item" @click="onSend('md')">
                             <i class="taskfont">&#xe647;</i>
-                            {{$L('Markdown 格式发送')}}
+                            {{$L('MD 格式发送')}}
+                        </div>
+                        <div class="chat-input-popover-item" @click="onSend('normal')">
+                            <i class="taskfont">&#xe71b;</i>
+                            {{$L('普通格式发送')}}
                         </div>
                     </EPopover>
                 </li>
@@ -207,19 +214,21 @@
 
 <script>
 import {mapState} from "vuex";
-import Quill from 'quill';
+import Quill from 'quill-hi';
 import "quill-mention-hi";
 import ChatEmoji from "./emoji";
 import touchmouse from "../../../../directives/touchmouse";
+import touchclick from "../../../../directives/touchclick";
 import TransferDom from "../../../../directives/transfer-dom";
 import clickoutside from "../../../../directives/clickoutside";
 import longpress from "../../../../directives/longpress";
+import {isMarkdownFormat} from "../../../../store/markdown";
 import {Store} from "le5le-store";
 
 export default {
     name: 'ChatInput',
     components: {ChatEmoji},
-    directives: {touchmouse, TransferDom, clickoutside, longpress},
+    directives: {touchmouse, touchclick, TransferDom, clickoutside, longpress},
     props: {
         value: {
             type: [String, Number],
@@ -257,6 +266,10 @@ export default {
             type: Boolean,
             default: true
         },
+        simpleMode: {
+            type: Boolean,
+            default: false
+        },
         options: {
             type: Object,
             default: () => ({})
@@ -264,7 +277,7 @@ export default {
         toolbar: {
             type: Array,
             default: () => {
-                return ['bold', 'strike', 'italic', 'underline', {'list': 'ordered'}, {'list': 'bullet'}, 'blockquote', 'code-block']
+                return ['bold', 'strike', 'italic', 'underline', 'blockquote', {'list': 'ordered'}, {'list': 'bullet'}, {'list': 'check'}]
             },
         },
         maxlength: {
@@ -318,10 +331,11 @@ export default {
 
             emojiTimer: null,
             scrollTimer: null,
-            selectTimer: null,
             textTimer: null,
             fileTimer: null,
             moreTimer: null,
+            selectTimer: null,
+            selectRange: null,
 
             fullInput: false,
             fullQuill: null,
@@ -356,6 +370,7 @@ export default {
     },
     beforeDestroy() {
         if (this.quill) {
+            this.quill.getModule("mention")?.hideMentionList();
             this.quill = null
         }
         if (this.recordRec) {
@@ -408,6 +423,9 @@ export default {
                 } else {
                     array.push('record-ready');
                 }
+            }
+            if (this.simpleMode) {
+                array.push('simple-mode');
             }
             if (this.showMenu) {
                 array.push('show-menu');
@@ -485,7 +503,9 @@ export default {
                     this.quill.setText('')
                 }
             }
-            this.$store.dispatch("saveDialogDraft", {id: this.dialogId, extra_draft_content: this.filterInvalidLine(val)})
+            if (!this.simpleMode) {
+                this.$store.dispatch("saveDialogDraft", {id: this.dialogId, extra_draft_content: this.filterInvalidLine(val)})
+            }
         },
 
         // Watch disabled change
@@ -626,14 +646,15 @@ export default {
             // Options
             this._options = Object.assign({
                 theme: 'bubble',
+                formats: ['bold', 'strike', 'italic', 'underline', 'blockquote', 'list', 'link', 'image', 'mention'],
                 readOnly: false,
                 placeholder: this.placeholder,
                 modules: {
                     toolbar: this.$isEEUiApp || this.windowTouch ? false : this.toolbar,
-                    keyboard: {
+                    keyboard: this.simpleMode ? {} : {
                         bindings: {
                             'short enter': {
-                                key: 13,
+                                key: "Enter",
                                 shortKey: true,
                                 handler: _ => {
                                     if (!this.isEnterSend) {
@@ -644,7 +665,7 @@ export default {
                                 }
                             },
                             'enter': {
-                                key: 13,
+                                key: "Enter",
                                 shiftKey: false,
                                 handler: _ => {
                                     if (this.isEnterSend) {
@@ -655,7 +676,7 @@ export default {
                                 }
                             },
                             'esc': {
-                                key: 27,
+                                key: "Escape",
                                 shiftKey: false,
                                 handler: _ => {
                                     if (this.emojiQuickShow) {
@@ -684,15 +705,15 @@ export default {
 
             // Mark model as touched if editor lost focus
             this.quill.on('selection-change', range => {
-                if (!range && document.activeElement) {
-                    // 修复光标会超出的问题
-                    if (['ql-editor', 'ql-clipboard'].includes(document.activeElement.className)) {
-                        this.selectTimer && clearTimeout(this.selectTimer)
-                        this.selectTimer = setTimeout(_ => {
-                            this.quill.setSelection(document.activeElement.className === 'ql-editor' ? 0 : this.quill.getLength())
-                        }, 100)
-                        return
-                    }
+                if (range) {
+                    this.selectRange = range
+                } else if (this.selectRange && document.activeElement && /(ql-editor|ql-clipboard)/.test(document.activeElement.className)) {
+                    // 修复iOS光标会超出的问题
+                    this.selectTimer && clearTimeout(this.selectTimer)
+                    this.selectTimer = setTimeout(_ => {
+                        this.quill.setSelection(this.selectRange.index, this.selectRange.length)
+                    }, 100)
+                    return
                 }
                 this.isFocus = !!range;
             })
@@ -758,8 +779,8 @@ export default {
             this.$nextTick(_ => {
                 this.quill.root.addEventListener('keydown', e => {
                     if (e.key === '\r\r' && e.keyCode === 229) {
-                        const length = this.quill.getSelection(true).index;
-                        this.quill.insertText(length, "\r\n");
+                        const {index} = this.quill.getSelection(true);
+                        this.quill.insertText(index, "\r\n");
                         //
                         this.keyTimer && clearTimeout(this.keyTimer)
                         this.keyTimer = setTimeout(_ => {
@@ -891,7 +912,7 @@ export default {
                     && $A.isArray(window.emoticonData)) {
                     // 显示快捷选择表情窗口
                     this.emojiQuickItems = [];
-                    const baseUrl = $A.apiUrl("../images/emoticon")
+                    const baseUrl = $A.mainUrl("images/emoticon")
                     window.emoticonData.some(data => {
                         let j = 0
                         data.list.some(item => {
@@ -943,7 +964,7 @@ export default {
 
         setContent(value) {
             if (this.quill) {
-                this.quill.setContents(this.quill.clipboard.convert(value))
+                this.quill.setContents(this.quill.clipboard.convert({html: value}))
             }
         },
 
@@ -953,13 +974,13 @@ export default {
 
         loadInputDraft() {
             const {extra_draft_content} = this.dialogData;
-            if (extra_draft_content) {
-                this.pasteClean = false
-                this.$emit('input', extra_draft_content)
-                this.$nextTick(_ => this.pasteClean = true)
-            } else {
+            if (this.simpleMode || !extra_draft_content) {
                 this.$emit('input', '')
+                return
             }
+            this.pasteClean = false
+            this.$emit('input', extra_draft_content)
+            this.$nextTick(_ => this.pasteClean = true)
         },
 
         onClickEditor() {
@@ -1036,7 +1057,7 @@ export default {
             this.showMenu = true;
         },
 
-        onSend(type) {
+        onSend(type = 'auto') {
             this.emojiTimer && clearTimeout(this.emojiTimer)
             this.emojiQuickShow = false;
             //
@@ -1047,6 +1068,13 @@ export default {
                 this.hidePopover('send')
                 this.rangeIndex = 0
                 this.clearSearchKey()
+                //
+                if (type === 'auto') {
+                    type = isMarkdownFormat(this.value) ? 'md' : ''
+                }
+                if (type === 'normal') {
+                    type = ''
+                }
                 if (type) {
                     this.$emit('on-send', null, type)
                 } else {
@@ -1276,6 +1304,33 @@ export default {
             this.setQuote(0)
         },
 
+        onQuoteUserResult(data) {
+            if (this.dialogData.type !== 'group') {
+                return
+            }
+            if (this.quoteUpdate || !this.quoteData) {
+                return
+            }
+            if (this.userId === data.userid || this.quoteData.userid !== data.userid) {
+                return
+            }
+            if (new RegExp(`<span[^>]+?class="mention"[^>]+?data-id="${data.userid}"[^>]*?>`).test(this.$refs.editor.firstChild.innerHTML)) {
+                return
+            }
+            this.addMention({
+                denotationChar: "@",
+                id: data.userid,
+                value: data.nickname,
+            })
+        },
+
+        onSpaceInputFocus() {
+            if (this.selectRange) {
+                // 修复Android光标会超出的问题
+                this.quill?.setSelection(this.selectRange.index, this.selectRange.length)
+            }
+        },
+
         openMenu(char) {
             if (!this.quill) {
                 return;
@@ -1296,7 +1351,10 @@ export default {
             if (!this.quill) {
                 return;
             }
-            this.quill.getModule("mention").insertItem(data, true);
+            const {index} = this.quill.getSelection(true);
+            this.quill.insertEmbed(index, "mention", data, Quill.sources.USER);
+            this.quill.insertText(index + 1, " ", Quill.sources.USER);
+            this.quill.setSelection(index + 2, Quill.sources.USER);
         },
 
         getProjectId() {
@@ -1603,45 +1661,7 @@ export default {
             if (postFiles.length > 0) {
                 e.preventDefault()
                 this.$emit('on-file', files)
-            } else if (this.pasteRtf(e)) {
-                e.preventDefault()
             }
-        },
-
-        pasteRtf(e) {
-            if (e && e.clipboardData && e.clipboardData.items) {
-                const imgHtml = (new DOMParser).parseFromString(e.clipboardData.getData("text/html") || "", "text/html").querySelector("img");
-                if (!imgHtml) {
-                    const array = [];
-                    let image = null;
-                    if (e.clipboardData.types && -1 != [].indexOf.call(e.clipboardData.types, "text/rtf") || e.clipboardData.getData("text/rtf")) {
-                        image = e.clipboardData.items[0].getAsFile();
-                        if (image) {
-                            array.push(image)
-                        }
-                    } else {
-                        for (let s = 0; s < e.clipboardData.items.length; s++) {
-                            image = e.clipboardData.items[s].getAsFile()
-                            if (image) {
-                                array.push(image)
-                            }
-                        }
-                    }
-                    if (array.length > 0) {
-                        array.forEach(image => {
-                            const t = new FileReader;
-                            t.onload = ({target}) => {
-                                const length = this.quill.getSelection(true).index;
-                                this.quill.insertEmbed(length, "image", target.result);
-                                this.quill.setSelection(length + 1)
-                            };
-                            t.readAsDataURL(image)
-                        })
-                        return true
-                    }
-                }
-            }
-            return false
         },
 
         filterInvalidLine(content) {

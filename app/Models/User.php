@@ -13,15 +13,15 @@ use Carbon\Carbon;
  * App\Models\User
  *
  * @property int $userid
- * @property array $identity 身份
- * @property array $department 所属部门
+ * @property array $identity
+ * @property array $department
  * @property string|null $az A-Z
  * @property string|null $pinyin 拼音（主要用于搜索）
- * @property string|null $email 邮箱
+ * @property string|null $email
  * @property string|null $tel 联系电话
- * @property string $nickname 昵称
- * @property string|null $profession 职位/职称
- * @property string $userimg 头像
+ * @property string $nickname
+ * @property string|null $profession
+ * @property string $userimg
  * @property string|null $encrypt
  * @property string|null $password 登录密码
  * @property int|null $changepass 登录需要修改密码
@@ -32,15 +32,21 @@ use Carbon\Carbon;
  * @property string|null $line_at 最后在线时间（接口）
  * @property int|null $task_dialog_id 最后打开的任务会话ID
  * @property string|null $created_ip 注册IP
- * @property string|null $disable_at 禁用时间（离职时间）
+ * @property string|null $disable_at
  * @property int|null $email_verity 邮箱是否已验证
  * @property int|null $bot 是否机器人
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelAppend()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelHidden()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel change($array)
  * @method static \Database\Factories\UserFactory factory(...$parameters)
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel getKeyValue()
  * @method static \Illuminate\Database\Eloquent\Builder|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|User newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|User query()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel remove()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel saveOrIgnore()
  * @method static \Illuminate\Database\Eloquent\Builder|User whereAz($value)
  * @method static \Illuminate\Database\Eloquent\Builder|User whereBot($value)
  * @method static \Illuminate\Database\Eloquent\Builder|User whereChangepass($value)
@@ -525,6 +531,16 @@ class User extends AbstractModel
                     return Base::retError('no');
                 }
         }
+    }
+
+    /**
+     * 临时帐号别名
+     * @return mixed|string
+     */
+    public static function tempAccountAlias()
+    {
+        $alias = Base::settingFind('system', 'temp_account_alias');
+        return $alias ?: Doo::translate("临时帐号");
     }
 
     /**

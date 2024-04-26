@@ -56,6 +56,7 @@
             :transition-names="['', '']"
             :beforeClose="onClose"
             :class-name="`meeting-manager${meetingMini ? ' meeting-hidden' : ''}`"
+            :ignore-remove-last="meetingMini"
             fullscreen>
             <ul>
                 <li v-if="localUser.uid">
@@ -245,7 +246,7 @@ export default {
                         dialog_id: data.dialog_id
                     }
                 }).then(({data}) => {
-                    this.$set(this.addData, 'userids', data.map(item => item.userid))
+                    this.$set(this.addData, 'userids', data.filter(item => !item.bot).map(item => item.userid))
                 }).finally(_ => {
                     this.loadIng--;
                 });
@@ -398,28 +399,30 @@ export default {
             AgoraRTC.onMicrophoneChanged = async (changedDevice) => {
                 // When plugging in a device, switch to a device that is newly plugged in.
                 if (changedDevice.state === "ACTIVE") {
-                    this.localUser.audioTrack.setDevice(changedDevice.device.deviceId);
+                    this.localUser.audioTrack?.setDevice(changedDevice.device.deviceId);
                     // Switch to an existing device when the current device is unplugged.
-                } else if (changedDevice.device.label === this.localUser.audioTrack.getTrackLabel()) {
+                } else if (changedDevice.device.label === this.localUser.audioTrack?.getTrackLabel()) {
                     const oldMicrophones = await AgoraRTC.getMicrophones();
-                    oldMicrophones[0] && this.localUser.audioTrack.setDevice(oldMicrophones[0].deviceId);
+                    oldMicrophones[0] && this.localUser.audioTrack?.setDevice(oldMicrophones[0].deviceId);
                 }
             }
             // 视频采集设备状态变化回调
             AgoraRTC.onCameraChanged = async (changedDevice) => {
                 // When plugging in a device, switch to a device that is newly plugged in.
                 if (changedDevice.state === "ACTIVE") {
-                    this.localUser.videoTrack.setDevice(changedDevice.device.deviceId);
+                    this.localUser.videoTrack?.setDevice(changedDevice.device.deviceId);
                     // Switch to an existing device when the current device is unplugged.
-                } else if (changedDevice.device.label === this.localUser.videoTrack.getTrackLabel()) {
+                } else if (changedDevice.device.label === this.localUser.videoTrack?.getTrackLabel()) {
                     const oldCameras = await AgoraRTC.getCameras();
-                    oldCameras[0] && this.localUser.videoTrack.setDevice(oldCameras[0].deviceId);
+                    oldCameras[0] && this.localUser.videoTrack?.setDevice(oldCameras[0].deviceId);
                 }
             }
             // 音频或视频轨道自动播放失败回调
             AgoraRTC.onAutoplayFailed = () => {
                 $A.messageWarning("点击屏幕开始会议");
             }
+            // 设置日志级别
+            AgoraRTC.setLogLevel(window.systemInfo.debug === "yes" ? 0 : 3);
 
             // 创建客户端
             this.agoraClient = AgoraRTC.createClient({mode: "rtc", codec: "vp8"});
@@ -548,10 +551,10 @@ export default {
                     sharekey: this.addData.sharekey
                 },
             }).then(({ data }) => {
-                this.$copyText(data).then(_ => {
-                    $A.messageSuccess('已复制会议邀请链接');
-                }).catch(_ => {
-                    $A.messageError('复制失败');
+                this.copyText({
+                    text: data,
+                    success: '已复制会议邀请链接',
+                    error: "复制失败"
                 });
                 this.invitationShow = false;
             }).catch(({ msg }) => {

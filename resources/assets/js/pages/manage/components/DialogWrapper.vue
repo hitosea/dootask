@@ -80,6 +80,9 @@
                             <EDropdownItem command="searchMsg">
                                 <div>{{$L('搜索消息')}}</div>
                             </EDropdownItem>
+                            <EDropdownItem v-if="dialogData.bot == 0" command="report">
+                                <div>{{$L('举报投诉')}}</div>
+                            </EDropdownItem>
                             <template v-if="dialogData.type === 'user'">
                                 <EDropdownItem v-if="isManageBot" command="modifyNormal">
                                     <div>{{$L('修改资料')}}</div>
@@ -198,7 +201,7 @@
                 @on-error="onError"
                 @on-emoji="onEmoji"
                 @on-show-emoji-user="onShowEmojiUser">
-                <template #header>
+                <template #header v-if="!isChildComponent">
                     <div class="dialog-item head-box">
                         <div v-if="loadIng > 0 || prevId > 0" class="loading" :class="{filled: allMsgs.length === 0}">
                             <span v-if="scrollOffset < 100"></span>
@@ -214,7 +217,7 @@
             <div
                 v-if="scrollTail > 500 || (msgNew > 0 && allMsgs.length > 0)"
                 class="dialog-goto"
-                @click="onToBottom">
+                v-touchclick="onToBottom">
                 <Badge :overflow-count="999" :count="msgNew">
                     <i class="taskfont">&#xe72b;</i>
                 </Badge>
@@ -273,74 +276,86 @@
                 transfer>
                 <div :style="{userSelect:operateVisible ? 'none' : 'auto', height: operateStyles.height}"></div>
                 <DropdownMenu slot="list">
-                    <DropdownItem name="action">
-                        <ul class="operate-action">
-                            <li v-if="msgId === 0" @click="onOperate('reply')">
-                                <i class="taskfont">&#xe6eb;</i>
-                                <span>{{ $L('回复') }}</span>
-                            </li>
-                            <li v-if="operateItem.userid == userId && operateItem.type === 'text'" @click="onOperate('update')">
-                                <i class="taskfont">&#xe779;</i>
-                                <span>{{ $L('编辑') }}</span>
-                            </li>
-                            <li v-for="item in operateCopys" @click="onOperate('copy', item)">
-                                <i class="taskfont" v-html="item.icon"></i>
-                                <span>{{ $L(item.label) }}</span>
-                            </li>
-                            <li v-if="operateItem.type !== 'word-chain' && operateItem.type !== 'vote'" @click="onOperate('forward')">
-                                <i class="taskfont">&#xe638;</i>
-                                <span>{{ $L('转发') }}</span>
-                            </li>
-                            <li v-if="operateItem.userid == userId" @click="onOperate('withdraw')">
-                                <i class="taskfont">&#xe637;</i>
-                                <span>{{ $L('撤回') }}</span>
-                            </li>
-                            <template v-if="operateItem.type === 'file'">
-                                <li @click="onOperate('view')">
-                                    <i class="taskfont">&#xe77b;</i>
-                                    <span>{{ $L('查看') }}</span>
+                    <template v-if="!operateItem.created_at">
+                        <DropdownItem name="action">
+                            <ul class="operate-action cancel">
+                                <li @click="onOperate('cancel')">
+                                    <i class="taskfont">&#xe6eb;</i>
+                                    <span>{{ $L('取消发送') }}</span>
                                 </li>
-                                <li @click="onOperate('down')">
-                                    <i class="taskfont">&#xe7a8;</i>
-                                    <span>{{ $L('下载') }}</span>
+                            </ul>
+                        </DropdownItem>
+                    </template>
+                    <template v-else>
+                        <DropdownItem name="action">
+                            <ul class="operate-action">
+                                <li v-if="msgId === 0" @click="onOperate('reply')">
+                                    <i class="taskfont">&#xe6eb;</i>
+                                    <span>{{ $L('回复') }}</span>
                                 </li>
-                            </template>
-                            <li @click="onOperate('tag')">
-                                <i class="taskfont">&#xe61e;</i>
-                                <span>{{ $L(operateItem.tag ? '取消标注' : '标注') }}</span>
-                            </li>
-                            <li v-if="operateItem.type === 'text'" @click="onOperate('newTask')">
-                                <i class="taskfont">&#xe7b8;</i>
-                                <span>{{ $L('新任务') }}</span>
-                            </li>
-                            <li @click="onOperate('todo')">
-                                <i class="taskfont">&#xe7b7;</i>
-                                <span>{{ $L(operateItem.todo ? '取消待办' : '设待办') }}</span>
-                            </li>
-                            <li @click="onOperate('top')">
-                                <i class="taskfont" v-html="dialogData.top_msg_id == operateItem.id ? '&#xe7e3;' : '&#xe7e6;'"></i>
-                                <span>{{ $L(dialogData.top_msg_id == operateItem.id ? '取消置顶' : '置顶') }}</span>
-                            </li>
-                            <li v-if="msgType !== ''" @click="onOperate('pos')">
-                                <i class="taskfont">&#xee15;</i>
-                                <span>{{ $L('完整对话') }}</span>
-                            </li>
-                        </ul>
-                    </DropdownItem>
-                    <DropdownItem name="emoji" class="dropdown-emoji">
-                        <ul class="operate-emoji scrollbar-hidden">
-                            <li
-                                v-for="(emoji, key) in operateEmojis"
-                                :key="key"
-                                v-html="emoji"
-                                class="no-dark-content"
-                                @click="onOperate('emoji', emoji)"></li>
-                            <li></li>
-                            <li class="more-emoji" @click="onOperate('emoji', 'more')">
-                                <i class="taskfont">&#xe790;</i>
-                            </li>
-                        </ul>
-                    </DropdownItem>
+                                <li v-if="operateItem.userid == userId && operateItem.type === 'text'" @click="onOperate('update')">
+                                    <i class="taskfont">&#xe779;</i>
+                                    <span>{{ $L('编辑') }}</span>
+                                </li>
+                                <li v-for="item in operateCopys" @click="onOperate('copy', item)">
+                                    <i class="taskfont" v-html="item.icon"></i>
+                                    <span>{{ $L(item.label) }}</span>
+                                </li>
+                                <li v-if="actionPermission(operateItem, 'forward')" @click="onOperate('forward')">
+                                    <i class="taskfont">&#xe638;</i>
+                                    <span>{{ $L('转发') }}</span>
+                                </li>
+                                <li v-if="operateItem.userid == userId" @click="onOperate('withdraw')">
+                                    <i class="taskfont">&#xe637;</i>
+                                    <span>{{ $L('撤回') }}</span>
+                                </li>
+                                <template v-if="operateItem.type === 'file'">
+                                    <li @click="onOperate('view')">
+                                        <i class="taskfont">&#xe77b;</i>
+                                        <span>{{ $L('查看') }}</span>
+                                    </li>
+                                    <li @click="onOperate('down')">
+                                        <i class="taskfont">&#xe7a8;</i>
+                                        <span>{{ $L('下载') }}</span>
+                                    </li>
+                                </template>
+                                <li @click="onOperate('tag')">
+                                    <i class="taskfont">&#xe61e;</i>
+                                    <span>{{ $L(operateItem.tag ? '取消标注' : '标注') }}</span>
+                                </li>
+                                <li v-if="actionPermission(operateItem, 'newTask')" @click="onOperate('newTask')">
+                                    <i class="taskfont">&#xe7b8;</i>
+                                    <span>{{ $L('新任务') }}</span>
+                                </li>
+                                <li @click="onOperate('todo')">
+                                    <i class="taskfont">&#xe7b7;</i>
+                                    <span>{{ $L(operateItem.todo ? '取消待办' : '设待办') }}</span>
+                                </li>
+                                <li @click="onOperate('top')">
+                                    <i class="taskfont" v-html="dialogData.top_msg_id == operateItem.id ? '&#xe7e3;' : '&#xe7e6;'"></i>
+                                    <span>{{ $L(dialogData.top_msg_id == operateItem.id ? '取消置顶' : '置顶') }}</span>
+                                </li>
+                                <li v-if="msgType !== ''" @click="onOperate('pos')">
+                                    <i class="taskfont">&#xee15;</i>
+                                    <span>{{ $L('完整对话') }}</span>
+                                </li>
+                            </ul>
+                        </DropdownItem>
+                        <DropdownItem name="emoji" class="dropdown-emoji">
+                            <ul class="operate-emoji scrollbar-hidden">
+                                <li
+                                    v-for="(emoji, key) in operateEmojis"
+                                    :key="key"
+                                    v-html="emoji"
+                                    class="no-dark-content"
+                                    @click="onOperate('emoji', emoji)"></li>
+                                <li></li>
+                                <li class="more-emoji" @click="onOperate('emoji', 'more')">
+                                    <i class="taskfont">&#xe790;</i>
+                                </li>
+                            </ul>
+                        </DropdownItem>
+                    </template>
                 </DropdownMenu>
             </Dropdown>
         </div>
@@ -433,7 +448,7 @@
         <!-- 转发确认 -->
         <Modal
             v-model="forwardhow"
-            :title="$L('转发给:')"
+            :title="`${$L('转发给')}:`"
             class-name="common-user-select-modal dialog-forward-message-modal"
             :mask-closable="false"
             width="420">
@@ -459,13 +474,35 @@
             </div>
             <div class="twice-affirm-body-extend">
                 <div class="dialog-wrapper-forward-body">
-                    <div class="dialog-wrapper">
-                        <div class="dialog-scroller">
-                            <DialogItem :source="operateItem" simpleView :dialogAvatar="false"/>
-                        </div>
+                    <div class="dialog-wrapper inde-list">
+                        <Scrollbar class-name="dialog-scroller">
+                            <DialogItem
+                                :source="operateItem"
+                                @on-view-text="onViewText"
+                                @on-view-file="onViewFile"
+                                @on-down-file="onDownFile"
+                                @on-emoji="onEmoji"
+                                simpleView/>
+                        </Scrollbar>
                     </div>
                     <div class="leave-message">
-                        <Input type="textarea" :autosize="{minRows: 1,maxRows: 3}" v-model="forwardMessage" :placeholder="$L('留言')" clearable />
+                        <ChatInput
+                            v-if="forwardDialogId > 0"
+                            v-model="forwardMessage"
+                            :dialog-id="forwardDialogId"
+                            :emoji-bottom="windowPortrait"
+                            :maxlength="200000"
+                            :placeholder="$L('留言')"
+                            disabled-record
+                            simple-mode/>
+                        <Input
+                            v-else
+                            type="textarea"
+                            :autosize="{minRows: 1,maxRows: 3}"
+                            v-model="forwardMessage"
+                            :maxlength="200000"
+                            :placeholder="$L('留言')"
+                            clearable/>
                     </div>
                 </div>
             </div>
@@ -522,6 +559,14 @@
             <DialogGroupInfo v-if="groupInfoShow" :dialogId="dialogId" @on-close="groupInfoShow=false"/>
         </DrawerOverlay>
 
+        <!--举报投诉-->
+        <DrawerOverlay
+            v-model="reportShow"
+            placement="right"
+            :size="500">
+            <DialogComplaint v-if="reportShow" :dialogId="dialogId" @on-close="reportShow=false"/>
+        </DrawerOverlay>
+
         <!--群转让-->
         <Modal
             v-model="groupTransferShow"
@@ -548,7 +593,8 @@
                 v-if="replyListShow"
                 :dialogId="dialogId"
                 :msgId="replyListId"
-                class="drawer-list">
+                isChildComponent
+                class="inde-list">
                 <div slot="head" class="drawer-title">{{$L('回复消息')}}</div>
             </DialogWrapper>
         </DrawerOverlay>
@@ -567,20 +613,24 @@
             placement="right"
             class-name="dialog-wrapper-drawer-list"
             :size="500">
-            <div class="dialog-wrapper drawer-list">
+            <div class="dialog-wrapper inde-list">
                 <div class="dialog-nav">
                     <div class="drawer-title">{{$L('待办消息')}}</div>
                 </div>
                 <Scrollbar class-name="dialog-scroller">
-                    <DialogItem
-                        v-if="todoViewMsg"
-                        :source="todoViewMsg"
-                        @on-view-text="onViewText"
-                        @on-view-file="onViewFile"
-                        @on-down-file="onDownFile"
-                        @on-emoji="onEmoji"
-                        simpleView/>
-                    <Button class="original-button" icon="md-exit" type="text" :loading="todoViewPosLoad" @click="onPosTodo">{{ $L("回到原文") }}</Button>
+                    <template v-if="todoViewMsg">
+                        <DialogItem
+                            :source="todoViewMsg"
+                            @on-view-text="onViewText"
+                            @on-view-file="onViewFile"
+                            @on-down-file="onDownFile"
+                            @on-emoji="onEmoji"
+                            simpleView/>
+                        <Button class="original-button" icon="md-exit" type="text" :loading="todoViewPosLoad" @click="onPosTodo">{{ $L("回到原文") }}</Button>
+                    </template>
+                    <div v-else class="dialog-float-loading">
+                        <Loading/>
+                    </div>
                 </Scrollbar>
                 <div class="todo-button">
                     <Button type="primary" size="large" icon="md-checkbox-outline" @click="onDoneTodo" :loading="todoViewLoad" long>{{ $L("完成") }}</Button>
@@ -611,7 +661,7 @@ import DialogGroupInfo from "./DialogGroupInfo";
 import DialogRespond from "./DialogRespond";
 import ChatInput from "./ChatInput";
 
-import VirtualList from 'vue-virtual-scroll-list-hi'
+import VirtualList from "vue-virtual-scroll-list-hi"
 import {Store} from "le5le-store";
 import ImgUpload from "../../../components/ImgUpload.vue";
 import {choiceEmojiOne} from "./ChatInput/one";
@@ -621,6 +671,8 @@ import UserSelect from "../../../components/UserSelect.vue";
 import UserAvatarTip from "../../../components/UserAvatar/tip.vue";
 import DialogGroupWordChain from "./DialogGroupWordChain";
 import DialogGroupVote from "./DialogGroupVote";
+import DialogComplaint from "./DialogComplaint";
+import touchclick from "../../../directives/touchclick";
 
 export default {
     name: "DialogWrapper",
@@ -638,7 +690,9 @@ export default {
         ApproveDetails,
         DialogGroupWordChain,
         DialogGroupVote,
+        DialogComplaint,
     },
+    directives: {touchclick},
 
     props: {
         dialogId: {
@@ -653,7 +707,12 @@ export default {
             type: Boolean,
             default: false
         },
-        isMessenger: {
+        location: {
+            type: String,
+            default: ""
+        },
+        // 当做子组件用，非正常聊天窗口
+        isChildComponent: {
             type: Boolean,
             default: false
         },
@@ -701,12 +760,14 @@ export default {
             forwardhow: false,
             forwardData: [],
             forwardLoad: 0,
+            forwardDialogId: 0,
             forwardMessage: '',
             forwardSource: true,
 
             openId: 0,
             dialogDrag: false,
             groupInfoShow: false,
+            reportShow: false,
 
             groupTransferShow: false,
             groupTransferLoad: 0,
@@ -776,13 +837,18 @@ export default {
     },
 
     mounted() {
+        this.subMsgListener()
         this.msgSubscribe = Store.subscribe('dialogMsgChange', this.onMsgChange);
         document.addEventListener('selectionchange', this.onSelectionchange);
     },
 
     beforeDestroy() {
-        this.$store.dispatch('forgetInDialog', this._uid)
-        this.$store.dispatch('closeDialog', this.dialogId)
+        this.subMsgListener(true)
+        //
+        if (!this.isChildComponent) {
+            this.$store.dispatch('forgetInDialog', this._uid)
+            this.$store.dispatch('closeDialog', this.dialogId)
+        }
         //
         if (this.msgSubscribe) {
             this.msgSubscribe.unsubscribe();
@@ -1004,14 +1070,14 @@ export default {
             return [];
         },
 
-        footerPaddingBottom({keyboardType, keyboardHeight, safeAreaBottom, windowScrollY, isMessenger, focusLazy}) {
-            if (windowScrollY === 0
+        footerPaddingBottom({keyboardType, keyboardHeight, safeAreaBottom, windowScrollY, location, focusLazy}) {
+            if (windowScrollY < 2
+                && location
                 && focusLazy
-                && isMessenger
                 && keyboardType === "show"
                 && keyboardHeight > 0
                 && keyboardHeight < 120) {
-                return keyboardHeight + safeAreaBottom;
+                return keyboardHeight + safeAreaBottom + (location === 'modal' ? 15 : 0);
             }
             return 0;
         },
@@ -1192,6 +1258,7 @@ export default {
                 this.$store.dispatch('closeDialog', old_id)
                 //
                 window.localStorage.removeItem('__cache:vote__')
+                window.localStorage.removeItem('__cache:unfoldWordChain__')
             },
             immediate: true
         },
@@ -1400,9 +1467,38 @@ export default {
         readLoadNum() {
             this.positionShow = true
         },
+
+        operateVisible(val) {
+            if (!val) {
+                document.getSelection().removeAllRanges();
+            }
+        },
     },
 
     methods: {
+        /**
+         * 订阅消息（用于独立窗口）
+         * @param unsubscribe
+         */
+        subMsgListener(unsubscribe = false) {
+            if (!$A.isSubElectron) {
+                return
+            }
+            if (unsubscribe) {
+                this.$store.dispatch('websocketMsgListener', 'DialogWrapper')
+            } else {
+                this.$store.dispatch('websocketMsgListener', {
+                    name: 'DialogWrapper',
+                    callback: (msgDetail) => {
+                        const {type, mode, data} = msgDetail;
+                        if (type === 'dialog' && mode === 'add') {
+                            this.tempMsgs.push(data)
+                        }
+                    }
+                })
+            }
+        },
+
         /**
          * 发送消息
          * @param text
@@ -1438,7 +1534,7 @@ export default {
             if (this.dialogData.extra_quote_type === 'update') {
                 // 修改
                 if (textType === "text") {
-                    textBody = textBody.replace(new RegExp(`src=(["'])${$A.apiUrl('../')}`, "g"), "src=$1{{RemoteURL}}")
+                    textBody = textBody.replace(new RegExp(`src=(["'])${$A.mainUrl()}`, "g"), "src=$1{{RemoteURL}}")
                 }
                 const update_id = this.quoteId
                 this.$store.dispatch("setLoad", {
@@ -1472,12 +1568,12 @@ export default {
                     id: this.getTempId(),
                     dialog_id: this.dialogData.id,
                     reply_id: this.quoteId,
-                    reply_data: this.quoteData,
                     type: typeLoad ? 'loading' : 'text',
                     userid: this.userId,
                     msg: {
-                        text: typeLoad ? '' : textBody,
                         type: textType,
+                        text: typeLoad ? '' : textBody,
+                        reply_data: this.quoteData,
                     },
                 }
                 this.tempMsgs.push(tempMsg)
@@ -1487,6 +1583,7 @@ export default {
                 this.$nextTick(this.onToBottom)
                 //
                 this.$store.dispatch("call", {
+                    requestId: tempMsg.id,
                     url: 'dialog/msg/sendtext',
                     data: {
                         dialog_id: tempMsg.dialog_id,
@@ -1517,10 +1614,11 @@ export default {
                 id: this.getTempId(),
                 dialog_id: this.dialogData.id,
                 reply_id: this.quoteId,
-                reply_data: this.quoteData,
-                type: 'loading',
+                type: 'record',
                 userid: this.userId,
-                msg,
+                msg: Object.assign(msg, {
+                    reply_data: this.quoteData,
+                }),
             }
             this.tempMsgs.push(tempMsg)
             this.msgType = ''
@@ -1529,6 +1627,7 @@ export default {
             this.$nextTick(this.onToBottom)
             //
             this.$store.dispatch("call", {
+                requestId: tempMsg.id,
                 url: 'dialog/msg/sendrecord',
                 data: Object.assign(msg, {
                     dialog_id: this.dialogId,
@@ -1905,6 +2004,9 @@ export default {
         },
 
         onTouchStart(e) {
+            if ($A.isAndroid() && $A.eeuiAppKeyboardStatus()) {
+                $A.eeuiAppSetDisabledUserLongClickSelect(500);
+            }
             this.wrapperStart = null;
             if (this.selectedTextStatus) {
                 this.wrapperStart = window.scrollY
@@ -1977,13 +2079,20 @@ export default {
         chatFile(type, file) {
             switch (type) {
                 case 'progress':
+                    const percentage = file.showProgress ? Math.max(file.percentage, 0.01) : false
+                    const temp = this.tempMsgs.find(({id}) => id == file.tempId);
+                    if (temp) {
+                        temp.msg.percentage = percentage
+                        return;
+                    }
                     const tempMsg = {
                         id: file.tempId,
+                        file_uid: file.uid,
                         dialog_id: this.dialogData.id,
                         reply_id: this.quoteId,
-                        type: 'loading',
+                        type: 'file',
                         userid: this.userId,
-                        msg: { },
+                        msg: Object.assign(file.msg || {}, {percentage}),
                     }
                     this.tempMsgs.push(tempMsg)
                     this.msgType = ''
@@ -2073,26 +2182,31 @@ export default {
         },
 
         onCallTel() {
-            this.$store.dispatch("call", {
-                url: 'dialog/tel',
-                data: {
-                    dialog_id: this.dialogId,
-                },
-                spinner: 600,
-            }).then(({data}) => {
-                if (data.tel) {
-                    $A.eeuiAppSendMessage({
-                        action: 'callTel',
-                        tel: data.tel
+            $A.modalConfirm({
+                content: `是否拨打电话给 ${this.dialogData.name}？`,
+                onOk: () => {
+                    this.$store.dispatch("call", {
+                        url: 'dialog/tel',
+                        data: {
+                            dialog_id: this.dialogId,
+                        },
+                        spinner: 600,
+                    }).then(({data}) => {
+                        if (data.tel) {
+                            $A.eeuiAppSendMessage({
+                                action: 'callTel',
+                                tel: data.tel
+                            });
+                        }
+                        if (data.add) {
+                            this.$store.dispatch("saveDialogMsg", data.add);
+                            this.$store.dispatch("updateDialogLastMsg", data.add);
+                            this.onActive();
+                        }
+                    }).catch(({msg}) => {
+                        $A.modalError(msg);
                     });
                 }
-                if (data.add) {
-                    this.$store.dispatch("saveDialogMsg", data.add);
-                    this.$store.dispatch("updateDialogLastMsg", data.add);
-                    this.onActive();
-                }
-            }).catch(({msg}) => {
-                $A.modalError(msg);
             });
         },
 
@@ -2367,6 +2481,10 @@ export default {
                 case "exit":
                     this.onExitGroup()
                     break;
+
+                case "report":
+                    this.reportShow = true
+                    break;
             }
         },
 
@@ -2515,6 +2633,13 @@ export default {
                 if (this.forwardData.length === 0) {
                     $A.messageError("请选择转发对话或成员");
                 } else {
+                    this.forwardDialogId = 0;
+                    if (this.forwardData.length === 1) {
+                        const {type, userid} = this.forwardData[0];
+                        if (type === "group" && /^d:/.test(userid)) {
+                            this.forwardDialogId = parseInt(userid.replace(/^d:/, ''));
+                        }
+                    }
                     this.forwardMessage = '';
                     this.forwardSource = true;
                     this.forwardhow = true;
@@ -2730,10 +2855,20 @@ export default {
             }
             this.$nextTick(() => {
                 const rect = el.getBoundingClientRect();
+                const scrollerRect = this.$refs.scroller.$el.getBoundingClientRect();
+                let top = rect.top + this.windowScrollY,
+                    height = rect.height;
+                if (rect.top < scrollerRect.top) {
+                    top = scrollerRect.top
+                    height -= scrollerRect.top - rect.top
+                }
+                if (rect.bottom > scrollerRect.bottom) {
+                    height -= rect.bottom - scrollerRect.bottom
+                }
                 this.operateStyles = {
                     left: `${event.clientX}px`,
-                    top: `${rect.top + this.windowScrollY}px`,
-                    height: rect.height + 'px',
+                    top: `${top}px`,
+                    height: `${height}px`,
                 }
                 this.operateClient = {x: event.clientX, y: event.clientY};
                 this.operateVisible = true;
@@ -2744,6 +2879,10 @@ export default {
             this.operateVisible = false;
             this.$nextTick(_ => {
                 switch (action) {
+                    case "cancel":
+                        this.onCancelSend()
+                        break;
+
                     case "reply":
                         this.onReply()
                         break;
@@ -2803,6 +2942,39 @@ export default {
                         break;
                 }
             })
+        },
+
+        onCancelSend() {
+            $A.modalConfirm({
+                title: '取消发送',
+                content: '你确定要取消发送吗？',
+                loading: true,
+                onOk: () => {
+                    return new Promise((resolve, reject) => {
+                        if (this.operateItem.created_at) {
+                            reject("消息已发送，不可取消");
+                            return
+                        }
+                        if (this.operateItem.type === 'file') {
+                            // 取消文件上传
+                            if (this.$refs.chatUpload.cancel(this.operateItem.file_uid)) {
+                                this.forgetTempMsg(this.operateItem.id)
+                                resolve();
+                            } else {
+                                reject("取消发送失败");
+                            }
+                        } else {
+                            // 取消消息发送
+                            this.$store.dispatch('callCancel', this.operateItem.id).then(() => {
+                                this.forgetTempMsg(this.operateItem.id)
+                                resolve();
+                            }).catch(() => {
+                                reject("取消发送失败");
+                            });
+                        }
+                    })
+                }
+            });
         },
 
         onReply(type) {
@@ -2866,18 +3038,18 @@ export default {
                     break;
 
                 case 'link':
-                    this.$copyText(value).then(_ => $A.messageSuccess('复制成功')).catch(_ => $A.messageError('复制失败'))
+                    this.copyText(value);
                     break;
 
                 case 'selected':
-                    this.$copyText(value).then(_ => $A.messageSuccess('复制成功')).catch(_ => $A.messageError('复制失败'))
+                    this.copyText(value);
                     break;
 
                 case 'text':
                     const copyEl = $A(this.$refs.scroller.$el).find(`[data-id="${this.operateItem.id}"]`).find('.dialog-content')
                     if (copyEl.length > 0) {
                         const text = copyEl[0].innerText.replace(/\n\n/g, "\n").replace(/(^\s*)|(\s*$)/g, "")
-                        this.$copyText(text).then(_ => $A.messageSuccess('复制成功')).catch(_ => $A.messageError('复制失败'))
+                        this.copyText(text)
                     } else {
                         $A.messageWarning('不可复制的内容');
                     }
@@ -2923,6 +3095,9 @@ export default {
             // 打开审批详情
             let approveElement = target;
             while (approveElement) {
+                if (approveElement.classList.contains('dialog-scroller')) {
+                    break;
+                }
                 if (approveElement.classList.contains('open-approve-details')) {
                     const dataId = approveElement.getAttribute("data-id")
                     if (window.innerWidth < 426) {
@@ -2933,15 +3108,13 @@ export default {
                             this.approveDetails = {id: dataId};
                         })
                     }
-                    break;
-                }
-                if (approveElement.classList.contains('dialog-item')) {
-                    break;
+                    return;
                 }
                 approveElement = approveElement.parentElement;
             }
 
             switch (target.nodeName) {
+                // 打开图片
                 case "IMG":
                     if (target.classList.contains('browse')) {
                         this.onViewPicture(target.currentSrc);
@@ -2952,6 +3125,7 @@ export default {
                     }
                     break;
 
+                // 打开任务、打开OKR
                 case "SPAN":
                     if (target.classList.contains('mention') && target.classList.contains('task')) {
                         this.$store.dispatch("openTask", $A.runNum(target.getAttribute("data-id")));
@@ -2961,6 +3135,48 @@ export default {
                     }
                     break;
 
+                // 更新待办列表
+                case "LI":
+                    const dataClass = target.getAttribute('data-list')
+                    if (['checked', 'unchecked'].includes(dataClass)) {
+                        let listElement = el.parentElement;
+                        while (listElement) {
+                            if (listElement.classList.contains('dialog-scroller')) {
+                                break;
+                            }
+                            if (listElement.classList.contains('dialog-view')) {
+                                const dataId = listElement.getAttribute("data-id")
+                                const dataIndex = [].indexOf.call(el.querySelectorAll(target.tagName), target);
+                                if (dataClass === 'checked') {
+                                    target.setAttribute('data-list', 'unchecked')
+                                } else {
+                                    target.setAttribute('data-list', 'checked')
+                                }
+                                this.$store.dispatch("setLoad", {
+                                    key: `msg-${dataId}`,
+                                    delay: 600
+                                })
+                                this.$store.dispatch("call", {
+                                    url: 'dialog/msg/checked',
+                                    data: {
+                                        dialog_id: this.dialogId,
+                                        msg_id: dataId,
+                                        index: dataIndex,
+                                        checked: dataClass === 'checked' ? 0 : 1
+                                    },
+                                }).then(({data}) => {
+                                    this.$store.dispatch("saveDialogMsg", data);
+                                }).catch(({msg}) => {
+                                    $A.modalError(msg);
+                                }).finally(_ => {
+                                    this.$store.dispatch("cancelLoad", `msg-${dataId}`)
+                                });
+                                break;
+                            }
+                            listElement = listElement.parentElement;
+                        }
+                    }
+                    break;
             }
         },
 
@@ -3006,7 +3222,7 @@ export default {
                     },
                 })
             } else {
-                window.open($A.apiUrl(`..${path}`))
+                window.open($A.mainUrl(path.substring(1)))
             }
         },
 
@@ -3312,6 +3528,23 @@ export default {
             this.onPositionId(id).finally(_ => {
                 this.positionLoad--
             })
+        },
+
+        actionPermission(item, permission) {
+            if (permission === 'forward') {
+                if (['word-chain', 'vote'].includes(item.type)) {
+                    return false    // 投票、接龙 不支持转发
+                }
+                if (item.type === 'text') {
+                    return typeof item.msg.approve_type === 'undefined' // 审批消息不支持转发
+                }
+            } else if (permission === 'newTask') {
+                if (item.type === 'text') {
+                    return typeof item.msg.approve_type === 'undefined' // 审批消息不支持新建任务
+                }
+                return false
+            }
+            return true // 返回 true 允许操作
         },
 
         findOperateFile(msgId, link) {

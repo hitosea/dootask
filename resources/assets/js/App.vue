@@ -53,23 +53,24 @@ export default {
     },
 
     created() {
-        this.electronEvents();
-        this.eeuiEvents();
-        this.otherEvents();
+        this.electronEvents()
+        this.eeuiEvents()
+        this.otherEvents()
     },
 
     mounted() {
-        window.addEventListener('resize', this.windowSizeListener);
-        window.addEventListener('scroll', this.windowScrollListener);
+        window.addEventListener('resize', this.windowSizeListener)
+        window.addEventListener('scroll', this.windowScrollListener)
         window.addEventListener('message', this.windowHandleMessage)
-        this.searchInter = setInterval(this.searchEnter, 1000);
+        this.searchInter = setInterval(this.searchEnter, 1000)
+        $A.loadVConsole()
     },
 
     beforeDestroy() {
-        window.removeEventListener('resize', this.windowSizeListener);
-        window.removeEventListener('scroll', this.windowScrollListener);
+        window.removeEventListener('resize', this.windowSizeListener)
+        window.removeEventListener('scroll', this.windowScrollListener)
         window.removeEventListener('message', this.windowHandleMessage)
-        this.searchInter && clearInterval(this.searchInter);
+        this.searchInter && clearInterval(this.searchInter)
     },
 
     computed: {
@@ -98,38 +99,20 @@ export default {
             handler() {
                 this.$store.dispatch("websocketConnection");
                 //
-                if (this.userId > 0) {
-                    if (this.$isEEUiApp) {
+                if (this.userId > 0 && this.$isEEUiApp) {
+                    $A.eeuiAppSendMessage({
+                        action: 'initApp',
+                        apiUrl: $A.apiUrl(''),
+                        userid: this.userId,
+                        token: this.userToken,
+                        userAgent: window.navigator.userAgent,
+                    });
+                    setTimeout(_ => {
                         $A.eeuiAppSendMessage({
-                            action: 'intiUmeng',
+                            action: 'setUmengAlias',
+                            url: $A.apiUrl('users/umeng/alias')
                         });
-                        setTimeout(_ => {
-                            $A.eeuiAppSendMessage({
-                                action: 'setUmengAlias',
-                                userid: this.userId,
-                                token: this.userToken,
-                                url: $A.apiUrl('users/umeng/alias')
-                            });
-                        }, 6000)
-                    }
-                    //
-                    $A.IDBString("logOpen").then(r => {
-                        $A.openLog = r === "open"
-                        if ($A.openLog) {
-                            $A.loadScript('js/vconsole.min.js').then(_ => {
-                                window.vConsole = new window.VConsole({
-                                    onReady: () => {
-                                        console.log('vConsole: onReady');
-                                    },
-                                    onClearLog: () => {
-                                        console.log('vConsole: onClearLog');
-                                    }
-                                });
-                            }).catch(_ => {
-                                $A.modalError("vConsole 组件加载失败！");
-                            })
-                        }
-                    })
+                    }, 6000)
                 }
             },
             immediate: true
@@ -232,6 +215,12 @@ export default {
 
             this.$store.state.formLabelPosition = windowWidth > 576 ? 'right' : 'top'
             this.$store.state.formLabelWidth = windowWidth > 576 ? 'auto' : ''
+
+            $A.eeuiAppSendMessage({
+                action: 'windowSize',
+                width: windowWidth,
+                height: windowHeight,
+            });
         },
 
         windowScrollListener() {
@@ -248,6 +237,22 @@ export default {
             }
         },
 
+        isUseDefaultBrowser(url) {
+            if (/web\.zoom\.us/i.test(url)
+                || /meeting\.tencent\.com/i.test(url)
+                || /meet\.google\.com/i.test(url)) {
+                return true;
+            }
+            if ($A.getDomain(url) == $A.getDomain($A.mainUrl())) {
+                try {
+                    if (/^\/uploads\//i.test(new URL(url).pathname)) {
+                        return true;
+                    }
+                } catch (e) { }
+            }
+            return false;
+        },
+
         electronEvents() {
             if (!this.$Electron) {
                 return;
@@ -258,16 +263,11 @@ export default {
                 }
             }
             window.__onBeforeOpenWindow = ({url}) => {
-                if ($A.getDomain(url) == $A.getDomain($A.apiUrl('../'))) {
-                    try {
-                        // 下载文件不使用内置浏览器打开
-                        if (/^\/uploads\//i.test(new URL(url).pathname)) {
-                            return false;
-                        }
-                    } catch (e) { }
+                if (this.isUseDefaultBrowser(url)) {
+                    return false;   // 使用默认浏览器打开
                 }
                 this.$store.dispatch("openWebTabWindow", url)
-                return true;
+                return true;        // 阻止默认打开
             }
             this.$Electron.registerMsgListener('dispatch', args => {
                 if (!$A.isJson(args)) {
@@ -303,6 +303,7 @@ export default {
             // APP进入前台
             window.__onAppActive = () => {
                 this.autoTheme()
+                $A.IDBTest()
             }
             // 页面失活
             window.__onPagePause = () => {
@@ -317,14 +318,13 @@ export default {
                 } else {
                     this.autoTheme()
                 }
-                $A.eeuiAppSendMessage({
-                    action: 'outerSize',
-                    outerWidth: window.outerWidth,
-                    outerHeight: window.outerHeight,
-                });
             }
             // 新窗口打开
             window.__onCreateTarget = (url) => {
+                if (this.isUseDefaultBrowser(url)) {
+                    $A.eeuiAppOpenWeb(url);
+                    return;
+                }
                 this.$store.dispatch('openAppChildPage', {
                     pageType: 'app',
                     pageTitle: ' ',
@@ -400,9 +400,9 @@ export default {
             }
             // 发送网页尺寸
             $A.eeuiAppSendMessage({
-                action: 'outerSize',
-                outerWidth: window.outerWidth,
-                outerHeight: window.outerHeight,
+                action: 'windowSize',
+                width: this.windowWidth,
+                height: this.windowHeight,
             });
             // 取消长按振动
             $A.eeuiAppSetHapticBackEnabled(false)

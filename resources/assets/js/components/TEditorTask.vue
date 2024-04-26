@@ -23,6 +23,7 @@
                 <div :style="{userSelect:operateVisible ? 'none' : 'auto', height: operateStyles.height}"></div>
                 <DropdownMenu slot="list">
                     <DropdownItem @click.native="onEditing">{{ $L('编辑描述') }}</DropdownItem>
+                    <DropdownItem @click.native="onHistory">{{ $L('历史记录') }}</DropdownItem>
                     <DropdownItem v-if="operateLink" @click.native="onLinkPreview">{{ $L('打开链接') }}</DropdownItem>
                     <DropdownItem v-if="operateImg" @click.native="onImagePreview">{{ $L('查看图片') }}</DropdownItem>
                 </DropdownMenu>
@@ -69,7 +70,7 @@ export default {
             content: this.value,
 
             plugins: [
-                'advlist autolink lists link image charmap print preview hr anchor pagebreak',
+                'advlist autolink lists checklist link image charmap print preview hr anchor pagebreak',
                 'searchreplace visualblocks visualchars code',
                 'insertdatetime media nonbreaking save table directionality',
                 'emoticons paste codesample',
@@ -81,16 +82,21 @@ export default {
                 autoresize_bottom_margin: 2,
                 min_height: 200,
                 max_height: 380,
-                contextmenu: 'bold italic underline forecolor backcolor | link | codesample | uploadImages imagePreview | preview screenload',
-                valid_elements: 'a[href|title|target=_blank],em,strong/b,div[align],span[style],a,br,p,img[src|alt|witdh|height],pre[class],code',
+                contextmenu: 'checklist | bold italic underline forecolor backcolor | link | uploadImages imagePreview | history screenload',
+                valid_elements: 'a[href|title|target=_blank],em,strong/b,div[align],span[style],a,br,p,img[src|alt|witdh|height],pre[class],code,ol[class],ul[class],li[class]',
                 extended_valid_elements: 'a[href|title|target=_blank]',
                 toolbar: false
             },
             optionFull: {
                 menubar: 'file edit view',
-                valid_elements: 'a[href|title|target=_blank],em,strong/b,div[align],span[style],a,br,p,img[src|alt|witdh|height],pre[class],code',
+                removed_menuitems: 'preview,print',
+                contextmenu: 'checklist | bold italic underline forecolor backcolor | link | uploadImages imagePreview | screenload',
+                valid_elements: 'a[href|title|target=_blank],em,strong/b,div[align],span[style],a,br,p,img[src|alt|witdh|height],pre[class],code,ol[class],ul[class],li[class]',
                 extended_valid_elements: 'a[href|title|target=_blank]',
-                toolbar: 'uploadImages | bold italic underline | forecolor backcolor'
+                toolbar: 'uploadImages | checklist | bold italic underline | forecolor backcolor',
+                mobile: {
+                    menubar: 'file edit view',
+                },
             },
 
             operateStyles: {},
@@ -146,12 +152,17 @@ export default {
             this.$refs.desc.onFull()
         },
 
+        onHistory() {
+            this.$emit('on-history');
+        },
+
         onBlur() {
             this.$emit('on-blur');
         },
 
         onEditorInit(editor) {
             this.updateTouchContent();
+            this.updateHistoryContent(editor);
             this.$emit('on-editor-init', editor);
         },
 
@@ -234,6 +245,16 @@ export default {
                     this.updateTouchLink(timeout + 100);
                 }
             }, timeout)
+        },
+
+        updateHistoryContent(editor) {
+            editor.ui.registry.addMenuItem('history', {
+                icon: 'insert-time',
+                text: this.$L('历史记录'),
+                onAction: () => {
+                    this.onHistory();
+                }
+            });
         },
 
         onLinkPreview() {

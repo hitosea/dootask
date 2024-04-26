@@ -28,10 +28,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelAppend()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelHidden()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel change($array)
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel getKeyValue()
  * @method static \Illuminate\Database\Eloquent\Builder|File newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|File newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|File onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder|File query()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel remove()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel saveOrIgnore()
  * @method static \Illuminate\Database\Eloquent\Builder|File whereCid($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereCreatedId($value)
@@ -190,9 +196,10 @@ class File extends AbstractModel
      * @param user $user
      * @param int $pid
      * @param string $webkitRelativePath
+     * @param bool $overwrite
      * @return array
      */
-    public function contentUpload($user, int $pid, $webkitRelativePath)
+    public function contentUpload($user, int $pid, $webkitRelativePath, $overwrite = false)
     {
         $userid = $user->userid;
         if ($pid > 0) {
@@ -283,17 +290,25 @@ class File extends AbstractModel
         if ($data['ext'] == 'markdown') {
             $data['ext'] = 'md';
         }
-        $file = File::createInstance([
+        $file = null;
+        $params = [
             'pid' => $pid,
             'name' => Base::rightDelete($data['name'], '.' . $data['ext']),
             'type' => $type,
             'ext' => $data['ext'],
             'userid' => $userid,
             'created_id' => $user->userid,
-        ]);
-        $file->handleDuplicateName();
+        ];
+        if ($overwrite) {
+            $file = self::wherePid($params['pid'])->whereExt($params['ext'])->whereName($params['name'])->first();
+        }
+        if (!$file) {
+            $overwrite = false;
+            $file = File::createInstance($params);
+            $file->handleDuplicateName();
+        }
         // 开始创建
-        return AbstractModel::transaction(function () use ($addItem, $webkitRelativePath, $type, $user, $data, $file) {
+        return AbstractModel::transaction(function () use ($overwrite, $addItem, $webkitRelativePath, $type, $user, $data, $file) {
             $file->size = $data['size'] * 1024;
             $file->saveBeforePP();
             //
@@ -321,11 +336,12 @@ class File extends AbstractModel
             $tmpRow->pushMsg('add', $tmpRow);
             //
             $data = File::handleImageUrl($tmpRow->toArray());
-            $data['full_name'] = $webkitRelativePath ?: $data['name'];
+            $data['full_name'] = $webkitRelativePath ?: ($data['name'] . '.' . $data['ext']);
+            $data['overwrite'] = $overwrite ? 1 : 0;
             //
             $addItem[] = $data;
 
-            return ['data'=>$data,'addItem'=>$addItem];
+            return ['data' => $data, 'addItem' => $addItem];
         });
     }
 

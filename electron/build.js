@@ -1,4 +1,3 @@
-const os = require('os')
 const fs = require('fs');
 const fse = require('fs-extra');
 const path = require('path')
@@ -19,14 +18,13 @@ const devloadCachePath = path.resolve(__dirname, ".devload");
 const packageFile = path.resolve(__dirname, "package.json");
 const packageBakFile = path.resolve(__dirname, "package-bak.json");
 const platforms = ["build-mac", "build-win"];
-const comSuffix = os.type() == 'Windows_NT' ? '.cmd' : '';
 
 /**
  * 克隆 Drawio
  * @param systemInfo
  */
 function cloneDrawio(systemInfo) {
-    child_process.spawnSync("git", ["submodule", "update", "--quiet", "--init", "--depth=1"], {stdio: "inherit"});
+    child_process.execSync("git submodule update --quiet --init --depth=1", {stdio: "inherit"});
     const drawioSrcDir = path.resolve(__dirname, "../resources/drawio/src/main/webapp");
     const drawioCoverDir = path.resolve(__dirname, "../docker/drawio/webapp");
     const drawioDestDir = path.resolve(electronDir, "drawio/webapp");
@@ -110,6 +108,78 @@ function axiosAutoTry(data) {
 }
 
 /**
+ * 上传app应用
+ * @param url
+ */
+function androidUpload(url) {
+    if (!DP_KEY) {
+        console.error("Missing Deploy Key or GitHub Token and Repository!");
+        process.exit()
+    }
+    const releaseDir = path.resolve(__dirname, "../resources/mobile/platforms/android/eeuiApp/app/build/outputs/apk/release");
+    if (!fs.existsSync(releaseDir)) {
+        console.error("Release not found");
+        process.exit()
+    }
+    fs.readdir(releaseDir, async (err, files) => {
+        if (err) {
+            console.warn(err)
+        } else {
+            const uploadOras = {}
+            for (const filename of files) {
+                const localFile = path.join(releaseDir, filename)
+                if (/\.apk$/.test(filename) && fs.existsSync(localFile)) {
+                    const fileStat = fs.statSync(localFile)
+                    if (fileStat.isFile()) {
+                        uploadOras[filename] = ora(`Upload [0%] ${filename}`).start()
+                        const formData = new FormData()
+                        formData.append("file", fs.createReadStream(localFile));
+                        formData.append("file_num", 1);
+                        await axiosAutoTry({
+                            axios: {
+                                method: 'post',
+                                url: url,
+                                data: formData,
+                                headers: {
+                                    'Publish-Version': config.version,
+                                    'Publish-Key': DP_KEY,
+                                    'Content-Type': 'multipart/form-data;boundary=' + formData.getBoundary(),
+                                },
+                                onUploadProgress: progress => {
+                                    const complete = Math.min(99, Math.round(progress.loaded / progress.total * 100 | 0)) + '%'
+                                    uploadOras[filename].text = `Upload [${complete}] ${filename}`
+                                },
+                            },
+                            onRetry: _ => {
+                                uploadOras[filename].warn(`Upload [retry] ${filename}`)
+                                uploadOras[filename] = ora(`Upload [0%] ${filename}`).start()
+                            },
+                            retryNumber: 3
+                        }).then(({status, data}) => {
+                            if (status !== 200) {
+                                uploadOras[filename].fail(`Upload [fail:${status}] ${filename}`)
+                                return
+                            }
+                            if (!utils.isJson(data)) {
+                                uploadOras[filename].fail(`Upload [fail:not json] ${filename}`)
+                                return
+                            }
+                            if (data.ret !== 1) {
+                                uploadOras[filename].fail(`Upload [fail:ret ${data.ret}] ${filename}`)
+                                return
+                            }
+                            uploadOras[filename].succeed(`Upload [100%] ${filename}`)
+                        }).catch(_ => {
+                            uploadOras[filename].fail(`Upload [fail] ${filename}`)
+                        })
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
  * 通用发布
  * @param url
  * @param key
@@ -122,6 +192,10 @@ function genericPublish({url, key, version, output}) {
         return
     }
     const filePath = path.resolve(__dirname, output)
+    if (!fs.existsSync(filePath)) {
+        console.warn("Publish output not found: " + filePath)
+        return
+    }
     fs.readdir(filePath, async (err, files) => {
         if (err) {
             console.warn(err)
@@ -166,7 +240,19 @@ function genericPublish({url, key, version, output}) {
                                 uploadOras[filename] = ora(`Upload [0%] ${filename}`).start()
                             },
                             retryNumber: 3
-                        }).then(_ => {
+                        }).then(({status, data}) => {
+                            if (status !== 200) {
+                                uploadOras[filename].fail(`Upload [fail:${status}] ${filename}`)
+                                return
+                            }
+                            if (!utils.isJson(data)) {
+                                uploadOras[filename].fail(`Upload [fail:not json] ${filename}`)
+                                return
+                            }
+                            if (data.ret !== 1) {
+                                uploadOras[filename].fail(`Upload [fail:ret ${data.ret}] ${filename}`)
+                                return
+                            }
                             uploadOras[filename].succeed(`Upload [100%] ${filename}`)
                         }).catch(_ => {
                             uploadOras[filename].fail(`Upload [fail] ${filename}`)
@@ -230,15 +316,34 @@ function startBuild(data) {
     //
     if (data.id === 'app') {
         const eeuiDir = path.resolve(__dirname, "../resources/mobile");
-        const eeuiCli = "kuaifan/eeui-cli:0.0.1"
+        const eeuiRun = `--rm -v ${eeuiDir}:/work -w /work kuaifan/eeui-cli:0.0.1`
         const publicDir = path.resolve(__dirname, "../resources/mobile/src/public");
         fse.removeSync(publicDir)
         fse.copySync(electronDir, publicDir)
         if (argv[3] === "setting") {
-            child_process.spawnSync("docker", `run -it --rm -v ${eeuiDir}:/work -w /work ${eeuiCli} eeui setting`.split(" "), {stdio: "inherit", cwd: "resources/mobile"});
+            child_process.execSync(`docker run -it ${eeuiRun} eeui setting`, {stdio: "inherit", cwd: "resources/mobile"});
         }
-        if (['setting', 'build'].includes(argv[3])) {
-            child_process.spawnSync("docker", `run -it --rm -v ${eeuiDir}:/work -w /work ${eeuiCli} eeui build --simple`.split(" "), {stdio: "inherit", cwd: "resources/mobile"});
+        if (argv[3] === "publish") {
+            const gradleFile = path.resolve(eeuiDir, "platforms/android/eeuiApp/build.gradle")
+            if (fs.existsSync(gradleFile)) {
+                let gradleResult = fs.readFileSync(gradleFile, 'utf8')
+                gradleResult = gradleResult.replace(/versionCode\s*=\s*(.+?)(\n|$)/, `versionCode = ${config.codeVerson}\n`)
+                gradleResult = gradleResult.replace(/versionName\s*=\s*(.+?)(\n|$)/, `versionName = "${config.version}"\n`)
+                fs.writeFileSync(gradleFile, gradleResult, 'utf8')
+            }
+            const xcconfigFile = path.resolve(eeuiDir, "platforms/ios/eeuiApp/Config/IdentityConfig.xcconfig")
+            if (fs.existsSync(xcconfigFile)) {
+                let xcconfigResult = fs.readFileSync(xcconfigFile, 'utf8')
+                xcconfigResult = xcconfigResult.replace(/BASE_CODE_VERSON\s*=\s*(.+?)(\n|$)/, `BASE_CODE_VERSON = ${config.codeVerson}\n`)
+                xcconfigResult = xcconfigResult.replace(/BASE_SHORT_VERSON\s*=\s*(.+?)(\n|$)/, `BASE_SHORT_VERSON = ${config.version}\n`)
+                fs.writeFileSync(xcconfigFile, xcconfigResult, 'utf8')
+            }
+        }
+        if (['setting', 'build', 'publish'].includes(argv[3])) {
+            if (!fs.existsSync(path.resolve(eeuiDir, "node_modules"))) {
+                child_process.execSync(`docker run ${eeuiRun} npm install`, {stdio: "inherit", cwd: "resources/mobile"});
+            }
+            child_process.execSync(`docker run ${eeuiRun} eeui build --simple`, {stdio: "inherit", cwd: "resources/mobile"});
         } else {
             [
                 path.resolve(publicDir, "../../platforms/ios/eeuiApp/bundlejs/eeui/public"),
@@ -291,13 +396,13 @@ function startBuild(data) {
         }
         econfig.build.directories.output = `${output}-github`;
         fs.writeFileSync(packageFile, JSON.stringify(econfig, null, 2), 'utf8');
-        child_process.spawnSync("npm" + comSuffix, ["run", `${platform}-publish`], {stdio: "inherit", cwd: "electron"});
+        child_process.execSync(`npm run ${platform}-publish`, {stdio: "inherit", cwd: "electron"});
     }
     // generic (build || publish)
     econfig.build.publish = data.publish
     econfig.build.directories.output = `${output}-generic`;
     fs.writeFileSync(packageFile, JSON.stringify(econfig, null, 2), 'utf8');
-    child_process.spawnSync("npm" + comSuffix, ["run", platform], {stdio: "inherit", cwd: "electron"});
+    child_process.execSync(`npm run ${platform}`, {stdio: "inherit", cwd: "electron"});
     if (publish === true && DP_KEY) {
         genericPublish({
             url: econfig.build.publish.url,
@@ -338,6 +443,12 @@ if (["dev"].includes(argv[2])) {
             notarize: false,
         }
     }, false, false)
+} else if (["android-upload"].includes(argv[2])) {
+    config.app.forEach(({publish}) => {
+        if (publish.provider === 'generic') {
+            androidUpload(publish.url)
+        }
+    })
 } else if (["all", "win", "mac"].includes(argv[2])) {
     // 自动编译
     platforms.filter(p => {

@@ -10,16 +10,16 @@
             :class="headClass"
             v-longpress="{callback: handleLongpress, delay: 300}">
             <!--回复-->
-            <div v-if="!hideReply && msgData.reply_data" class="dialog-reply no-dark-content" @click="viewReply">
+            <div v-if="!hideReply && msgData.reply_id && showReplyData(msgData.msg.reply_data)" class="dialog-reply no-dark-content" @click="viewReply">
                 <div class="reply-avatar">
-                    <UserAvatar :userid="msgData.reply_data.userid" :show-icon="false" :show-name="true"/>
+                    <UserAvatar :userid="msgData.msg.reply_data.userid" :show-icon="false" :show-name="true"/>
                 </div>
-                <div class="reply-desc" v-html="$A.getMsgSimpleDesc(msgData.reply_data, 'image-preview')"></div>
+                <div class="reply-desc" v-html="$A.getMsgSimpleDesc(msgData.msg.reply_data, 'image-preview')"></div>
             </div>
             <!--转发-->
-            <div v-if="msgData.forward_show && msgData.forward_data && msgData.forward_data.userid" class="dialog-reply no-dark-content" @click="openDialog(msgData.forward_data.userid)">
+            <div v-if="!hideForward && msgData.forward_id && showForwardData(msgData.msg.forward_data)" class="dialog-reply no-dark-content" @click="openDialog(msgData.msg.forward_data.userid)">
                 <div class="reply-avatar">
-                    <UserAvatar :userid="msgData.forward_data.userid" :show-icon="false" :show-name="true"/>
+                    <UserAvatar :userid="msgData.msg.forward_data.userid" :show-icon="false" :show-name="true"/>
                 </div>
             </div>
             <!--详情-->
@@ -40,6 +40,9 @@
                                 <div class="file-size">{{$A.bytesToSize(msgData.msg.size)}}</div>
                             </div>
                         </div>
+                        <div v-if="msgData.msg.percentage" class="file-percentage">
+                            <span :style="fileStyle(msgData.msg.percentage)"></span>
+                        </div>
                     </div>
                 </div>
                 <!--录音-->
@@ -51,7 +54,7 @@
                 </div>
                 <!--会议-->
                 <div v-else-if="msgData.type === 'meeting'" class="content-meeting no-dark-content">
-                    <ul class="dialog-meeting">
+                    <ul class="dialog-meeting" :class="{'meeting-end':!!msgData.msg.end_at}">
                         <li>
                             <em>{{$L('会议主题')}}</em>
                             {{msgData.msg.name}}
@@ -64,7 +67,10 @@
                             <em>{{$L('频道ID')}}</em>
                             {{msgData.msg.meetingid.replace(/^(.{3})(.{3})(.*)$/, '$1 $2 $3')}}
                         </li>
-                        <li class="meeting-operation" @click="openMeeting">
+                        <li v-if="msgData.msg.end_at" class="meeting-operation">
+                            {{$L('会议已结束')}}
+                        </li>
+                        <li v-else class="meeting-operation" @click="openMeeting">
                             {{$L('点击加入会议')}}
                             <i class="taskfont">&#xe68b;</i>
                         </li>
@@ -73,12 +79,12 @@
                 <!--接龙-->
                 <div v-else-if="msgData.type === 'word-chain'" class="content-text content-word-chain no-dark-content">
                     <pre v-html="$A.formatTextMsg(msgData.msg.text, userId)"></pre>
-                    <ul>
+                    <ul :class="{'expand': unfoldWordChainData.indexOf(msgData.id) !== -1 }">
                         <li v-for="(item) in (msgData.msg.list || []).filter(h=>h.type == 'case')">
                             {{ $L('例') }} {{ item.text }}
                         </li>
-                        <li v-for="(item,index) in (msgData.msg.list || []).filter(h=>h.type != 'case')">
-                            <span class="expand" v-if="index == 2 && msgData.msg.list.length > 4" @click="unfoldWordChain">
+                        <li v-for="(item,index) in (msgData.msg.list || []).filter(h=>h.type != 'case' && h.text)">
+                            <span class="expand" v-if="index == 2 && msgData.msg.list.length > 4" @click="unfoldWordChain(msgData)">
                                 ...{{$L('展开')}}...
                             </span>
                             <span :class="{'shrink': index >= 2 && msgData.msg.list.length > 4 } ">
@@ -97,7 +103,7 @@
                         <i class="taskfont">&#xe7fd;</i>
                         <em>{{ $L('投票') }}</em>
                         <span>{{ msgData.msg.multiple == 1 ? $L('多选') : $L('单选')}}</span>
-                        <span>{{ msgData.msg.multiple == 1 ? $L('匿名') : $L('实名')}}</span>
+                        <span>{{ msgData.msg.anonymous == 1 ? $L('匿名') : $L('实名')}}</span>
                     </div>
                     <pre v-html="$A.formatTextMsg(msgData.msg.text, userId)"></pre>
                     <template v-if="(msgData.msg.votes || []).filter(h=>h.userid == userId).length == 0">
@@ -112,8 +118,8 @@
                             </Checkbox>
                         </CheckboxGroup>
                         <div class="btn-row">
-                            <Button v-if="(voteData[msgData.msg.uuid] || []).length == 0" disabled>{{$L("请选择后投票")}}</Button>
-                            <Button v-else type="warning" :loading="msgData.msg._loadIng > 0"  @click="onVote('vote',msgData)">{{$L("立即投票")}}</Button>
+                            <Button v-if="(voteData[msgData.msg.uuid] || []).length == 0" class="ivu-btn-grey" disabled>{{$L("请选择后投票")}}</Button>
+                            <Button v-else type="warning" :loading="msgData.msg._loadIng > 0" class="no-dark-content" @click="onVote('vote',msgData)">{{$L("立即投票")}}</Button>
                         </div>
                     </template>
                     <template v-else>
@@ -126,9 +132,9 @@
                                         <span>{{ getVoteProgress(msgData.msg,item.id).progress + '%' }}</span>
                                     </div>
                                     <Progress :percent="Number(getVoteProgress(msgData.msg,item.id).progress)" :stroke-width="5" hide-info/>
-                                    <div v-if="msgData.msg.anonymous" class="avatar-row">
+                                    <div v-if="msgData.msg.anonymous == 0" class="avatar-row">
                                         <template v-for="votes in (msgData.msg.votes || []).filter(h=>h.votes.indexOf(item.id) != -1)">
-                                            <UserAvatar  :userid="votes.userid" :size="18" />
+                                            <UserAvatar :userid="votes.userid" :size="18" />
                                         </template>
                                     </div>
                                 </li>
@@ -289,6 +295,10 @@ export default {
             type: Boolean,
             default: false
         },
+        hideForward: {
+            type: Boolean,
+            default: false
+        },
         operateVisible: {
             type: Boolean,
             default: false
@@ -318,7 +328,8 @@ export default {
 
             emojiUsersNum: 5,
 
-            voteData: {}
+            voteData: {},
+            unfoldWordChainData: []
         }
     },
 
@@ -326,6 +337,9 @@ export default {
         this.emojiUsersNum = Math.min(6, Math.max(2, Math.floor((this.windowWidth - 180) / 52)))
         if (Object.keys(this.voteData).length === 0) {
             this.voteData = JSON.parse(window.localStorage.getItem(`__cache:vote__`)) || {};
+        }
+        if (this.unfoldWordChainData.length === 0) {
+            this.unfoldWordChainData = JSON.parse(window.localStorage.getItem(`__cache:unfoldWordChain__`)) || [];
         }
     },
 
@@ -349,9 +363,6 @@ export default {
             const array = [];
             if (msgData.type) {
                 array.push(msgData.type)
-            }
-            if (msgData.reply_data) {
-                array.push('reply-view')
             }
             if (operateAction) {
                 array.push('operate-action')
@@ -490,7 +501,7 @@ export default {
 
         recordStyle(info) {
             const {duration} = info;
-            const width = 50 + Math.min(180, Math.floor(duration / 150));
+            const width = 50 + Math.min(180, Math.floor(duration / 200));
             return {
                 width: width + 'px',
             };
@@ -503,6 +514,15 @@ export default {
                 return `${minute}:${seconds}″`
             }
             return `${Math.max(1, seconds)}″`
+        },
+
+        fileStyle(percentage) {
+            if (percentage) {
+                return {
+                    width: `${percentage}%`
+                };
+            }
+            return {};
         },
 
         imageStyle(info) {
@@ -533,6 +553,9 @@ export default {
             if (this.operateVisible) {
                 return
             }
+            if (!this.msgData.created_at) {
+                return;
+            }
             this.$store.dispatch("audioPlay", this.msgData.msg.path)
         },
 
@@ -556,6 +579,20 @@ export default {
             });
         },
 
+        showReplyData(data) {
+            if (!$A.isJson(data)) {
+                return false
+            }
+            return data.userid
+        },
+
+        showForwardData(data) {
+            if (!$A.isJson(data)) {
+                return false
+            }
+            return data.show && data.userid
+        },
+
         viewReply() {
             this.$emit("on-view-reply", {
                 msg_id: this.msgData.id,
@@ -568,10 +605,16 @@ export default {
         },
 
         viewFile() {
+            if (!this.msgData.created_at) {
+                return;
+            }
             this.$emit("on-view-file", this.msgData)
         },
 
         downFile() {
+            if (!this.msgData.created_at) {
+                return;
+            }
             this.$emit("on-down-file", this.msgData)
         },
 
@@ -604,8 +647,13 @@ export default {
             }
         },
 
-        unfoldWordChain(e) {
-            e.target.parentNode?.parentNode?.classList.add('expand')
+        unfoldWordChain(msg) {
+            if (this.unfoldWordChainData.indexOf(msg.id) == -1) {
+                const data = JSON.parse(window.localStorage.getItem('__cache:unfoldWordChain__')) || [];
+                data.push(msg.id);
+                window.localStorage.setItem('__cache:unfoldWordChain__', JSON.stringify(data));
+                this.unfoldWordChainData.push(msg.id);
+            }
         },
 
         onVote(type, msgData) {

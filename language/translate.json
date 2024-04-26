@@ -3916,15 +3916,15 @@
         "id": "Harus mengisi: anda harus mengatur nama panggilan, panggilan sebelum anda mengirim obrolan."
     },
     {
-        "key": "进入路由器终端执行以下命令即可完成安装：",
+        "key": "进入路由器终端执行以下命令即可完成安装",
         "zh": "",
-        "zh-CHT": "進入路由器終端執行以下命令即可完成安裝：",
-        "en": "Log in to the router terminal and run the following command to complete the installation:",
-        "ko": "라우터 터미널에 들어가서 다음 명령을 실행하면 설치가 완료됩니다:",
+        "zh-CHT": "進入路由器終端執行以下命令即可完成安裝",
+        "en": "Log in to the router terminal and run the following command to complete the installation",
+        "ko": "라우터 터미널에 들어가서 다음 명령을 실행하면 설치가 완료됩니다",
         "ja": "ルーター端末に入って以下のコマンドを実行すればインストール完了です。",
-        "de": "Um die installation abzuschließen, müssen sie die folgenden befehle ausführen:",
-        "fr": "Allez dans le terminal du routeur et exécutez les commandes suivantes pour terminer l’installation:",
-        "id": "Memasuki terminal router untuk melakukan instalasi selesai dengan perintah berikut:"
+        "de": "Um die installation abzuschließen, müssen sie die folgenden befehle ausführen",
+        "fr": "Allez dans le terminal du routeur et exécutez les commandes suivantes pour terminer l’installation",
+        "id": "Memasuki terminal router untuk melakukan instalasi selesai dengan perintah berikut"
     },
     {
         "key": "设备连接上指定路由器（WiFi）后自动签到。",
@@ -4411,15 +4411,15 @@
         "id": "Melalui sinergi menghasilkan dokumen awan yang kuat dan mudah digunakan"
     },
     {
-        "key": "注销前，请确认一下事项：",
+        "key": "注销前，请确认一下事项",
         "zh": "",
-        "zh-CHT": "註銷前，請確認一下事項：",
-        "en": "Before cancellation, please confirm the following:",
+        "zh-CHT": "註銷前，請確認一下事項",
+        "en": "Before cancellation, please confirm the following",
         "ko": "로그아웃하기 전에 다음 사항을 확인하시기 바랍니다.",
         "ja": "登録を抹消する前に、確認事項をお願いします。",
-        "de": "Vor der abschreibung überprüfen sie bitte den auftrag:",
-        "fr": "Avant de vous déconnecter, veuillez vérifier les choses:",
-        "id": "Pastikan hal sebelum log keluar:"
+        "de": "Vor der abschreibung überprüfen sie bitte den auftrag",
+        "fr": "Avant de vous déconnecter, veuillez vérifier les choses",
+        "id": "Pastikan hal sebelum log keluar"
     },
     {
         "key": "签到前后时间收到消息通知",
@@ -5203,15 +5203,15 @@
         "id": "Harap masukkan ID saluran pertemuan"
     },
     {
-        "key": "第二次任务提醒:",
+        "key": "第二次任务提醒",
         "zh": "",
-        "zh-CHT": "第二次任務提醒:",
-        "en": "Second mission reminder:",
-        "ko": "두 번째 작업 알람:",
-        "ja": "2回目のタスクリマインダーです:",
+        "zh-CHT": "第二次任務提醒",
+        "en": "Second mission reminder",
+        "ko": "두 번째 작업 알람",
+        "ja": "2回目のタスクリマインダーです",
         "de": "Das war unser auftrag.",
-        "fr": "Deuxième rappel de mission:",
-        "id": "Pengingat untuk tugas kedua:"
+        "fr": "Deuxième rappel de mission",
+        "id": "Pengingat untuk tugas kedua"
     },
     {
         "key": "请输入职位\/职称",
@@ -7480,15 +7480,15 @@
         "id": "Server SMTP"
     },
     {
-        "key": "任务提醒:",
+        "key": "任务提醒",
         "zh": "",
-        "zh-CHT": "任務提醒:",
-        "en": "Task reminder:",
-        "ko": "작업 알람:",
-        "ja": "タスクリマインダーです:",
-        "de": "Das beruhigt mich.",
-        "fr": "Rappel des tâches:",
-        "id": "Peringatan misi:"
+        "zh-CHT": "任務提醒",
+        "en": "Task reminder",
+        "ko": "작업 알람",
+        "ja": "タスクリマインダーです",
+        "de": "Ich brauche eine bestätigung.",
+        "fr": "Rappel des tâches",
+        "id": "Pengingat tugas"
     },
     {
         "key": "职位\/职称",
@@ -7698,17 +7698,6 @@
         "de": "Beschreibung der mission",
         "fr": "Description des tâches",
         "id": "Deskripsi tugas"
-    },
-    {
-        "key": "任务提醒",
-        "zh": "",
-        "zh-CHT": "任務提醒",
-        "en": "Task reminder",
-        "ko": "작업 알람",
-        "ja": "タスクリマインダーです",
-        "de": "Ich brauche eine bestätigung.",
-        "fr": "Rappel des tâches",
-        "id": "Pengingat tugas"
     },
     {
         "key": "任务时间",
@@ -8558,15 +8547,15 @@
         "id": "Laporan pekerjaan"
     },
     {
-        "key": "开启后：",
+        "key": "开启后",
         "zh": "",
-        "zh-CHT": "開啓後：",
-        "en": "After opening:",
-        "ko": "켜진 후:",
-        "ja": "オンにします:",
-        "de": "Aktivierung:",
-        "fr": "Après ouverture:",
-        "id": "Setelah di buka:"
+        "zh-CHT": "開啓後",
+        "en": "After opening",
+        "ko": "켜진 후",
+        "ja": "オンにします",
+        "de": "Aktivierung",
+        "fr": "Après ouverture",
+        "id": "Setelah di buka"
     },
     {
         "key": "开启推送",
@@ -15290,17 +15279,6 @@
         "id": "Download sekarang"
     },
     {
-        "key": "请填写完整的参数",
-        "zh": "",
-        "zh-CHT": "請填寫完整的參數",
-        "en": "Please fill in the complete parameters",
-        "ko": "완벽한 파라메터를 기입해 주십시오",
-        "ja": "完全なパラメータをお願いします。",
-        "de": "Füllen sie bitte die vollständige parameter aus",
-        "fr": "Veuillez remplir tous les paramètres",
-        "id": "Silahkan isi seluruh parameter"
-    },
-    {
         "key": "图片优化",
         "zh": "",
         "zh-CHT": "圖片優化",
@@ -15365,17 +15343,6 @@
         "de": "Eine stille nachricht.",
         "fr": "Envoi en silence",
         "id": "Diam kirim"
-    },
-    {
-        "key": "Markdown 格式发送",
-        "zh": "",
-        "zh-CHT": "Markdown 格式發送",
-        "en": "It is sent in Markdown format",
-        "ko": "마크다운 포맷 전송",
-        "ja": "Markdownフォーマット送信します",
-        "de": "Das format in der glauben glauben spielt",
-        "fr": "Envoyer au format Markdown",
-        "id": "Markdown format kirim"
     },
     {
         "key": "编辑消息",
@@ -17116,15 +17083,15 @@
         "id": "Nama, silakan!"
     },
     {
-        "key": "访问OpenAI网站查看：",
+        "key": "访问OpenAI网站查看",
         "zh": "",
-        "zh-CHT": "訪問OpenAI網站查看：",
-        "en": "Visit the OpenAI website to see:",
-        "ko": "Openai 사이트를 방문하십시오:",
+        "zh-CHT": "訪問OpenAI網站查看",
+        "en": "Visit the OpenAI website to see",
+        "ko": "Openai 사이트를 방문하십시오",
         "ja": "OpenAIのウェブサイトをご覧ください。",
-        "de": "Besuch der website OpenAI:",
-        "fr": "Visitez le site OpenAI pour voir:",
-        "id": "Kunjungi tampilan situs OpenAI:"
+        "de": "Besuch der website OpenAI",
+        "fr": "Visitez le site OpenAI pour voir",
+        "id": "Kunjungi tampilan situs OpenAI"
     },
     {
         "key": "使用代理",
@@ -18766,15 +18733,15 @@
         "id": "Tidak menunjukkan pesan asli"
     },
     {
-        "key": "转发给:",
+        "key": "转发给",
         "zh": "",
-        "zh-CHT": "轉發給:",
-        "en": "Forward to:",
-        "ko": "다음으로 전달:",
-        "ja": "転送します:",
+        "zh-CHT": "轉發給",
+        "en": "Forward to",
+        "ko": "다음으로 전달",
+        "ja": "転送します",
         "de": "Und an scotty.",
-        "fr": "Envoyer à:",
-        "id": "Teruskan ke:"
+        "fr": "Envoyer à",
+        "id": "Teruskan ke"
     },
     {
         "key": "留言",
@@ -19897,5 +19864,577 @@
         "de": "Yesterday",
         "fr": "Yesterday",
         "id": "Yesterday"
+    },
+    {
+        "key": "文件已存在",
+        "zh": "",
+        "zh-CHT": "文件已存在",
+        "en": "File already exists",
+        "ko": "파일이 이미 존재합니다",
+        "ja": "ファイルは存在します",
+        "de": "Die datei existiert.",
+        "fr": "Le fichier existe déjà",
+        "id": "File telah ada"
+    },
+    {
+        "key": "文件(*)已存在，是否替换？",
+        "zh": "",
+        "zh-CHT": "文件(*)已存在，是否替換？",
+        "en": "File (*) already exists. Do you want to replace it?",
+        "ko": "파일 (*)이 이미 존재합니다. 바꾸시겠습니까?",
+        "ja": "ファイル(*)が存在しますが、差し替えますか?",
+        "de": "Die datei * existiert bereits. Wird sie ersetzt?",
+        "fr": "Le fichier (*) existe déjà, est-il remplacé?",
+        "id": "Berkas (*) telah ada, apakah diganti?"
+    },
+    {
+        "key": "保留两者",
+        "zh": "",
+        "zh-CHT": "保留兩者",
+        "en": "Retain both",
+        "ko": "둘다 보류하다",
+        "ja": "両方を留保します",
+        "de": "Er bewahrt beide.",
+        "fr": "Conserver les deux",
+        "id": "Simpan keduanya"
+    },
+    {
+        "key": "替换",
+        "zh": "",
+        "zh-CHT": "替換",
+        "en": "Replace",
+        "ko": "교체",
+        "ja": "置き換えます",
+        "de": "Ersetzung",
+        "fr": "Remplacer",
+        "id": "Pengganti"
+    },
+    {
+        "key": "端到端加密",
+        "zh": "",
+        "zh-CHT": "端到端加密",
+        "en": "End-to-end encryption",
+        "ko": "종간 암호화",
+        "ja": "エンドツーエンド暗号化です",
+        "de": "Ende an ende verschlüsselt",
+        "fr": "Chiffrement de bout en bout",
+        "id": "End-to-end enkripsi"
+    },
+    {
+        "key": "关闭端到端加密传输数据。",
+        "zh": "",
+        "zh-CHT": "關閉端到端加密傳輸數據。",
+        "en": "Disable end-to-end encryption for data transmission.",
+        "ko": "엔드 투 엔드 암호화된 전송 데이터",
+        "ja": "エンド・ツー・エンドでのデータの暗号化を停止します。",
+        "de": "Daten Von einem ende zum anderen verschlüsselt.",
+        "fr": "Désactivez le transfert crypté de bout en bout des données.",
+        "id": "Tutup end to end transmisi data dienkripsi."
+    },
+    {
+        "key": "等(*)个文件",
+        "zh": "",
+        "zh-CHT": "等(*)個文件",
+        "en": "Wait for (*) files",
+        "ko": "등 (*) 개 문건을 제출하였다",
+        "ja": "(*)のファイルです。",
+        "de": "Etc. (*) ein dokument",
+        "fr": "Etc. (*) fichiers",
+        "id": "Tunggu (*) berkas"
+    },
+    {
+        "key": "你确定要删除【(*)】等2个文件吗？",
+        "zh": "",
+        "zh-CHT": "你確定要刪除【(*)】等2個文件嗎？",
+        "en": "Are you sure you want to delete [(*)] etc. 2 files?",
+        "ko": "[(*)] 등 2개의 파일을 삭제하시겠습니까?",
+        "ja": "【(*)】などの2つのファイルを削除しますか?",
+        "de": "Sollen wirklich zwei dateien gelöscht werden? (*)",
+        "fr": "Êtes-vous sûr de vouloir supprimer 2 fichiers comme [(*)]?",
+        "id": "Apakah anda yakin ingin menghapus ((*) dan menunggu 2 file?"
+    },
+    {
+        "key": "审批详情",
+        "zh": "",
+        "zh-CHT": "審批詳情",
+        "en": "Approval details",
+        "ko": "심사 정보",
+        "ja": "承認の詳細です",
+        "de": "Lektion 4 prüfung",
+        "fr": "Détails des approbations",
+        "id": "Detail persetujuan"
+    },
+    {
+        "key": "天前",
+        "zh": "",
+        "zh-CHT": "天前",
+        "en": "Days ago",
+        "ko": "일 전",
+        "ja": "先日です",
+        "de": "Äh vortag.",
+        "fr": "Jours",
+        "id": "Hari yang lalu"
+    },
+    {
+        "key": "月前",
+        "zh": "",
+        "zh-CHT": "月前",
+        "en": "Month before",
+        "ko": "1 개월 전에",
+        "ja": "月の前です",
+        "de": "Vor dem monat.",
+        "fr": "Il y a",
+        "id": "Bulan lalu"
+    },
+    {
+        "key": "请输入用户名",
+        "zh": "",
+        "zh-CHT": "請輸入用戶名",
+        "en": "Please enter your username",
+        "ko": "사용자 이름을 입력하십시오",
+        "ja": "ユーザー名の入力をお願いします",
+        "de": "Bitte geben sie einen benutzernamen ein",
+        "fr": "Veuillez entrer votre nom d’utilisateur",
+        "id": "Nama pengguna, silakan"
+    },
+    {
+        "key": "是否拨打电话给(*)？",
+        "zh": "",
+        "zh-CHT": "是否撥打電話給(*)？",
+        "en": "Do you call (*)?",
+        "ko": "(*)에게 전화를 걸어야 합니까?",
+        "ja": "(*)に電話しますか?",
+        "de": "Soll ich anrufen (*)?",
+        "fr": "Est-ce que vous appelez à (*)?",
+        "id": "Apakah ada panggilan untuk (*)?"
+    },
+    {
+        "key": "MD 格式发送",
+        "zh": "",
+        "zh-CHT": "MD 格式發送",
+        "en": "Send in MD format",
+        "ko": "Md 포맷 전송",
+        "ja": "MDフォーマットでお送りします。",
+        "de": "Molt-format raus. Und zwar jetzt.",
+        "fr": "Envoi au format MD",
+        "id": "MD format kirim"
+    },
+    {
+        "key": "你确定要取消发送吗？",
+        "zh": "",
+        "zh-CHT": "你確定要取消發送嗎？",
+        "en": "Are you sure you want to cancel?",
+        "ko": "발송을 취소하시겠습니까?",
+        "ja": "送信をキャンセルすることは確実ですか?",
+        "de": "Willst du die lieferung wirklich absagen?",
+        "fr": "Êtes-vous sûr de vouloir annuler l’envoi?",
+        "id": "Apakah anda yakin ingin membatalkan pengiriman?"
+    },
+    {
+        "key": "消息已发送，不可取消",
+        "zh": "",
+        "zh-CHT": "消息已發送，不可取消",
+        "en": "The message has been sent and cannot be cancelled",
+        "ko": "메시지가 전송되었습니다. 취소할 수 없습니다",
+        "ja": "メッセージは送信済みですので,キャンセルは不可です",
+        "de": "Die nachricht wurde gesendet, du darfst sie nicht absagen",
+        "fr": "Message envoyé et non annulable",
+        "id": "Pesan terkirim dan tidak dapat dibatalkan"
+    },
+    {
+        "key": "取消发送失败",
+        "zh": "",
+        "zh-CHT": "取消發送失敗",
+        "en": "Unsend failed",
+        "ko": "보내기 취소 실패",
+        "ja": "送信キャンセルに失敗しました",
+        "de": "Sagen sie das ab.",
+        "fr": "Annuler l’envoi a échoué",
+        "id": "Batal kirim"
+    },
+    {
+        "key": "注册失败",
+        "zh": "",
+        "zh-CHT": "註冊失敗",
+        "en": "Registration failure",
+        "ko": "등록 실패",
+        "ja": "登録に失敗しました",
+        "de": "Antrag abgelehnt.",
+        "fr": "L’inscription a échoué",
+        "id": "Gagal mendaftar"
+    },
+    {
+        "key": "请填写基本配置",
+        "zh": "",
+        "zh-CHT": "請填寫基本配置",
+        "en": "Please fill in the basic configuration",
+        "ko": "기본 사양을 기재해 주세요",
+        "ja": "基本仕様をお願いします。",
+        "de": "Füllen sie die grundeinstellungen aus",
+        "fr": "Veuillez remplir la configuration de base",
+        "id": "Silahkan mengisi konfigurasi dasar"
+    },
+    {
+        "key": "会议已结束",
+        "zh": "",
+        "zh-CHT": "會議已結束",
+        "en": "The meeting is over",
+        "ko": "회의는 이미 끝났다",
+        "ja": "会議は終わりました",
+        "de": "Das Treffen ist vorbei.",
+        "fr": "La conférence est terminée",
+        "id": "Pertemuan selesai."
+    },
+    {
+        "key": "基本配置",
+        "zh": "",
+        "zh-CHT": "基本配置",
+        "en": "Basic configuration",
+        "ko": "기본 설정",
+        "ja": "基本的な仕様です",
+        "de": "Grundausstattung. - grundausstattung.",
+        "fr": "La configuration basique",
+        "id": "Konfigurasi dasar"
+    },
+    {
+        "key": "用于生成会议频道。",
+        "zh": "",
+        "zh-CHT": "用於生成會議頻道。",
+        "en": "Used to generate conference channels.",
+        "ko": "회의 채널을 만드는 데 사용합니다.",
+        "ja": "会議のチャンネルを生成します。",
+        "de": "Damit kriegt ihr konferenzkanäle.",
+        "fr": "Utilisé pour générer le canal de conférence.",
+        "id": "Untuk mendapatkan saluran pertemuan."
+    },
+    {
+        "key": "用于频道管理。",
+        "zh": "",
+        "zh-CHT": "用於頻道管理。",
+        "en": "Used for channel management.",
+        "ko": "채널 관리용.",
+        "ja": "チャンネル管理に使われます。",
+        "de": "Du arbeitest für die nachrichtenverwaltung.",
+        "fr": "Pour la gestion des canaux.",
+        "id": "Untuk manajemen saluran."
+    },
+    {
+        "key": "比如",
+        "zh": "",
+        "zh-CHT": "比如",
+        "en": "For example",
+        "ko": "례를들면",
+        "ja": "たとえばです",
+        "de": "Es gibt drei möglichkeiten.",
+        "fr": "Comme",
+        "id": "Seperti"
+    },
+    {
+        "key": "结束会议室",
+        "zh": "",
+        "zh-CHT": "結束會議室",
+        "en": "End meeting room",
+        "ko": "회의실을 마치다",
+        "ja": "会議室を終了します",
+        "de": "Konferenzraum zu ende.",
+        "fr": "Clôture salle de Réunion",
+        "id": "Ruang pertemuan selesai"
+    },
+    {
+        "key": "普通格式发送",
+        "zh": "",
+        "zh-CHT": "普通格式發送",
+        "en": "Plain format sending",
+        "ko": "일반 형식으로 보내기",
+        "ja": "通常のフォーマットで送ります。",
+        "de": "Senden in formaten",
+        "fr": "Envoyer en format normal",
+        "id": "Kirim format umum"
+    },
+    {
+        "key": "查看历史",
+        "zh": "",
+        "zh-CHT": "查看歷史",
+        "en": "View history",
+        "ko": "과거 기록 보기",
+        "ja": "歴史を調べます",
+        "de": "Sie untersuchen die geschichte.",
+        "fr": "Voir l’histoire",
+        "id": "Lihat riwayat"
+    },
+    {
+        "key": "历史记录",
+        "zh": "",
+        "zh-CHT": "歷史記錄",
+        "en": "Historical record",
+        "ko": "역사 기록",
+        "ja": "歴史的記録です",
+        "de": "Die geschichte.",
+        "fr": "Un record historique",
+        "id": "Catatan sejarah"
+    },
+    {
+        "key": "任务描述历史记录",
+        "zh": "",
+        "zh-CHT": "任務描述歷史記錄",
+        "en": "Task Description Historical record",
+        "ko": "작업 설명 과거 기록",
+        "ja": "任務記述履歴書です",
+        "de": "Mission beschreibt historische aufzeichnungen",
+        "fr": "Description des tâches historique",
+        "id": "Catatan sejarah deskripsi tugas"
+    },
+    {
+        "key": "描述",
+        "zh": "",
+        "zh-CHT": "描述",
+        "en": "Desc",
+        "ko": "Desc",
+        "ja": "Desc",
+        "de": "Desc",
+        "fr": "Desc",
+        "id": "Desc"
+    },
+    {
+        "key": "数据加载失败",
+        "zh": "",
+        "zh-CHT": "數據加載失敗",
+        "en": "Data loading failure",
+        "ko": "데이터 불러오기 실패",
+        "ja": "データ読み込み失敗です",
+        "de": "Datenproblem nicht geladen.",
+        "fr": "Échec du chargement des données",
+        "id": "Pemuatan data gagal"
+    },
+    {
+        "key": "请选择举报类型",
+        "zh": "",
+        "zh-CHT": "請選擇舉報類型",
+        "en": "Please select a report type",
+        "ko": "제보 유형을 선택하세요",
+        "ja": "通報の種類を選択します。",
+        "de": "Bitte wählen sie den art der meldung",
+        "fr": "Veuillez sélectionner un type de dénonciation",
+        "id": "Silahkan pilih jenis laporan"
+    },
+    {
+        "key": "请填写举报原因",
+        "zh": "",
+        "zh-CHT": "請填寫舉報原因",
+        "en": "Please fill in the report reason",
+        "ko": "고발 사유를 기재하시오",
+        "ja": "通報理由をお願いします。",
+        "de": "Bitte füllen sie ihren bericht aus",
+        "fr": "Veuillez renseigner la raison du signalement",
+        "id": "Silahkan mengisi untuk alasan pelaporan"
+    },
+    {
+        "key": "举报管理",
+        "zh": "",
+        "zh-CHT": "舉報管理",
+        "en": "Reporting management",
+        "ko": "고발 관리",
+        "ja": "通報管理です",
+        "de": "Management meldet:",
+        "fr": "Gestion des signalements",
+        "id": "Melaporkan manajemen"
+    },
+    {
+        "key": "举报类型",
+        "zh": "",
+        "zh-CHT": "舉報類型",
+        "en": "Reporting type",
+        "ko": "신고 유형",
+        "ja": "通報タイプです",
+        "de": "Art der meldung",
+        "fr": "Types de signalements",
+        "id": "Tipe pelaporan"
+    },
+    {
+        "key": "举报状态",
+        "zh": "",
+        "zh-CHT": "舉報狀態",
+        "en": "Reporting status",
+        "ko": "신고 상태",
+        "ja": "通報状態です",
+        "de": "Meldung über den stand.",
+        "fr": "État des signalements",
+        "id": "Laporkan status"
+    },
+    {
+        "key": "已处理",
+        "zh": "",
+        "zh-CHT": "已處理",
+        "en": "Processed",
+        "ko": "처리됨",
+        "ja": "処理済みです",
+        "de": "Wir kümmern uns darum.",
+        "fr": "A été traité",
+        "id": "Sudah ditangani"
+    },
+    {
+        "key": "诈骗诱导转账",
+        "zh": "",
+        "zh-CHT": "詐騙誘導轉賬",
+        "en": "Fraud-induced transfer",
+        "ko": "사기 유도 이체",
+        "ja": "詐欺誘導振り込みです",
+        "de": "Ein köder.",
+        "fr": "Transferts induits par fraude",
+        "id": "Melakukan penipuan"
+    },
+    {
+        "key": "引流下载其他APP付费",
+        "zh": "",
+        "zh-CHT": "引流下載其他APP付費",
+        "en": "Diversion download other apps pay",
+        "ko": "유료 다운로드 다른 앱",
+        "ja": "有料で他のアプリをダウンロードします",
+        "de": "Weitere APP gratis downloaden",
+        "fr": "Drainage télécharger autre APP payer",
+        "id": "- download streaming untuk aplikasi lain"
+    },
+    {
+        "key": "敲诈勒索",
+        "zh": "",
+        "zh-CHT": "敲詐勒索",
+        "en": "Extortion",
+        "ko": "사기를 쳐서 재물을 갈취하다.",
+        "ja": "ゆすりゆすりです",
+        "de": "Erpressung und so weiter.",
+        "fr": "Extorsion et extorsion",
+        "id": "Pemerasan."
+    },
+    {
+        "key": "照片与本人不一致",
+        "zh": "",
+        "zh-CHT": "照片與本人不一致",
+        "en": "The photo does not match me",
+        "ko": "사진이 본인과 일치하지 않다",
+        "ja": "写真と本人が一致しません",
+        "de": "Das foto passt nicht zu dem bild",
+        "fr": "La photo ne correspond pas à moi",
+        "id": "Foto tidak sesuai dengan saya"
+    },
+    {
+        "key": "色情低俗",
+        "zh": "",
+        "zh-CHT": "色情低俗",
+        "en": "Pornographic and vulgar",
+        "ko": "색정적이고 저속하다.",
+        "ja": "下品なポルノです",
+        "de": "Pornografie ist vulgär.",
+        "fr": "Érotique vulgaire",
+        "id": "Porno kotor"
+    },
+    {
+        "key": "频繁广告骚扰",
+        "zh": "",
+        "zh-CHT": "頻繁廣告騷擾",
+        "en": "Frequent advertising harassment",
+        "ko": "잦은 광고 소동",
+        "ja": "頻繁な広告ハラスメントです",
+        "de": "Unmengen Von anzeigen.",
+        "fr": "Harcèlement publicitaire fréquent",
+        "id": "Sering mengganggu iklan"
+    },
+    {
+        "key": "其他问题",
+        "zh": "",
+        "zh-CHT": "其他問題",
+        "en": "Other questions",
+        "ko": "그 밖의 문제",
+        "ja": "その他の問題です",
+        "de": "Noch andere fragen.",
+        "fr": "Pour toute autre question",
+        "id": "Masalah lain"
+    },
+    {
+        "key": "举报人",
+        "zh": "",
+        "zh-CHT": "舉報人",
+        "en": "Informer",
+        "ko": "고발인",
+        "ja": "通報者です",
+        "de": "Der anrufer.",
+        "fr": "Le dénonciateur",
+        "id": "Pembawa berita"
+    },
+    {
+        "key": "你确定要处理吗？",
+        "zh": "",
+        "zh-CHT": "你確定要處理嗎？",
+        "en": "Are you sure you want to handle this?",
+        "ko": "정말로 처리하실 겁니까?",
+        "ja": "処理することは確実ですか?",
+        "de": "Hast du wirklich vor, dich darum zu kümmern?",
+        "fr": "Êtes-vous sûr de vouloir traiter?",
+        "id": "Kau yakin ingin menanganinya?"
+    },
+    {
+        "key": "你确定要删除吗？",
+        "zh": "",
+        "zh-CHT": "你確定要刪除嗎？",
+        "en": "Are you sure you want to delete it?",
+        "ko": "정말로 삭제하시겠습니까?",
+        "ja": "削除しますか?",
+        "de": "Willst du es wirklich löschen?",
+        "fr": "Êtes-vous sûr de vouloir supprimer?",
+        "id": "Kau yakin ingin menghapusnya?"
+    },
+    {
+        "key": "举报成功",
+        "zh": "",
+        "zh-CHT": "舉報成功",
+        "en": "Report success",
+        "ko": "신고가 성공하다",
+        "ja": "通報できました",
+        "de": "Melde erfolg.",
+        "fr": "Signaler un succès",
+        "id": "Laporkan sukses"
+    },
+    {
+        "key": "匿名举报",
+        "zh": "",
+        "zh-CHT": "匿名舉報",
+        "en": "Anonymous report",
+        "ko": "익명으로 고발하다.",
+        "ja": "匿名の通報です",
+        "de": "Anonymer tipp.",
+        "fr": "Signaler de manière anonyme",
+        "id": "Laporan anonim"
+    },
+    {
+        "key": "请输入举报类型：",
+        "zh": "",
+        "zh-CHT": "請輸入舉報類型：",
+        "en": "Please enter the report type:",
+        "ko": "제보 유형을 입력하십시오:",
+        "ja": "通報の種類を入力してくださいます:",
+        "de": "Bitte geben sie den melanchentyp ein:",
+        "fr": "Veuillez entrer le type de signalement:",
+        "id": "Silakan masukkan tipe laporan:"
+    },
+    {
+        "key": "请输入举报原因：",
+        "zh": "",
+        "zh-CHT": "請輸入舉報原因：",
+        "en": "Please enter the reason for reporting:",
+        "ko": "제보하는 이유를 입력해주세요:",
+        "ja": "通報理由を入力してくださいます:",
+        "de": "Bitte geben sie einen grund ein:",
+        "fr": "Veuillez saisir la raison de votre signalement:",
+        "id": "Mohon masukkan alasan pelaporan:"
+    },
+    {
+        "key": "请输入填写详细的举报原因，以使我们更好的帮助你解决问题",
+        "zh": "",
+        "zh-CHT": "請輸入填寫詳細的舉報原因，以使我們更好的幫助你解決問題",
+        "en": "Please fill in the detailed report reason, so that we can better help you solve the problem",
+        "ko": "자세한 제보 원인을 입력하여 기입하십시요, 더 나은 문제 해결에 도움이 되도록",
+        "ja": "通報の詳細な原因を記入してください、あなたの問題を解決するために私たちを助けます。",
+        "de": "Bitte geben sie einen detaillierten hinweis ein, warum sie ihre probleme lösen sollen",
+        "fr": "S’il vous plaît entrer la raison de remplir les détails pour nous permettre de mieux vous aider à résoudre le problème",
+        "id": "Silakan ketik alasan kami mengisi laporan lengkap untuk memberikan bantuan yang lebih baik dalam memecahkan masalah anda"
     }
 ]

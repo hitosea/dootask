@@ -125,9 +125,6 @@ export default {
             if (this.$Electron && $A.$isSubElectron) {
                 return; // 客户端子窗口 不预加载
             }
-            if (this.$isEEUiApp) {
-                return; // 移动端 不预加载
-            }
             axios.get($A.apiUrl('system/prefetch')).then(({status, data}) => {
                 if (status === 200) {
                     data.forEach(url => {
@@ -157,7 +154,7 @@ export default {
                     if (this.compareVersion(this.apiVersion, '0.19.0') === -1) {
                         $A.modalWarning({
                             title: '温馨提示',
-                            message: `服务器（${$A.getDomain($A.apiUrl('../'))}）接口版本过低，部分功能可能无法正常使用。`,
+                            message: `服务器（${$A.getDomain($A.mainUrl())}）接口版本过低，部分功能可能无法正常使用。`,
                         });
                     }
                     if (this.$Electron) {

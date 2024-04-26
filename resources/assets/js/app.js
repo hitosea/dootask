@@ -39,6 +39,7 @@ import VueClipboard from 'vue-clipboard2'
 import ViewUI from 'view-design-hi'
 import store from './store/index'
 import mixin from "./store/mixin"
+import 'default-passive-events'
 
 import "../sass/app.scss";
 
@@ -159,6 +160,27 @@ Vue.prototype.goBack = function () {
         app.$store.state.routeHistorys = [];
         app.$store.state.routeHistoryLast = {};
     }
+};
+
+// 复制文本
+Vue.prototype.copyText = function (obj) {
+    if (!$A.isJson(obj)) {
+        obj = {
+            text: obj,
+            success: "复制成功",
+            error: "复制失败"
+        }
+    }
+    if ($A.isEEUiApp) {
+        $A.eeuiAppCopyText(obj.text)
+        obj.success && $A.messageSuccess(obj.success)
+        return
+    }
+    app.$copyText(obj.text).then(_ => {
+        obj.success && $A.messageSuccess(obj.success)
+    }).catch(_ => {
+        obj.error && $A.messageError(obj.error)
+    })
 };
 
 // 全局对象/变量

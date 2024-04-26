@@ -154,6 +154,7 @@
                     <div class="operate-position" :style="operateStyles" v-show="operateVisible">
                         <Dropdown
                             trigger="custom"
+                            transferClassName="scrollbar-hidden"
                             :placement="windowLandscape ? 'bottom' : 'top'"
                             :visible="operateVisible"
                             @on-clickoutside="operateVisible = false"
@@ -179,10 +180,10 @@
                                         <i class="taskfont" v-html="operateItem.silence ? '&#xe7eb;' : '&#xe7d7;'"></i>
                                     </div>
                                 </DropdownItem>
-                                <DropdownItem @click.native="handleHideClick" :disabled="operateItem.top_at">
+                                <DropdownItem @click.native="handleHideClick" :disabled="!!operateItem.top_at">
                                     <div class="item">
                                         {{ $L('不显示该会话') }}
-                                        <i class="taskfont">&#xe787;</i>
+                                        <i class="taskfont">&#xe881;</i>
                                     </div>
                                 </DropdownItem>
                                 <DropdownItem @click.native="handleColorClick(c.color)" v-for="(c, k) in taskColorList" :key="'c_' + k" :divided="k==0"  v-if="k<6" >
@@ -211,7 +212,7 @@
                     <div class="msg-dialog-bg-icon"><Icon type="ios-chatbubbles" /></div>
                     <div class="msg-dialog-bg-text">{{$L('选择一个会话开始聊天')}}</div>
                 </div>
-                <DialogWrapper v-if="windowLandscape && dialogId > 0" :dialogId="dialogId" @on-active="scrollIntoActive" :auto-focus="$A.isDesktop()" is-messenger/>
+                <DialogWrapper v-if="windowLandscape && dialogId > 0" :dialogId="dialogId" @on-active="scrollIntoActive" :auto-focus="$A.isDesktop()" location="messenger"/>
             </div>
         </div>
     </div>
@@ -529,17 +530,15 @@ export default {
 
         dialogSearchKey(val) {
             this.$store.state.messengerSearchKey.dialog = val
-            switch (val) {
-                case 'log.o':
-                    $A.IDBSet("logOpen", "open").then(_ => {
-                        $A.reloadUrl()
-                    });
-                    break;
-                case 'log.c':
-                    $A.IDBSet("logOpen", "close").then(_ => {
-                        $A.reloadUrl()
-                    });
-                    break;
+            if ($A.loadVConsole(val)) {
+                this.dialogSearchKey = '';
+                return;
+            }
+            if (this.tabActive === 'dialog') {
+                // todo 日志输出对话详情信息
+                if (/^info\.\d+$/.test(val)) {
+                    console.log(this.cacheDialogs.find(item => item.id == val.replace('info.', '')));
+                }
             }
             //
             this.dialogSearchList = [];
@@ -564,6 +563,10 @@ export default {
                 }
                 this.contactsLoad--;
             }, 600);
+        },
+
+        windowActive(val) {
+            this.updateDialogs(val ? 1000 : -1);
         },
 
         tabActive: {
@@ -1068,7 +1071,7 @@ export default {
             this.__updateDialogs && clearTimeout(this.__updateDialogs)
             if (timeout > -1) {
                 this.__updateDialogs = setTimeout(_ => {
-                    if (this.tabActive === 'dialog') {
+                    if (this.tabActive === 'dialog' && this.routeName === 'manage-messenger') {
                         this.$store.dispatch("getDialogAuto").catch(() => {});
                     }
                 }, timeout)

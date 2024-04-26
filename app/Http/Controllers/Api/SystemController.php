@@ -40,7 +40,7 @@ class SystemController extends AbstractController
      * @apiParam {String} type
      * - get: 获取（默认）
      * - all: 获取所有（需要管理员权限）
-     * - save: 保存设置（参数：['reg', 'reg_identity', 'reg_invite', 'login_code', 'password_policy', 'project_invite', 'chat_information', 'anon_message', 'e2e_message', 'auto_archived', 'archived_day', 'task_visible', 'task_default_time', 'all_group_mute', 'all_group_autoin', 'user_private_chat_mute', 'user_group_chat_mute', 'image_compress', 'image_save_local', 'start_home']）
+     * - save: 保存设置（参数：['reg', 'reg_identity', 'reg_invite', 'temp_account_alias', 'login_code', 'password_policy', 'project_invite', 'chat_information', 'anon_message', 'e2e_message', 'auto_archived', 'archived_day', 'task_visible', 'task_default_time', 'all_group_mute', 'all_group_autoin', 'user_private_chat_mute', 'user_group_chat_mute', 'image_compress', 'image_save_local', 'start_home']）
 
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -60,6 +60,7 @@ class SystemController extends AbstractController
                     'reg',
                     'reg_identity',
                     'reg_invite',
+                    'temp_account_alias',
                     'login_code',
                     'password_policy',
                     'project_invite',
@@ -99,13 +100,14 @@ class SystemController extends AbstractController
         //
         if ($type == 'all' || $type == 'save') {
             User::auth('admin');
-            $setting['reg_invite'] = $setting['reg_invite'] ?: Base::generatePassword(8);
+            $setting['reg_invite'] = $setting['reg_invite'] ?: Base::generatePassword();
         } else {
             if (isset($setting['reg_invite'])) unset($setting['reg_invite']);
         }
         //
         $setting['reg'] = $setting['reg'] ?: 'open';
         $setting['reg_identity'] = $setting['reg_identity'] ?: 'normal';
+        $setting['temp_account_alias'] = $setting['temp_account_alias'] ?: '';
         $setting['login_code'] = $setting['login_code'] ?: 'auto';
         $setting['password_policy'] = $setting['password_policy'] ?: 'simple';
         $setting['project_invite'] = $setting['project_invite'] ?: 'open';
@@ -202,7 +204,7 @@ class SystemController extends AbstractController
      *
      * @apiParam {String} type
      * - get: 获取（默认）
-     * - save: 保存设置（参数：['open', 'appid', 'app_certificate']）
+     * - save: 保存设置（参数：['open', 'appid', 'app_certificate', 'api_key', 'api_secret']）
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
      * @apiSuccess {Object} data    返回数据
@@ -222,12 +224,14 @@ class SystemController extends AbstractController
                     'open',
                     'appid',
                     'app_certificate',
+                    'api_key',
+                    'api_secret',
                 ])) {
                     unset($all[$key]);
                 }
             }
             if ($all['open'] === 'open' && (!$all['appid'] || !$all['app_certificate'])) {
-                return Base::retError('请填写完整的参数');
+                return Base::retError('请填写基本配置');
             }
             $setting = Base::setting('meetingSetting', Base::newTrim($all));
         } else {
@@ -238,6 +242,8 @@ class SystemController extends AbstractController
         if (env("SYSTEM_SETTING") == 'disabled') {
             $setting['appid'] = substr($setting['appid'], 0, 4) . str_repeat('*', strlen($setting['appid']) - 8) . substr($setting['appid'], -4);
             $setting['app_certificate'] = substr($setting['app_certificate'], 0, 4) . str_repeat('*', strlen($setting['app_certificate']) - 8) . substr($setting['app_certificate'], -4);
+            $setting['api_key'] = substr($setting['api_key'], 0, 4) . str_repeat('*', strlen($setting['api_key']) - 8) . substr($setting['api_key'], -4);
+            $setting['api_secret'] = substr($setting['api_secret'], 0, 4) . str_repeat('*', strlen($setting['api_secret']) - 8) . substr($setting['api_secret'], -4);
         }
         //
         return Base::retSuccess('success', $setting ?: json_decode('{}'));
@@ -1322,21 +1328,35 @@ class SystemController extends AbstractController
      */
     public function prefetch()
     {
-        $file = base_path('.prefetch');
-        if (!file_exists($file)) {
-            return [];
+        $userAgent = strtolower(Request::server('HTTP_USER_AGENT'));
+        $isMain = str_contains($userAgent, 'maintaskwindow');
+        $isApp = str_contains($userAgent, 'kuaifan_eeui');
+        $version = Base::getVersion();
+        $array = [];
+
+        if ($isMain || $isApp) {
+            $path = 'js/build/';
+            $list = Base::readDir(public_path($path), false);
+            foreach ($list as $item) {
+                if (is_file($item) && filesize($item) > 50 * 1024) {
+                    $array[] = $path . basename($item);
+                }
+            }
         }
 
-        $version = Base::getVersion();
-        $content = file_get_contents($file);
-
-        $array = explode("\n", $content);
-        $array = array_values(array_filter($array));
+        if ($isMain) {
+            $file = base_path('.prefetch');
+            if (file_exists($file)) {
+                $content = file_get_contents($file);
+                $items = explode("\n", $content);
+                $array = array_merge($array, $items);
+            }
+        }
 
         return array_map(function($item) use ($version) {
             $url = trim($item);
             $url = str_replace('{version}', $version, $url);
             return url($url);
-        }, $array);
+        }, array_values(array_filter($array)));
     }
 }

@@ -541,7 +541,7 @@ const localforage = require("localforage");
                 if (height !== tmpHeight || width !== tmpWidth) {
                     height = tmpHeight;
                     width = tmpWidth;
-                    console.log(width, height);
+                    $A.openLog && console.log(width, height);
                     if (typeof callback === 'function') callback();
                 }
             }, 250);
@@ -1371,6 +1371,27 @@ const localforage = require("localforage");
     $.extend({
         __IDBTimer: {},
 
+        async IDBTest() {
+            try {
+                if ($A.isIos()) {
+                    await localforage.setItem('__test__', $A.Time())
+                }
+                $A.openLog && console.log('IDBTest OK')
+            } catch (error) {
+                if ($A.openLog) {
+                    console.error('IDBTest Error: ', error)
+                    $A.modalWarning({
+                        content: error.message,
+                        onOk: () => {
+                            $A.reloadUrl();
+                        }
+                    });
+                } else {
+                    $A.reloadUrl();
+                }
+            }
+        },
+
         IDBSave(key, value, delay = 100) {
             if (typeof this.__IDBTimer[key] !== "undefined") {
                 clearTimeout(this.__IDBTimer[key])
@@ -1739,8 +1760,7 @@ const localforage = require("localforage");
             }
             // JSONP
             if (options.dataType === 'json' && options.url.indexOf('callback=') >= 0) {
-
-                let callbackName = 'f7jsonp_' + Date.now() + ($._jsonpRequests++);
+                let callbackName = '__jsonp_' + Date.now() + ($._jsonpRequests++);
                 let abortTimeout;
                 let callbackSplit = options.url.split('callback=');
                 let requestUrl = callbackSplit[0] + 'callback=' + callbackName;
@@ -1932,7 +1952,7 @@ const localforage = require("localforage");
 
     /**
      * =============================================================================
-     * *****************************   ajaxc   ****************************
+     * ***********************************   ajaxc   *******************************
      * =============================================================================
      */
     $.extend({
@@ -1950,30 +1970,57 @@ const localforage = require("localforage");
             if (typeof params.success === 'undefined') params.success = () => { };
             if (typeof params.error === 'undefined') params.error = () => { };
             if (typeof params.header == 'undefined') params.header = {};
+            const key = $A.randomString(16);
             //
             params.before();
-            $A.ihttp({
+            $A.__ajaxList.push({
+                key,
+                id: params.requestId || null,
                 url: params.url,
-                data: params.data,
-                cache: params.cache,
-                headers: params.header,
-                method: params.method.toUpperCase(),
-                contentType: "OPTIONS",
-                crossDomain: true,
-                dataType: params.dataType,
-                timeout: params.timeout,
-                success: function (data, status, xhr) {
-                    params.complete();
-                    params.success(data, status, xhr);
-                    params.after(true);
-                },
-                error: function (xhr, status) {
-                    params.complete();
-                    params.error(xhr, status);
-                    params.after(false);
+                request: $A.ihttp({
+                    url: params.url,
+                    data: params.data,
+                    cache: params.cache,
+                    headers: params.header,
+                    method: params.method.toUpperCase(),
+                    contentType: "OPTIONS",
+                    crossDomain: true,
+                    dataType: params.dataType,
+                    timeout: params.timeout,
+                    success: function (data, status, xhr) {
+                        $A.__ajaxList = $A.__ajaxList.filter(val => val.key !== key);
+                        params.complete();
+                        params.success(data, status, xhr);
+                        params.after(true);
+                    },
+                    error: function (xhr, status) {
+                        $A.__ajaxList = $A.__ajaxList.filter(val => val.key !== key);
+                        params.complete();
+                        params.error(xhr, status);
+                        params.after(false);
+                    }
+                })
+            });
+        },
+        ajaxcCancel(requestId) {
+            if (!requestId) {
+                return 0;
+            }
+            let num = 0;
+            $A.__ajaxList.forEach((val, index) => {
+                if (val.id === requestId) {
+                    num++;
+                    if (val.request) {
+                        val.request.abort();
+                    }
                 }
             });
-        }
+            if (num > 0) {
+                $A.__ajaxList = $A.__ajaxList.filter(val => val.id !== requestId);
+            }
+            return num;
+        },
+        __ajaxList: [],
     });
 
     window.$A = $;

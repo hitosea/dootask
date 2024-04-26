@@ -360,17 +360,6 @@ class Base
     }
 
     /**
-     * 去除html
-     * @param $text
-     * @param int $length
-     * @return string
-     */
-    public static function getHtml($text, $length = 250)
-    {
-        return Base::cutStr(strip_tags($text), $length, 0, "...");
-    }
-
-    /**
      *
      * 截取字符串
      * @param string $string 字符串
@@ -2252,8 +2241,8 @@ class Base
                 case 'md':
                     $type = ['md'];
                     break;
-                case 'desktop':
-                    $type = ['yml', 'yaml', 'dmg', 'pkg', 'blockmap', 'zip', 'exe', 'msi'];
+                case 'publish':
+                    $type = ['yml', 'yaml', 'dmg', 'pkg', 'blockmap', 'zip', 'exe', 'msi', 'apk'];
                     break;
                 case 'more':
                     $type = []; // 不限制上传文件类型
@@ -2473,13 +2462,18 @@ class Base
      */
     public static function extIcon($ext)
     {
-        return match ($ext) {
-            "docx" => 'images/ext/doc.png',
-            "xlsx" => 'images/ext/xls.png',
-            "pptx" => 'images/ext/ppt.png',
-            "ai", "avi", "bmp", "cdr", "doc", "eps", "gif", "mov", "mp3", "mp4", "pdf", "ppt", "pr", "psd", "rar", "svg", "tif", "txt", "xls", "zip" => 'images/ext/' . $ext . '.png',
-            default => 'images/ext/file.png',
-        };
+        if ($ext == "docx") {
+            $ext = 'doc';
+        } elseif ($ext == "xlsx") {
+            $ext = 'xls';
+        } elseif ($ext == "pptx") {
+            $ext = 'ppt';
+        }
+        if (in_array($ext, ["ai", "avi", "bmp", "cdr", "doc", "eps", "gif", "mov", "mp3", "mp4", "pdf", "ppt", "pr", "psd", "rar", "svg", "tif", "txt", "xls", "zip"])) {
+            return 'images/ext/' . $ext . '.png';
+        } else {
+            return 'images/ext/file.png';
+        }
     }
 
     /**

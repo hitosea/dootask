@@ -18,9 +18,15 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property string|null $end_at
  * @property Carbon|null $deleted_at
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelAppend()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelHidden()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel change($array)
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel getKeyValue()
  * @method static \Illuminate\Database\Eloquent\Builder|Meeting newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Meeting newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Meeting query()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel remove()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel saveOrIgnore()
  * @method static \Illuminate\Database\Eloquent\Builder|Meeting whereChannel($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Meeting whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Meeting whereDeletedAt($value)
@@ -44,12 +50,12 @@ class Meeting extends AbstractModel
     public function getShareLink()
     {
         $code = base64_encode("{$this->meetingid}" . Base::generatePassword());
-        Cache::put(self::CACHE_KEY.'_'.$code, [
+        Cache::put(self::CACHE_KEY . '_' . $code, [
             'id' => $this->id,
             'meetingid' => $this->meetingid,
             'channel' => $this->channel,
         ], Carbon::now()->addHours(self::CACHE_EXPIRED_TIME));
-        return Base::fillUrl("meeting/{$this->meetingid}/".$code);
+        return Base::fillUrl("meeting/{$this->meetingid}/" . $code);
     }
 
     /**
@@ -58,19 +64,19 @@ class Meeting extends AbstractModel
      */
     public static function getShareInfo($code)
     {
-        if(Cache::has(self::CACHE_KEY.'_'.$code)){
-            return Cache::get(self::CACHE_KEY.'_'.$code);
+        if (Cache::has(self::CACHE_KEY . '_' . $code)) {
+            return Cache::get(self::CACHE_KEY . '_' . $code);
         }
         return null;
     }
 
     /**
      * 保存访客信息
-     * @return mixed
+     * @return void
      */
     public static function setTouristInfo($data)
     {
-        Cache::put(Meeting::CACHE_KEY.'_'.$data['uid'], [
+        Cache::put(Meeting::CACHE_KEY . '_' . $data['uid'], [
             'uid' => $data['uid'],
             'userimg' => $data['userimg'],
             'nickname' => $data['nickname'],
@@ -83,8 +89,8 @@ class Meeting extends AbstractModel
      */
     public static function getTouristInfo($touristId)
     {
-        if(Cache::has(Meeting::CACHE_KEY.'_'.$touristId)){
-            return Cache::get(Meeting::CACHE_KEY.'_'.$touristId);
+        if (Cache::has(Meeting::CACHE_KEY . '_' . $touristId)) {
+            return Cache::get(Meeting::CACHE_KEY . '_' . $touristId);
         }
         return null;
     }

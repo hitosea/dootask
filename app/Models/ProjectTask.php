@@ -63,10 +63,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask allData($userid = null)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask authData($userid = null, $owner = null)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask betweenTime($start, $end, $type = 'taskTime')
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelAppend()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel cancelHidden()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel change($array)
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel getKeyValue()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask query()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel remove()
+ * @method static \Illuminate\Database\Eloquent\Builder|AbstractModel saveOrIgnore()
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereArchivedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereArchivedFollow($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTask whereArchivedUserid($value)
@@ -347,6 +353,25 @@ class ProjectTask extends AbstractModel
     }
 
     /**
+     * 生成描述
+     * @param $content
+     * @return string
+     */
+    public static function generateDesc($content)
+    {
+        $content = preg_replace_callback('/<ul class="tox-checklist">(.+?)<\/ul>/is', function ($matches) {
+            return preg_replace_callback('/<li([^>]*)>(.+?)<\/li>/is', function ($m) {
+                if (str_contains($m[1], 'tox-checklist--checked')) {
+                    return "<li{$m[1]}>[√]{$m[2]} </li>";
+                } else {
+                    return "<li{$m[1]}>[ ]{$m[2]} </li>";
+                }
+            }, $matches[0]);
+        }, $content);
+        return Base::cutStr(strip_tags($content), 100, 0, "...");
+    }
+
+    /**
      * 添加任务
      * @param $data
      * @return self
@@ -368,7 +393,7 @@ class ProjectTask extends AbstractModel
         $p_color    = $data['p_color'];
         $top        = intval($data['top']);
         $userid     = User::userid();
-        $visibility = isset($data['visibility_appoint']) ? $data['visibility_appoint'] : $data['visibility'];
+        $visibility = $data['visibility_appoint'] ?? $data['visibility'];
         $visibility_userids = $data['visibility_appointor'] ?: [];
         //
         if (ProjectTask::whereProjectId($project_id)
@@ -401,7 +426,7 @@ class ProjectTask extends AbstractModel
             'visibility' => $visibility ?: 1
         ]);
         if ($content) {
-            $task->desc = Base::getHtml($content, 100);
+            $task->desc = self::generateDesc($content);
         }
         // 标题
         if (empty($name)) {
@@ -502,6 +527,8 @@ class ProjectTask extends AbstractModel
                 ProjectTaskContent::createInstance([
                     'project_id' => $task->project_id,
                     'task_id' => $task->id,
+                    'userid' => $task->userid,
+                    'desc' => $task->desc,
                     'content' => [
                         'url' => ProjectTaskContent::saveContent($task->id, $content)
                     ],
@@ -888,15 +915,25 @@ class ProjectTask extends AbstractModel
                 }
                 // 内容
                 if (Arr::exists($data, 'content')) {
+                    $logRecord = [];
+                    $logContent = ProjectTaskContent::whereTaskId($this->id)->orderByDesc('id')->first();
+                    if ($logContent) {
+                        $logRecord['link'] = [
+                            'title' => '查看历史',
+                            'url' => 'single/task/content/' . $this->id . '?history_id=' . $logContent->id,
+                        ];
+                    }
+                    $this->desc = self::generateDesc($data['content']);
                     ProjectTaskContent::createInstance([
                         'project_id' => $this->project_id,
                         'task_id' => $this->id,
+                        'userid' => User::userid(),
+                        'desc' => $this->desc,
                         'content' => [
                             'url' => ProjectTaskContent::saveContent($this->id, $data['content'])
                         ],
                     ])->save();
-                    $this->desc = Base::getHtml($data['content'], 100);
-                    $this->addLog("修改{任务}详细描述");
+                    $this->addLog("修改{任务}详细描述", $logRecord);
                     $updateMarking['is_update_content'] = true;
                 }
                 // 优先级
@@ -1630,7 +1667,9 @@ class ProjectTask extends AbstractModel
         if (empty($receivers)) {
             return;
         }
-
+        //
+        $userid = User::userid();
+        //
         $botUser = User::botGetOrCreate('task-alert');
         if (empty($botUser)) {
             return;
@@ -1662,7 +1701,7 @@ class ProjectTask extends AbstractModel
                 ProjectTaskPushLog::createInstance($data)->save();
                 WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', [
                     'text' => str_replace("您的任务", $replace, $text) . $suffix
-                ], $botUser->userid);
+                ], in_array($type, [0, 3]) ? $userid : $botUser->userid);
             }
         }
     }

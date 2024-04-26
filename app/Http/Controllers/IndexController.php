@@ -10,18 +10,19 @@ use Response;
 use App\Module\Doo;
 use App\Models\File;
 use App\Module\Base;
-use App\Tasks\LoopTask;
 use App\Module\Extranet;
-use App\Tasks\AppPushTask;
 use App\Module\RandomColor;
+use App\Tasks\LoopTask;
+use App\Tasks\AppPushTask;
 use App\Tasks\JokeSoupTask;
 use App\Tasks\DeleteTmpTask;
 use App\Tasks\EmailNoticeTask;
 use App\Tasks\AutoArchivedTask;
 use App\Tasks\DeleteBotMsgTask;
 use App\Tasks\CheckinRemindTask;
-use Hhxsv5\LaravelS\Swoole\Task\Task;
+use App\Tasks\CloseMeetingRoomTask;
 use App\Tasks\UnclaimedTaskRemindTask;
+use Hhxsv5\LaravelS\Swoole\Task\Task;
 use LasseRafn\InitialAvatarGenerator\InitialAvatar;
 
 
@@ -165,6 +166,8 @@ class IndexController extends InvokeController
         Task::deliver(new JokeSoupTask());
         // 未领取任务通知
         Task::deliver(new UnclaimedTaskRemindTask());
+        // 关闭会议室
+        Task::deliver(new CloseMeetingRoomTask());
 
         return "success";
     }
@@ -192,7 +195,7 @@ class IndexController extends InvokeController
                 $publishPath = "uploads/desktop/{$publishVersion}/";
                 $res = Base::upload([
                     "file" => Request::file('file'),
-                    "type" => 'desktop',
+                    "type" => 'publish',
                     "path" => $publishPath,
                     "fileName" => true
                 ]);
@@ -236,29 +239,6 @@ class IndexController extends InvokeController
                 ];
             }
             //
-            $path = "uploads/android";
-            $dirPath = public_path($path);
-            $lists = Base::readDir($dirPath);
-            $apkFile = null;
-            foreach ($lists as $file) {
-                if (!str_ends_with($file, '.apk')) {
-                    continue;
-                }
-                if ($apkFile && strtotime($apkFile['time']) > filemtime($file)) {
-                    continue;
-                }
-                $fileName = Base::leftDelete($file, $dirPath);
-                $fileSize = filesize($file);
-                $apkFile = [
-                    'name' => substr($fileName, 1),
-                    'time' => date("Y-m-d H:i:s", filemtime($file)),
-                    'size' => $fileSize > 0 ? Base::readableBytes($fileSize) : 0,
-                    'url' => Base::fillUrl($path . $fileName),
-                ];
-            }
-            if ($apkFile) {
-                $files = array_merge([$apkFile], $files);
-            }
             return view('desktop', ['version' => $name, 'files' => $files]);
         }
         // 下载
@@ -322,10 +302,10 @@ class IndexController extends InvokeController
             }
             // 浏览器类型
             $browser = 'none';
-            if (str_contains($userAgent, 'chrome')) {
-                $browser = str_contains($userAgent, 'android') || str_contains($userAgent, 'harmonyos') ? 'android-mobile' : 'chrome-desktop';
-            } elseif (str_contains($userAgent, 'safari') || str_contains($userAgent, 'iphone') || str_contains($userAgent, 'ipad')) {
-                $browser = str_contains($userAgent, 'iphone') || str_contains($userAgent, 'ipad') ? 'safari-mobile' : 'safari-desktop';
+            if (str_contains($userAgent, 'chrome') || str_contains($userAgent, 'android_kuaifan_eeui')) {
+                $browser = str_contains($userAgent, 'android_kuaifan_eeui') ? 'android-mobile' : 'chrome-desktop';
+            } elseif (str_contains($userAgent, 'safari') || str_contains($userAgent, 'ios_kuaifan_eeui')) {
+                $browser = str_contains($userAgent, 'ios_kuaifan_eeui') ? 'safari-mobile' : 'safari-desktop';
             }
             // electron 直接在线预览查看
             if (str_contains($userAgent, 'electron') || str_contains($browser, 'desktop')) {
@@ -345,6 +325,7 @@ class IndexController extends InvokeController
                                     {
                                         action: 'setPageData',
                                         data: {
+                                            showProgress: true,
                                             titleFixed: true,
                                             urlFixed: true,
                                         }
