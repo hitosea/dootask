@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:public/js/build/sortablejs.3b0c8136.js
 import{g as Ke}from"./@traptitech.1821eed0.js";/**!
-========
-import{g as Ke}from"./@traptitech.363dce05.js";/**!
->>>>>>>> pro:public/js/build/sortablejs.8b819437.js
  * Sortable 1.10.2
  * @author	RubaXa   <trash@rubaxa.org>
  * @author	owenm    <owen23355@gmail.com>

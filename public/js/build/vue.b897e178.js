@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:public/js/build/vue.b897e178.js
 import{g as ni}from"./@traptitech.1821eed0.js";/*!
-========
-import{g as ni}from"./@traptitech.363dce05.js";/*!
->>>>>>>> pro:public/js/build/vue.eaf71fac.js
  * Vue.js v2.6.14
  * (c) 2014-2021 Evan You
  * Released under the MIT License.

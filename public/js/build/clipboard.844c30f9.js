@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:public/js/build/clipboard.844c30f9.js
 import{c as M}from"./@traptitech.1821eed0.js";var P={exports:{}};/*!
-========
-import{c as M}from"./@traptitech.363dce05.js";var P={exports:{}};/*!
->>>>>>>> pro:public/js/build/clipboard.d74ec60d.js
  * clipboard.js v2.0.11
  * https://clipboardjs.com/
  *

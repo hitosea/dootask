@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:public/js/build/vue-virtual-scroll-list-hi.cfa6db23.js
 import{c as J}from"./@traptitech.1821eed0.js";import{r as Q}from"./vue.b897e178.js";var k={exports:{}};/*!
-========
-import{c as J}from"./@traptitech.363dce05.js";import{r as Q}from"./vue.eaf71fac.js";var k={exports:{}};/*!
->>>>>>>> pro:public/js/build/vue-virtual-scroll-list-hi.f3f58d09.js
  * vue-virtual-scroll-list v2.3.5-10
  * open source under the MIT license
  * https://github.com/tangbc/vue-virtual-scroll-list#readme

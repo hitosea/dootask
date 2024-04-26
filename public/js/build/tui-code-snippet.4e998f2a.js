@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:public/js/build/tui-code-snippet.4e998f2a.js
 import{c as F}from"./@traptitech.1821eed0.js";var I={exports:{}};/*!
-========
-import{c as F}from"./@traptitech.363dce05.js";var I={exports:{}};/*!
->>>>>>>> pro:public/js/build/tui-code-snippet.449e7a67.js
  * tui-code-snippet.js
  * @version 1.5.2
  * @author NHN. FE Development Lab <dl_javascript@nhn.com>
