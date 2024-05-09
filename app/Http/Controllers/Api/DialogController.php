@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Tasks\PushTask;
 use DB;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
+use Illuminate\Support\Facades\Log;
 use Request;
 use Redirect;
 use Carbon\Carbon;
@@ -269,12 +270,18 @@ class DialogController extends AbstractController
                 return $item['userid'] > 0;
             });
         } else {
-            $data = WebSocketDialogUser::select(['web_socket_dialog_users.*', 'users.bot'])
+            $list = WebSocketDialogUser::select(['web_socket_dialog_users.*', 'users.bot'])
                 ->join('users', 'web_socket_dialog_users.userid', '=', 'users.userid')
                 ->where('web_socket_dialog_users.dialog_id', $dialog_id)
                 ->orderBy('web_socket_dialog_users.id')
                 ->get();
-            $array = $data->toArray();
+            if ($list->isNotEmpty()) {
+                foreach ($list as $item) {
+                    $user = User::find($item->userid);
+                    $item->is_admin = $user->isAdmin();
+                }
+            }
+            $array = $list->toArray();
         }
         return Base::retSuccess('success', $array);
     }
@@ -1979,8 +1986,8 @@ class DialogController extends AbstractController
             $avatar = $avatar ? Base::unFillUrl(is_array($avatar) ? $avatar[0]['path'] : $avatar) : '';
             $data['avatar'] = Base::fillUrl($array['avatar'] = $avatar);
         }
-        if (Request::exists('chat_name') && $dialog->group_type === 'user') {
-            $chatName = trim(Request::input('chat_name'));
+        if (Request::exists('name') && $dialog->group_type === 'user') {
+            $chatName = trim(Request::input('name'));
             if (mb_strlen($chatName) < 2) {
                 return Base::retError('群名称至少2个字');
             }
@@ -2547,5 +2554,89 @@ class DialogController extends AbstractController
         $topMsg = WebSocketDialogMsg::whereId($dialog->top_msg_id)->first();
         //
         return Base::retSuccess('success', $topMsg);
+    }
+
+    /**
+     * @api {get} api/dialog/group/mute          41. (解除)禁言群组
+     *
+     * @apiDescription  需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName group__mute
+     *
+     * @apiParam {Number} dialog_id             会话ID
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function group__mute()
+    {
+        User::auth();
+        //
+        $dialog_id = intval(Request::input('dialog_id'));
+        //
+        $dialog = WebSocketDialog::checkDialog($dialog_id, true);
+        //
+        $data = [
+            'id' => $dialog->id,
+            'mute' => $dialog->mute ? 0 : 1
+        ];
+        $msg = $dialog->mute ? '解除禁言成功' : '禁言成功';
+        //
+        $dialog->mute($data);
+        $dialog->pushMsg("groupMute");
+        //
+        return Base::retSuccess($msg, $data);
+    }
+
+    /**
+     * @api {get} api/dialog/group/muteuser          41. (解除)禁言群成员
+     *
+     * @apiDescription  需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName group__muteuser
+     *
+     * @apiParam {Number} dialog_id             会话ID
+     * @apiParam {Number} userid                成员ID
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function group__muteuser()
+    {
+        User::auth();
+        //
+        $dialog_id = intval(Request::input('dialog_id'));
+        $userid = intval(Request::input('userid'));
+        //
+        $dialog = WebSocketDialog::checkDialog($dialog_id, true);
+        if (!$userid) {
+            return Base::retError('请选择群成员');
+        }
+        $dialogUser = WebSocketDialogUser::whereDialogId($dialog->id)->whereUserid($userid)->first();
+        if (empty($dialogUser)) {
+            return Base::retError('群成员不存在');
+        }
+        $user = User::find($userid);
+        //
+        $data = [
+            'id' => $dialogUser->id,
+            'mute' => $dialogUser->mute ? 0 : 1
+        ];
+        $msg = $dialogUser->mute ? '解除禁言成功' : '禁言成功';
+        //
+        $notice = $dialogUser->mute ? "$user->nickname 禁言已解除" : "$user->nickname 已被禁言";
+
+        $dialogUser->updateInstance($data);
+        $dialogUser->save();
+
+        WebSocketDialogMsg::sendMsg(null, $dialog->id, 'notice', [
+            'notice' => $notice
+        ], 0, false, true);
+        //
+        return Base::retSuccess($msg, $data);
     }
 }

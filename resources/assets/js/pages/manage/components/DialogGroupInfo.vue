@@ -21,7 +21,8 @@
                 <li v-for="(item, index) in userList" :key="index" @click="openUser(item.userid)">
                     <UserAvatar :userid="item.userid" :size="32" showName/>
                     <div v-if="item.userid === dialogData.owner_id" class="user-tag">{{ $L("群主") }}</div>
-                    <div v-else-if="operableExit(item)" class="user-exit" @click.stop="onExit(item)"><Icon type="md-exit"/></div>
+                    <div v-if="operableExit(item) && item.userid !== dialogData.owner_id" class="user-exit" @click.stop="onExit(item)"><Icon type="md-exit"/></div>
+                    <div v-if="!item.is_admin && item.userid !== dialogData.owner_id" class="user-exit" @click.stop="onMute(item)"><i class="taskfont">{{ item.mute ? '&#xe7c7;' : '&#xe7c3;' }}</i></div>
                 </li>
                 <li v-if="userList.length === 0" class="no">
                     <Loading v-if="loadIng > 0"/>
@@ -86,7 +87,7 @@ export default {
     },
 
     computed: {
-        ...mapState(['cacheDialogs', 'cacheUserBasic', 'userIsAdmin']),
+        ...mapState(['cacheDialogs', 'cacheUserBasic']),
 
         dialogData() {
             return this.cacheDialogs.find(({id}) => id == this.dialogId) || {};
@@ -270,7 +271,37 @@ export default {
             }).finally(_ => {
                 this.openIng = false
             });
-        }
+        },
+
+        onMute(item) {
+            console.log(item);
+            let content = ""
+            let userid = 0
+            if ($A.isJson(item) && item.userid != this.userId) {
+                content = item.mute === 0 ? `你确定要将【${item.nickname}】禁言吗？` : `你确定要解除【${item.nickname}】禁言吗？`
+                userid = item.userid
+            }
+            $A.modalConfirm({
+                content,
+                loading: true,
+                onOk: () => {
+                    return new Promise((resolve, reject) => {
+                        this.$store.dispatch("call", {
+                            url: 'dialog/group/muteuser',
+                            data: {
+                                dialog_id: this.dialogId,
+                                userid,
+                            }
+                        }).then(({msg}) => {
+                            resolve(msg);
+                            this.getDialogUser();
+                        }).catch(({msg}) => {
+                            reject(msg);
+                        });
+                    })
+                },
+            });
+        },
     }
 }
 </script>

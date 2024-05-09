@@ -889,7 +889,7 @@ class WebSocketDialogMsg extends AbstractModel
             throw new ApiException('获取会话失败');
         }
         if ($sender > 0) {
-            $dialog->checkMute($sender);
+             $dialog->checkMute($sender);
         }
         //
         $modify = 1;

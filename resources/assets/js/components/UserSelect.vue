@@ -65,7 +65,7 @@
             <ul v-if="isWhole" class="user-modal-switch">
                 <li
                     v-for="item in switchItems" :key="item.key"
-                    :class="{active:switchActive===item.key}"
+                    :class="{active:switchActive===item.key,hide:(item.key==='contact'&&!userIsAdmin)}"
                     @click="switchActive=item.key">{{ $L(item.label) }}</li>
             </ul>
 
@@ -341,6 +341,7 @@ export default {
     computed: {
         ...mapState([
             'cacheDialogs',
+            'userIsAdmin'
         ]),
 
         isFullscreen({windowWidth}) {

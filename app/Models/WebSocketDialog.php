@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * App\Models\WebSocketDialog
@@ -226,6 +227,7 @@ class WebSocketDialog extends AbstractModel
         $this->dialog_user = null;
         $this->group_info = null;
         $this->bot = 0;
+        $this->user_mute = 0;
         switch ($this->type) {
             case "user":
                 $dialog_user = WebSocketDialogUser::whereDialogId($this->id)->where('userid', '!=', $userid)->first();
@@ -250,6 +252,7 @@ class WebSocketDialog extends AbstractModel
                 switch ($this->group_type) {
                     case 'user':
                         $this->dialog_mute = Base::settingFind('system', 'user_group_chat_mute');
+                        $this->user_mute = WebSocketDialogUser::whereDialogId($this->id)->whereUserid($userid)->value('mute');
                         break;
                     case 'project':
                         $this->group_info = Project::withTrashed()->select(['id', 'name', 'archived_at', 'deleted_at'])->whereDialogId($this->id)->first()?->cancelAppend()->cancelHidden();
@@ -521,7 +524,10 @@ class WebSocketDialog extends AbstractModel
 
             case 'group':
                 if ($this->group_type === 'user') {
-                    if ($systemConfig['user_group_chat_mute'] === 'close') {
+                    if ($systemConfig['user_group_chat_mute'] === 'close' ||
+                        ($this->mute == 1 && $this->owner_id != $userid) ||
+                        WebSocketDialogUser::checkMute($this->id, $userid)
+                    ) {
                         $muteMsgTip = '个人群组禁言';
                     }
                 } elseif ($this->group_type === 'all') {
@@ -789,5 +795,23 @@ class WebSocketDialog extends AbstractModel
             }
         }
         return $result;
+    }
+
+    /**
+     * 群组禁言
+     *
+     * @param $data
+     * @return void
+     */
+    public function mute($data)
+    {
+        $notice = $this->mute ? '本群聊已解除禁言' : '本群聊已禁言';
+        $this->updateInstance($data);
+        $this->save();
+        WebSocketDialogUser::whereDialogId($this->id)->change(['updated_at' => Carbon::now()->toDateTimeString('millisecond')]);
+        //
+        WebSocketDialogMsg::sendMsg(null, $this->id, 'notice', [
+            'notice' => $notice
+        ], null, true, true);
     }
 }

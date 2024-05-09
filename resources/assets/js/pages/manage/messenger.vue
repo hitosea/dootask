@@ -201,7 +201,7 @@
                         <Icon @click="onActive(null)" :class="{active:tabActive==='dialog'}" type="ios-chatbubbles" />
                         <Badge class="menu-num" :overflow-count="999" :count="msgUnread('all')"/>
                     </div>
-                    <div class="menu-icon">
+                    <div v-if="userIsAdmin" class="menu-icon">
                         <Icon @click="tabActive='contacts'" :class="{active:tabActive==='contacts'}" type="md-person" />
                     </div>
                 </div>
@@ -308,7 +308,7 @@ export default {
     },
 
     computed: {
-        ...mapState(['cacheDialogs', 'loadDialogs', 'dialogId', 'dialogMsgId', 'dialogMsgs', 'messengerSearchKey', 'appNotificationPermission', 'taskColorList']),
+        ...mapState(['cacheDialogs', 'loadDialogs', 'dialogId', 'dialogMsgId', 'dialogMsgs', 'messengerSearchKey', 'appNotificationPermission', 'taskColorList', 'userIsAdmin']),
 
         routeName() {
             return this.$route.name
@@ -848,6 +848,9 @@ export default {
         },
 
         getContactsList(page) {
+            if (!this.userIsAdmin) {
+                return
+            }
             this.contactsLoad++;
             const key = this.contactsKey
             this.$store.dispatch("call", {

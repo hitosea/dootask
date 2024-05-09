@@ -20480,5 +20480,159 @@
         "de": "Beschwerden wurden gesichtet",
         "fr": "Signaler une plainte",
         "id": "Laporkan keluhan"
+    },
+    {
+        "key": "群成员不存在",
+        "zh": "",
+        "zh-CHT": "羣成員不存在",
+        "en": "The group member does not exist",
+        "ko": "그룹의 구성원은 존재하지 않는다",
+        "ja": "群のメンバーは存在しません",
+        "de": "Gruppenmitglieder existieren nicht",
+        "fr": "Le membre du groupe n’existe pas",
+        "id": "Anggota koloni tidak ada"
+    },
+    {
+        "key": "解除禁言成功",
+        "zh": "",
+        "zh-CHT": "解除禁言成功",
+        "en": "The gag was lifted successfully",
+        "ko": "금언 해제에 성공하다",
+        "ja": "禁言解除成功です",
+        "de": "Die aufhebung des verbots ist erfolgreich",
+        "fr": "Succès de débloquage",
+        "id": "Membuka gag's sukses"
+    },
+    {
+        "key": "禁言成功",
+        "zh": "",
+        "zh-CHT": "禁言成功",
+        "en": "Gag success",
+        "ko": "성공을 금지하다.",
+        "ja": "禁言成功です",
+        "de": "Die schweigepflicht ist erfüllt.",
+        "fr": "Le succès du mot interdit",
+        "id": "Tutup mulut dan sukses"
+    },
+    {
+        "key": "(*) 禁言已解除",
+        "zh": "",
+        "zh-CHT": "(*) 禁言已解除",
+        "en": "(*) the embargo has been lifted",
+        "ko": "(*) 금언이 해제되였다",
+        "ja": "(*)禁句が解けました",
+        "de": "(*) das verbot ist aufgehoben",
+        "fr": "(*) le moratoire a été levé",
+        "id": "(*) gag disingkirkan"
+    },
+    {
+        "key": "(*) 已被禁言",
+        "zh": "",
+        "zh-CHT": "(*) 已被禁言",
+        "en": "(*) a gag order has been imposed",
+        "ko": "(*) 금언",
+        "ja": "(*)禁止されています",
+        "de": "* der heiligen schrift",
+        "fr": "(*) paroles déjà bannies",
+        "id": "(*) telah dilarang berbicara"
+    },
+    {
+        "key": "本群聊已解除禁言",
+        "zh": "",
+        "zh-CHT": "本羣聊已解除禁言",
+        "en": "This group chat has been lifted",
+        "ko": "본 단체 채팅은 이미 금기 (禁禁상태이다)를 해제하였다",
+        "ja": "当グループチャットは発禁を解除しました",
+        "de": "Die klatschpresse hat ihr schweigegelübde abgelegt",
+        "fr": "Ce chat de groupe a été libéré",
+        "id": "Pembicaraan dalam kelompok ini sudah berakhir"
+    },
+    {
+        "key": "本群聊已禁言",
+        "zh": "",
+        "zh-CHT": "本羣聊已禁言",
+        "en": "This group chat has been shut down",
+        "ko": "본 단체는 채팅이 금지되어 있다",
+        "ja": "このグループの雑談は既に禁じられました",
+        "de": "Die gruppe hat gequatscht",
+        "fr": "Ce chat de groupe a été interdit",
+        "id": "Obrolan dalam kelompok ini dilarang"
+    },
+    {
+        "key": "你确定要将【(*)】禁言吗？",
+        "zh": "",
+        "zh-CHT": "你確定要將【(*)】禁言嗎？",
+        "en": "Are you sure you want to gag [(*)]?",
+        "ko": "당신은 정말로\"(*)\"을 금언할 것인가?",
+        "ja": "あなたは【(*)】を禁句にしますか?",
+        "de": "Ist ihre aussage wirklich verboten? (*) ja.",
+        "fr": "Êtes-vous sûr de vouloir interdire [(*)]?",
+        "id": "Apakah anda yakin ingin menutup mulut?"
+    },
+    {
+        "key": "你确定要解除【(*)】禁言吗？",
+        "zh": "",
+        "zh-CHT": "你確定要解除【(*)】禁言嗎？",
+        "en": "Are you sure you want to lift the [(*)] gag?",
+        "ko": "당신은 금언 [(*)]을 해제할 것이 확실합니까?",
+        "ja": "【(*)】禁言を解除しますか?",
+        "de": "Sind sie sicher, dass sie die schweigepflicht aufheben möchten?",
+        "fr": "Êtes-vous sûr de vouloir lever le [(*)] ban?",
+        "id": "Apakah anda yakin ingin membuka pembicaraan?"
+    },
+    {
+        "key": "群组禁言",
+        "zh": "",
+        "zh-CHT": "羣組禁言",
+        "en": "Group gag",
+        "ko": "집단 금언",
+        "ja": "集団禁句です",
+        "de": "Gruppen schweigen",
+        "fr": "Mots interdits en groupe",
+        "id": "Grup diam"
+    },
+    {
+        "key": "解除禁言",
+        "zh": "",
+        "zh-CHT": "解除禁言",
+        "en": "Lift the gag",
+        "ko": "금언을 해제하다",
+        "ja": "げんげんを解く",
+        "de": "Lass das tabu.",
+        "fr": "Lever le mot interdit",
+        "id": "Mencabut gag"
+    },
+    {
+        "key": "您已被禁言",
+        "zh": "",
+        "zh-CHT": "您已被禁言",
+        "en": "You are under a gag order",
+        "ko": "당신은 금지되어 있습니다",
+        "ja": "あなたは禁句です",
+        "de": "Du hast hausarrest",
+        "fr": "Vous avez été banni",
+        "id": "Kau dilarang berbicara"
+    },
+    {
+        "key": "你确定要禁言【(*)】群组吗？",
+        "zh": "",
+        "zh-CHT": "你確定要禁言【(*)】羣組嗎？",
+        "en": "Are you sure you want to ban [(*)] groups?",
+        "ko": "그룹 (*)을 금지하시겠습니까?",
+        "ja": "あなたは禁言【(*)】グループを確定しますか?",
+        "de": "Sind sie sicher, dass sie die gruppe verbieten möchten?",
+        "fr": "Êtes-vous sûr de vouloir interdire le groupe [(*)]?",
+        "id": "Apakah anda yakin ingin melarang grup?"
+    },
+    {
+        "key": "你确定要解除【(*)】群组禁言吗？",
+        "zh": "",
+        "zh-CHT": "你確定要解除【(*)】羣組禁言嗎？",
+        "en": "Are you sure you want to unblock the [(*)] group?",
+        "ko": "당신은 정말로 [(*)] 그룹 금지를 해제하시겠습니까?",
+        "ja": "あなたは【(*)】グループ発言禁止を解除しますか?",
+        "de": "Ist das {y: i} verbot der gruppe wirklich aufgehoben?",
+        "fr": "Êtes-vous sûr de vouloir débloquer le groupe [(*)]?",
+        "id": "Apakah anda yakin ingin membubarkan [*] gag group?"
     }
 ]

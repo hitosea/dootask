@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * App\Models\WebSocketDialogUser
@@ -68,5 +69,21 @@ class WebSocketDialogUser extends AbstractModel
             WebSocketDialogUser::whereDialogId($dialogId)->change(['last_at' => $lastMsg->created_at]);
         }
         return $lastMsg;
+    }
+
+    /**
+     * 检测是否在群聊被禁言
+     *
+     * @param $dialogId int 对话id
+     * @param $userId int 用户id
+     * @return bool
+     */
+    public static function checkMute(int $dialogId, int $userId)
+    {
+        $dialogUser = WebSocketDialogUser::whereDialogId($dialogId)->whereUserid($userId)->first();
+        if (empty($dialogUser) || $dialogUser->mute == 1) {
+            return true;
+        }
+        return false;
     }
 }

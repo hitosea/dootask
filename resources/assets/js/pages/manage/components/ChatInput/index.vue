@@ -1383,7 +1383,7 @@ export default {
                 case "@": // @成员
                     this.mentionMode = "user-mention";
                     const atCallback = (list) => {
-                        this.getMoreUser(searchTerm, list.map(item => item.id)).then(moreUser => {
+                        this.getMoreUser({dialog_id: this.dialogId}, list.map(item => item.id)).then(moreUser => {
                             // 会话以外成员 排序 -> 前5名为最近联系的人
                             let cacheDialogs = this.cacheDialogs.filter((h, index) => h.type == "user" && h.bot == 0 && h.last_at)
                             cacheDialogs.sort((a, b) => a.last_at > b.last_at ? -1 : (a.last_at < b.last_at ? 1 : 0));
@@ -1622,9 +1622,7 @@ export default {
                         this.$store.dispatch("call", {
                             url: 'users/search',
                             data: {
-                                keys: {
-                                    key,
-                                },
+                                keys: key,
                                 state: 1,
                                 take: 30
                             },

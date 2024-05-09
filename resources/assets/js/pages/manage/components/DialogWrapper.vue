@@ -107,6 +107,9 @@
                                     <EDropdownItem command="modifyNormal">
                                         <div>{{$L('修改资料')}}</div>
                                     </EDropdownItem>
+                                    <EDropdownItem command="mute">
+                                        <div>{{dialogData.mute === 0 ? $L('群组禁言') : $L('解除禁言')}}</div>
+                                    </EDropdownItem>
                                     <EDropdownItem command="transfer">
                                         <div>{{$L('转让群主')}}</div>
                                     </EDropdownItem>
@@ -172,7 +175,6 @@
                     {{positionMsg.label}}
                 </div>
             </div>
-
             <!--消息列表-->
             <VirtualList
                 ref="scroller"
@@ -247,6 +249,12 @@
             </div>
             <div v-if="isMute" class="chat-mute">
                 {{$L('禁言发言')}}
+            </div>
+            <div v-else-if="isGroupMute" class="chat-mute">
+                {{$L('本群聊已禁言')}}
+            </div>
+            <div v-else-if="isUserMute" class="chat-mute">
+                {{$L('您已被禁言')}}
             </div>
             <ChatInput
                 v-else
@@ -1115,6 +1123,26 @@ export default {
         isMute() {
             if (this.dialogData.dialog_mute === 'close') {
                 return !this.userIsAdmin
+            }
+            return false
+        },
+
+        isGroupMute() {
+            if (!this.isMute && this.dialogData.mute === 1) {
+                if (this.userIsAdmin) {
+                    return false;
+                }
+                return !(this.dialogData.owner_id === this.userId)
+            }
+            return false
+        },
+
+        isUserMute() {
+            if (!this.isMute && !this.isGroupMute && this.dialogData.user_mute === 1) {
+                if (this.userIsAdmin) {
+                    return false;
+                }
+                return !(this.dialogData.owner_id === this.userId)
             }
             return false
         },
@@ -2485,6 +2513,10 @@ export default {
                 case "report":
                     this.reportShow = true
                     break;
+
+                case "mute":
+                    this.onMuteGroup()
+                    break;
             }
         },
 
@@ -3733,6 +3765,29 @@ export default {
                 this.approvaUserStatus = data;
             }).catch(({msg}) => {
                 $A.messageError(msg);
+            });
+        },
+
+        onMuteGroup() {
+            $A.modalConfirm({
+                content: this.dialogData.mute === 0 ? `你确定要禁言【${this.dialogData.name}】群组吗？` : `你确定要解除【${this.dialogData.name}】群组禁言吗？`,
+                loading: true,
+                okText: '确定',
+                onOk: () => {
+                    return new Promise((resolve, reject) => {
+                        this.$store.dispatch("call", {
+                            url: 'dialog/group/mute',
+                            data: {
+                                dialog_id: this.dialogId,
+                            }
+                        }).then(({data, msg}) => {
+                            resolve(msg);
+                            this.$store.dispatch("saveDialog", data);
+                        }).catch(({msg}) => {
+                            reject(msg);
+                        });
+                    })
+                },
             });
         },
 

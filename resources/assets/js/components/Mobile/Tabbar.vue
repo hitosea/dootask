@@ -3,8 +3,10 @@
         <NetworkException v-if="windowPortrait" type="alert"/>
         <ul class="tabbar-box">
             <li v-for="item in navList" @click="toggleRoute(item.name)" :class="{active: activeName === item.name}">
-                <i class="taskfont" v-html="item.icon"></i>
-                <div class="tabbar-title">{{ $L(item.label) }}</div>
+                <template v-if="userIsAdmin || item.name !== 'contacts'">
+                    <i class="taskfont" v-html="item.icon"></i>
+                    <div class="tabbar-title">{{ $L(item.label) }}</div>
+                </template>
                 <template v-if="item.name === 'dashboard'">
                     <Badge v-if="dashboardTask.overdue_count > 0" class="tabbar-badge" type="error" :overflow-count="999" :count="dashboardTask.overdue_count"/>
                     <Badge v-else-if="dashboardTask.today_count > 0" class="tabbar-badge" type="info" :overflow-count="999" :count="dashboardTask.today_count"/>
@@ -42,7 +44,7 @@ export default {
     },
 
     computed: {
-        ...mapState(['cacheDialogs', 'reportUnreadNumber', 'approveUnreadNumber']),
+        ...mapState(['cacheDialogs', 'reportUnreadNumber', 'approveUnreadNumber', 'userIsAdmin']),
         ...mapGetters(['dashboardTask']),
 
         routeName() {
