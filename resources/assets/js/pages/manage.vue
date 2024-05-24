@@ -283,10 +283,10 @@
 
         <!--举报投诉管理-->
         <DrawerOverlay
-            v-model="reportShow"
+            v-model="complaintShow"
             placement="right"
             :size="1200">
-            <ComplaintManagement v-if="reportShow"/>
+            <ComplaintManagement v-if="complaintShow"/>
         </DrawerOverlay>
 
         <!--查看归档项目-->
@@ -330,10 +330,10 @@ import TaskModal from "./manage/components/TaskModal";
 import CheckinExport from "./manage/components/CheckinExport";
 import TaskExport from "./manage/components/TaskExport";
 import ApproveExport from "./manage/components/ApproveExport";
+import ComplaintManagement from "./manage/components/ComplaintManagement";
+import MicroApps from "../components/MicroApps.vue";
 import notificationKoro from "notification-koro1";
 import {Store} from "le5le-store";
-import MicroApps from "../components/MicroApps.vue";
-import ComplaintManagement from "./manage/components/ComplaintManagement";
 import {MarkdownPreview} from "../store/markdown";
 
 export default {
@@ -410,7 +410,7 @@ export default {
 
             needStartHome: false,
 
-            reportShow: false,
+            complaintShow: false,
         }
     },
 
@@ -584,7 +584,7 @@ export default {
                     {path: 'archivedProject', name: '已归档的项目'},
 
                     {path: 'team', name: '团队管理', divided: true},
-                    {path: 'report', name: '举报管理', divided: true},
+                    {path: 'complaint', name: '举报管理'},
                 ])
             } else {
                 array.push(...[
@@ -782,8 +782,8 @@ export default {
                         path:'/manage/apps/' + ( path == 'okrManage' ? '/#/list' : '/#/analysis'),
                     });
                     return;
-                case 'report':
-                    this.reportShow = true;
+                case 'complaint':
+                    this.complaintShow = true;
                     return;
                 case 'logout':
                     $A.modalConfirm({
@@ -1106,6 +1106,7 @@ export default {
                     this.onAddShow()
                     break;
                 case 'allUser':
+                case 'complaint':
                 case 'workReport':
                     this.settingRoute(act)
                     break;

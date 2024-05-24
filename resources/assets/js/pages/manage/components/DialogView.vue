@@ -8,6 +8,7 @@
         <div
             class="dialog-head"
             :class="headClass"
+            @click="handleClick"
             v-longpress="{callback: handleLongpress, delay: 300}">
             <!--回复-->
             <div v-if="!hideReply && msgData.reply_id && showReplyData(msgData.msg.reply_data)" class="dialog-reply no-dark-content" @click="viewReply">
@@ -50,6 +51,9 @@
                     <div class="dialog-record" :class="{playing: audioPlaying === msgData.msg.path}" :style="recordStyle(msgData.msg)" @click="playRecord">
                         <div class="record-time">{{recordDuration(msgData.msg.duration)}}</div>
                         <div class="record-icon taskfont"></div>
+                    </div>
+                    <div v-if="msgData.msg.text" class="dialog-record-text">
+                        {{msgData.msg.text}}
                     </div>
                 </div>
                 <!--会议-->
@@ -192,7 +196,10 @@
                     :placement="isRightMsg ? 'bottom-end' : 'bottom-start'">
                     <div class="read-poptip-content">
                         <Scrollbar class-name="read">
-                            <div class="read-title"><em>{{ todoDoneList.length }}</em>{{ $L('完成') }}</div>
+                            <div class="read-title">
+                                <em>{{ todoDoneList.length }}</em>
+                                {{ $L('完成') }}
+                            </div>
                             <ul>
                                 <li v-for="item in todoDoneList">
                                     <UserAvatar :userid="item.userid" :size="26" showName/>
@@ -200,7 +207,12 @@
                             </ul>
                         </Scrollbar>
                         <Scrollbar class-name="unread">
-                            <div class="read-title"><em>{{ todoUndoneList.length }}</em>{{ $L('待办') }}</div>
+                            <div class="read-title">
+                                <em>{{ todoUndoneList.length }}</em>
+                                {{ $L('待办') }}
+                                <span class="space"></span>
+                                <Button type="primary" size="small" @click="handleTodoAdd">{{ $L('添加') }}</Button>
+                            </div>
                             <ul>
                                 <li v-for="item in todoUndoneList">
                                     <UserAvatar :userid="item.userid" :size="26" showName/>
@@ -236,7 +248,10 @@
                             :placement="isRightMsg ? 'bottom-end' : 'bottom-start'">
                             <div class="read-poptip-content">
                                 <Scrollbar class-name="read">
-                                    <div class="read-title"><em>{{ readList.length }}</em>{{ $L('已读') }}</div>
+                                    <div class="read-title">
+                                        <em>{{ readList.length }}</em>
+                                        {{ $L('已读') }}
+                                    </div>
                                     <ul>
                                         <li v-for="item in readList">
                                             <UserAvatar :userid="item.userid" :size="26" showName/>
@@ -244,7 +259,10 @@
                                     </ul>
                                 </Scrollbar>
                                 <Scrollbar class-name="unread">
-                                    <div class="read-title"><em>{{ unreadList.length }}</em>{{ $L('未读') }}</div>
+                                    <div class="read-title">
+                                        <em>{{ unreadList.length }}</em>
+                                        {{ $L('未读') }}
+                                    </div>
                                     <ul>
                                         <li v-for="item in unreadList">
                                             <UserAvatar :userid="item.userid" :size="26" showName/>
@@ -329,7 +347,8 @@ export default {
             emojiUsersNum: 5,
 
             voteData: {},
-            unfoldWordChainData: []
+            dotClicks: [],
+            unfoldWordChainData: [],
         }
     },
 
@@ -390,8 +409,11 @@ export default {
         },
 
         headClass() {
-            const {reply_id, type, msg, emoji} = this.msgData;
+            const {id, reply_id, type, msg, emoji, dot} = this.msgData;
             const array = [];
+            if (dot && !this.dotClicks.includes(id)) {
+                array.push('dot')
+            }
             if (reply_id === 0 && $A.arrayLength(emoji) === 0) {
                 if (type === 'text') {
                     if (/^<img\s+class="emoticon"[^>]*?>$/.test(msg.text)
@@ -447,6 +469,13 @@ export default {
             this.$emit("on-longpress", {event, el, msgData: this.msgData})
         },
 
+        handleClick() {
+            if (this.msgData.dot) {
+                this.dotClicks.push(this.msgData.id);
+                this.$store.dispatch("dialogMsgDot", this.msgData);
+            }
+        },
+
         openTodo() {
             if (this.todoLoad > 0) {
                 return;
@@ -471,6 +500,17 @@ export default {
                     this.todoShow = true
                 }, 100)
             });
+        },
+
+        handleTodoAdd() {
+            this.$refs.todo.doClose();
+            this.$emit("on-other", {
+                event: 'todoAdd',
+                data: {
+                    msg_id: this.msgData.id,
+                    userids: this.todoList.map(({userid}) => userid)
+                }
+            })
         },
 
         openReadPercentage() {

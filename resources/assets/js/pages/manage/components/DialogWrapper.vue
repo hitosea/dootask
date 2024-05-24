@@ -77,11 +77,11 @@
                         @command="onDialogMenu">
                         <i class="taskfont dialog-menu-icon">&#xe6e9;</i>
                         <EDropdownMenu slot="dropdown">
-                            <EDropdownItem command="searchMsg">
-                                <div>{{$L('搜索消息')}}</div>
-                            </EDropdownItem>
                             <EDropdownItem v-if="dialogData.bot == 0" command="report">
                                 <div>{{$L('举报投诉')}}</div>
+                            </EDropdownItem>
+                            <EDropdownItem command="searchMsg">
+                                <div>{{$L('搜索消息')}}</div>
                             </EDropdownItem>
                             <template v-if="dialogData.type === 'user'">
                                 <EDropdownItem v-if="isManageBot" command="modifyNormal">
@@ -200,6 +200,7 @@
                 @on-reply-list="onReplyList"
                 @on-error="onError"
                 @on-emoji="onEmoji"
+                @on-other="onOther"
                 @on-show-emoji-user="onShowEmojiUser">
                 <template #header v-if="!isChildComponent">
                     <div class="dialog-item head-box">
@@ -296,6 +297,10 @@
                                 <li v-if="operateItem.userid == userId && operateItem.type === 'text'" @click="onOperate('update')">
                                     <i class="taskfont">&#xe779;</i>
                                     <span>{{ $L('编辑') }}</span>
+                                </li>
+                                <li v-if="actionPermission(operateItem, 'voice2text')" @click="onOperate('voice2text')">
+                                    <i class="taskfont">&#xe628;</i>
+                                    <span>{{ $L('转文字') }}</span>
                                 </li>
                                 <li v-for="item in operateCopys" @click="onOperate('copy', item)">
                                     <i class="taskfont" v-html="item.icon"></i>
@@ -482,6 +487,7 @@
                                 @on-view-file="onViewFile"
                                 @on-down-file="onDownFile"
                                 @on-emoji="onEmoji"
+                                @on-other="onOther"
                                 simpleView/>
                         </Scrollbar>
                     </div>
@@ -550,6 +556,15 @@
                 <Button type="primary" :loading="todoSettingLoad > 0" @click="onTodo('submit')">{{$L('确定')}}</Button>
             </div>
         </Modal>
+        <UserSelect
+            v-if="todoSpecifyShow"
+            ref="todoSpecifySelect"
+            v-model="todoSpecifyData.userids"
+            :dialog-id="dialogId"
+            :title="$L('选择指定成员')"
+            module
+            border
+            :before-submit="onTodoSpecify"/>
 
         <!--群设置-->
         <DrawerOverlay
@@ -625,6 +640,7 @@
                             @on-view-file="onViewFile"
                             @on-down-file="onDownFile"
                             @on-emoji="onEmoji"
+                            @on-other="onOther"
                             simpleView/>
                         <Button class="original-button" icon="md-exit" type="text" :loading="todoViewPosLoad" @click="onPosTodo">{{ $L("回到原文") }}</Button>
                     </template>
@@ -801,6 +817,11 @@ export default {
                 type: 'all',
                 userids: [],
                 quick_value: [],
+            },
+            todoSpecifyShow: false,
+            todoSpecifyData: {
+                type: 'user',
+                userids: [],
             },
 
             todoViewLoad: false,
@@ -2891,6 +2912,10 @@ export default {
                         this.onUpdate()
                         break;
 
+                    case "voice2text":
+                        this.onVoice2text()
+                        break;
+
                     case "copy":
                         this.onCopy(value)
                         break;
@@ -2918,6 +2943,9 @@ export default {
                     case "newTask":
                         let content = $A.formatMsgBasic(this.operateItem.msg.text)
                         content = content.replace(/<img[^>]*?src=(["'])(.*?)(_thumb\.jpg)*\1[^>]*?>/g, `<img src="$2">`)
+                        content = content.replace(/<li\s+data-list="checked">/g, `<li class="tox-checklist--checked">`)
+                        content = content.replace(/<li\s+data-list="unchecked">/g, `<li>`)
+                        content = content.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/g, `<ul class="tox-checklist">$1</ul>`)
                         Store.set('addTask', {owner: [this.userId], content});
                         break;
 
@@ -3005,6 +3033,26 @@ export default {
             }
         },
 
+        onVoice2text() {
+            if (!this.actionPermission(this.operateItem, 'voice2text')) {
+                return;
+            }
+            const {id: msg_id} = this.operateItem
+            this.$store.dispatch("setLoad", `msg-${msg_id}`)
+            this.$store.dispatch("call", {
+                url: 'dialog/msg/voice2text',
+                data: {
+                    msg_id
+                },
+            }).then(({data}) => {
+                this.$store.dispatch("saveDialogMsg", data);
+            }).catch(({msg}) => {
+                $A.messageError(msg);
+            }).finally(_ => {
+                this.$store.dispatch("cancelLoad", `msg-${msg_id}`)
+            });
+        },
+
         onCopy(data) {
             if (!$A.isJson(data)) {
                 return
@@ -3087,7 +3135,7 @@ export default {
             this.onPositionId(data.reply_id, data.msg_id)
         },
 
-        onViewText({target}, el) {
+        onViewText({target, clientX}, el) {
             if (this.operateVisible) {
                 return
             }
@@ -3139,6 +3187,9 @@ export default {
                 case "LI":
                     const dataClass = target.getAttribute('data-list')
                     if (['checked', 'unchecked'].includes(dataClass)) {
+                        if (clientX - target.getBoundingClientRect().x > 18) {
+                            return;
+                        }
                         let listElement = el.parentElement;
                         while (listElement) {
                             if (listElement.classList.contains('dialog-scroller')) {
@@ -3146,6 +3197,10 @@ export default {
                             }
                             if (listElement.classList.contains('dialog-view')) {
                                 const dataId = listElement.getAttribute("data-id")
+                                const dataMsg = this.allMsgs.find(item => item.id == dataId) || {}
+                                if (dataMsg.userid != this.userId) {
+                                    return;
+                                }
                                 const dataIndex = [].indexOf.call(el.querySelectorAll(target.tagName), target);
                                 if (dataClass === 'checked') {
                                     target.setAttribute('data-list', 'unchecked')
@@ -3167,7 +3222,12 @@ export default {
                                 }).then(({data}) => {
                                     this.$store.dispatch("saveDialogMsg", data);
                                 }).catch(({msg}) => {
-                                    $A.modalError(msg);
+                                    if (dataClass === 'checked') {
+                                        target.setAttribute('data-list', 'checked')
+                                    } else {
+                                        target.setAttribute('data-list', 'unchecked')
+                                    }
+                                    $A.modalError(msg)
                                 }).finally(_ => {
                                     this.$store.dispatch("cancelLoad", `msg-${dataId}`)
                                 });
@@ -3355,6 +3415,19 @@ export default {
             this.respondShow = true
         },
 
+        onOther({event, data}) {
+            if (this.operateVisible) {
+                return
+            }
+            if (event === 'todoAdd') {
+                this.todoSpecifyData = Object.assign(this.todoSpecifyData, data)
+                this.todoSpecifyShow = true
+                this.$nextTick(_ => {
+                    this.$refs.todoSpecifySelect.onSelection()
+                })
+            }
+        },
+
         onTag() {
             if (this.operateVisible) {
                 return
@@ -3420,43 +3493,59 @@ export default {
                     this.todoSettingLoad--
                 })
             } else {
-                const quickList = {}
-                quickList[this.userId] = this.userId
-                const userid = this.dialogData.dialog_user?.userid
-                if (userid && userid != this.userId && !this.dialogData.bot) {
-                    quickList[userid] = userid
-                }
-                if (this.operateItem.type === 'text') {
-                    const atReg = /<span class="mention user" data-id="(\d+)">([^<]+)<\/span>/g
-                    const atList = this.operateItem.msg.text.match(atReg)
-                    if (atList) {
-                        atList.forEach(item => {
-                            const userid = parseInt(item.replace(atReg, '$1'))
-                            if (userid && userid != this.userId) {
-                                quickList[userid] = userid
-                            }
-                        })
-                    }
-                }
-                this.todoSettingData = {
-                    type: 'all',
-                    userids: [],
-                    msg_id: this.operateItem.id,
-                    quick_value: [],
-                    quick_list: Object.values(quickList),
-                }
                 if (this.operateItem.todo) {
                     $A.modalConfirm({
                         content: "你确定取消待办吗？",
                         cancelText: '取消',
                         okText: '确定',
                         loading: true,
-                        onOk: () => this.onTodoSubmit(this.todoSettingData)
+                        onOk: () => this.onTodoSubmit({
+                            type: 'user',
+                            userids: [],
+                            msg_id: this.operateItem.id,
+                        })
                     });
                 } else {
+                    const quickList = {}
+                    quickList[this.userId] = this.userId
+                    const userid = this.dialogData.dialog_user?.userid
+                    if (userid && userid != this.userId && !this.dialogData.bot) {
+                        quickList[userid] = userid
+                    }
+                    if (this.operateItem.type === 'text') {
+                        const atReg = /<span class="mention user" data-id="(\d+)">([^<]+)<\/span>/g
+                        const atList = this.operateItem.msg.text.match(atReg)
+                        if (atList) {
+                            atList.forEach(item => {
+                                const userid = parseInt(item.replace(atReg, '$1'))
+                                if (userid && userid != this.userId) {
+                                    quickList[userid] = userid
+                                }
+                            })
+                        }
+                    }
+                    this.todoSettingData = {
+                        type: 'all',
+                        userids: [],
+                        msg_id: this.operateItem.id,
+                        quick_value: [],
+                        quick_list: Object.values(quickList),
+                    }
                     this.todoSettingShow = true
                 }
             }
+        },
+
+        onTodoSpecify() {
+            return new Promise((resolve, reject) => {
+                this.onTodoSubmit(this.todoSpecifyData).then(msg => {
+                    $A.messageSuccess(msg)
+                    resolve()
+                }).catch(e => {
+                    $A.messageError(e)
+                    reject()
+                })
+            });
         },
 
         onTodoSubmit(data) {
@@ -3466,6 +3555,7 @@ export default {
                     delay: 600
                 })
                 this.$store.dispatch("call", {
+                    method: 'post',
                     url: 'dialog/msg/todo',
                     data,
                 }).then(({data, msg}) => {
@@ -3543,6 +3633,16 @@ export default {
                     return typeof item.msg.approve_type === 'undefined' // 审批消息不支持新建任务
                 }
                 return false
+            } else if (permission === 'voice2text') {
+                if (item.type !== 'record') {
+                    return false;
+                }
+                if (item.msg.text) {
+                    return false;
+                }
+                if (this.isLoad(`msg-${item.id}`)) {
+                    return false;
+                }
             }
             return true // 返回 true 允许操作
         },

@@ -2,7 +2,7 @@
     <div class="dialog-complaint-info">
         <div class="group-complaint-title">{{ $L('匿名举报') }}</div>
         <div class="group-complaint-warp">
-            <div class="group-complaint-title underline required">{{ $L('请输入举报类型：') }}</div>
+            <div class="group-complaint-title underline required">{{ $L('请选择举报类型') }}:</div>
             <div class="group-complaint-list">
                 <List>
                     <ListItem v-for="(item, index) in typeList" :key="index" :class="{ 'active': typeId == item.id }">
@@ -14,7 +14,7 @@
                 </List>
             </div>
             <!--  -->
-            <div class="group-complaint-title required">{{ $L('请输入举报原因：') }}</div>
+            <div class="group-complaint-title required">{{ $L('请输入举报原因') }}:</div>
             <div class="group-complaint-reason">
                 <Input v-model="reason" type="textarea" maxlength="500" :autosize="{ minRows: 4, maxRows: 8 }"
                     :placeholder="$L('请输入填写详细的举报原因，以使我们更好的帮助你解决问题')" />

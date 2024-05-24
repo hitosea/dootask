@@ -2484,7 +2484,7 @@ export default {
                 const updateData = {
                     id: data.dialog_id,
                     last_msg: data,
-                    last_at: $A.formatDate("Y-m-d H:i:s")
+                    last_at: data.created_at || $A.formatDate("Y-m-d H:i:s")
                 }
                 if (data.mtype == 'tag') {
                     updateData.has_tag = true;
@@ -3263,6 +3263,31 @@ export default {
     },
 
     /**
+     * 消息去除点
+     * @param state
+     * @param dispatch
+     * @param data
+     */
+    dialogMsgDot({state, dispatch}, data) {
+        if (!$A.isJson(data)) {
+            return;
+        }
+        if (!data.dot) {
+            return;
+        }
+        data.dot = 0;
+        //
+        dispatch("call", {
+            url: 'dialog/msg/dot',
+            data: {
+                id: data.id
+            }
+        }).then(({data}) => {
+            dispatch("saveDialog", data)
+        });
+    },
+
+    /**
      * 标记已读、未读
      * @param state
      * @param dispatch
@@ -3429,7 +3454,7 @@ export default {
         if (old) {
             // 删除已存在
             old.pause()
-            old.src = null
+            old.src = ""
             old.parentNode.removeChild(old);
         }
         if (!src || src === state.audioPlaying) {
@@ -3463,7 +3488,7 @@ export default {
         }
         if (old.src === src || src === true) {
             old.pause()
-            old.src = null
+            old.src = ""
             old.parentNode.removeChild(old);
             state.audioPlaying = null
         }

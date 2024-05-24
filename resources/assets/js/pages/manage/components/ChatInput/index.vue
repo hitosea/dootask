@@ -56,24 +56,24 @@
                         :visibleArrow="false"
                         placement="top"
                         popperClass="chat-input-emoji-popover">
-                        <ETooltip slot="reference" ref="emojiTip" :disabled="$isEEUiApp || windowTouch || showEmoji" placement="top" :content="$L('表情')">
+                        <ETooltip slot="reference" ref="emojiTip" :disabled="$isEEUiApp || windowTouch || showEmoji" placement="top" :enterable="false" :content="$L('表情')">
                             <i class="taskfont">&#xe7ad;</i>
                         </ETooltip>
                         <ChatEmoji v-if="showEmoji" @on-select="onSelectEmoji" :searchKey="emojiQuickKey"/>
                     </EPopover>
-                    <ETooltip v-else ref="emojiTip" :disabled="$isEEUiApp || windowTouch || showEmoji" placement="top" :content="$L('表情')">
+                    <ETooltip v-else ref="emojiTip" :disabled="$isEEUiApp || windowTouch || showEmoji" placement="top" :enterable="false" :content="$L('表情')">
                         <i class="taskfont" @click="showEmoji=!showEmoji">&#xe7ad;</i>
                     </ETooltip>
                 </li>
 
                 <!-- @ # -->
                 <li>
-                    <ETooltip placement="top" :disabled="$isEEUiApp || windowTouch" :content="$L('选择成员')">
+                    <ETooltip placement="top" :disabled="$isEEUiApp || windowTouch" :enterable="false" :content="$L('选择成员')">
                         <i class="taskfont" @click="onToolbar('user')">&#xe78f;</i>
                     </ETooltip>
                 </li>
                 <li>
-                    <ETooltip placement="top" :disabled="$isEEUiApp || windowTouch" :content="$L('选择任务')">
+                    <ETooltip placement="top" :disabled="$isEEUiApp || windowTouch" :enterable="false" :content="$L('选择任务')">
                         <i class="taskfont" @click="onToolbar('task')">&#xe7d6;</i>
                     </ETooltip>
                 </li>
@@ -86,7 +86,7 @@
                         :visibleArrow="false"
                         placement="top"
                         popperClass="chat-input-more-popover">
-                        <ETooltip slot="reference" ref="moreTip" :disabled="$isEEUiApp || windowTouch || showMore" placement="top" :content="$L('展开')">
+                        <ETooltip slot="reference" ref="moreTip" :disabled="$isEEUiApp || windowTouch || showMore" placement="top" :enterable="false" :content="$L('展开')">
                             <i class="taskfont">&#xe790;</i>
                         </ETooltip>
                         <div v-if="recordReady" class="chat-input-popover-item" @click="onToolbar('meeting')">
@@ -138,7 +138,7 @@
                         trigger="manual"
                         placement="top"
                         popperClass="chat-input-more-popover">
-                        <ETooltip slot="reference" ref="sendTip" placement="top" :disabled="$isEEUiApp || windowTouch || showMenu" :content="$L(sendContent)">
+                        <ETooltip slot="reference" ref="sendTip" placement="top" :disabled="$isEEUiApp || windowTouch || showMenu" :enterable="false" :content="$L(sendContent)">
                             <div v-if="loading">
                                 <div class="chat-load">
                                     <Loading/>
@@ -277,7 +277,7 @@ export default {
         toolbar: {
             type: Array,
             default: () => {
-                return ['bold', 'strike', 'italic', 'underline', 'blockquote', {'list': 'ordered'}, {'list': 'bullet'}, {'list': 'check'}]
+                return ['bold', 'strike', 'italic', 'underline', 'blockquote', 'link', {'list': 'ordered'}, {'list': 'bullet'}, {'list': 'check'}]
             },
         },
         maxlength: {
@@ -320,6 +320,7 @@ export default {
             recordDuration: 0,
 
             touchStart: {},
+            touchFocus: false,
             touchLimitX: false,
             touchLimitY: false,
 
@@ -646,6 +647,7 @@ export default {
             // Options
             this._options = Object.assign({
                 theme: 'bubble',
+                bubbleTooltipTop: true,
                 formats: ['bold', 'strike', 'italic', 'underline', 'blockquote', 'list', 'link', 'image', 'mention'],
                 readOnly: false,
                 placeholder: this.placeholder,
@@ -1018,6 +1020,7 @@ export default {
             }
             switch (action) {
                 case 'down':
+                    this.touchFocus = this.quill?.hasFocus();
                     this.touchLimitX = false;
                     this.touchLimitY = false;
                     this.touchStart = event.type === "touchstart" ? event.touches[0] : event;
@@ -1046,6 +1049,13 @@ export default {
                         return; // 移动了 X、Y 轴
                     }
                     this.onSend()
+                    break;
+
+                case 'click':
+                    if (this.touchFocus) {
+                        this.quill.blur();
+                        this.quill.focus();
+                    }
                     break;
             }
         },

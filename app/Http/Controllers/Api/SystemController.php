@@ -40,7 +40,7 @@ class SystemController extends AbstractController
      * @apiParam {String} type
      * - get: 获取（默认）
      * - all: 获取所有（需要管理员权限）
-     * - save: 保存设置（参数：['reg', 'reg_identity', 'reg_invite', 'temp_account_alias', 'login_code', 'password_policy', 'project_invite', 'chat_information', 'anon_message', 'e2e_message', 'auto_archived', 'archived_day', 'task_visible', 'task_default_time', 'all_group_mute', 'all_group_autoin', 'user_private_chat_mute', 'user_group_chat_mute', 'image_compress', 'image_save_local', 'start_home']）
+     * - save: 保存设置（参数：['reg', 'reg_identity', 'reg_invite', 'temp_account_alias', 'login_code', 'password_policy', 'project_invite', 'chat_information', 'anon_message', 'voice2text', 'e2e_message', 'auto_archived', 'archived_day', 'task_visible', 'task_default_time', 'all_group_mute', 'all_group_autoin', 'user_private_chat_mute', 'user_group_chat_mute', 'image_compress', 'image_save_local', 'start_home']）
 
      * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
      * @apiSuccess {String} msg     返回信息（错误描述）
@@ -66,6 +66,7 @@ class SystemController extends AbstractController
                     'project_invite',
                     'chat_information',
                     'anon_message',
+                    'voice2text',
                     'e2e_message',
                     'auto_archived',
                     'archived_day',
@@ -93,6 +94,9 @@ class SystemController extends AbstractController
                     return Base::retError('自动归档时间不可大于100天！');
                 }
             }
+            if ($all['voice2text'] == 'open' && empty(Base::settingFind('aibotSetting', 'openai_key'))) {
+                return Base::retError('开启语音转文字功能需要在应用中开启 ChatGPT AI 机器人。');
+            }
             $setting = Base::setting('system', Base::newTrim($all));
         } else {
             $setting = Base::setting('system');
@@ -113,6 +117,7 @@ class SystemController extends AbstractController
         $setting['project_invite'] = $setting['project_invite'] ?: 'open';
         $setting['chat_information'] = $setting['chat_information'] ?: 'optional';
         $setting['anon_message'] = $setting['anon_message'] ?: 'open';
+        $setting['voice2text'] = $setting['voice2text'] ?: 'close';
         $setting['e2e_message'] = $setting['e2e_message'] ?: 'close';
         $setting['auto_archived'] = $setting['auto_archived'] ?: 'close';
         $setting['archived_day'] = floatval($setting['archived_day']) ?: 7;
@@ -284,6 +289,8 @@ class SystemController extends AbstractController
             'gemini_key',
             'gemini_model',
             'gemini_agency',
+            'zhipu_key',
+            'zhipu_model',
         ];
 
         if ($type == 'save') {
@@ -329,12 +336,19 @@ class SystemController extends AbstractController
                     WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => "设置成功"], $botUser->userid, true, false, true);
                 }
             }
+            if ($backup['zhipu_key'] != $setting['zhipu_key']) {
+                $botUser = User::botGetOrCreate('ai-zhipu');
+                if ($botUser && $dialog = WebSocketDialog::checkUserDialog($botUser, $user->userid)) {
+                    WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', ['text' => "设置成功"], $botUser->userid, true, false, true);
+                }
+            }
         }
         //
         $setting['openai_model'] = $setting['openai_model'] ?: 'gpt-3.5-turbo';
         $setting['wenxin_model'] = $setting['wenxin_model'] ?: 'eb-instant';
         $setting['qianwen_model'] = $setting['qianwen_model'] ?: 'qwen-v1';
         $setting['gemini_model'] = $setting['gemini_model'] ?: 'gemini-1.0-pro';
+        $setting['zhipu_model'] = $setting['zhipu_model'] ?: 'glm-4';
         if (env("SYSTEM_SETTING") == 'disabled') {
             foreach ($keys as $item) {
                 if (strlen($setting[$item]) > 12) {
