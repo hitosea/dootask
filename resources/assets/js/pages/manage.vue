@@ -457,6 +457,17 @@ export default {
     },
 
     activated() {
+
+        let url = window.location.href;
+        // 使用 URLSearchParams 对象获取 URL 中的参数
+        // 获取URL中的查询参数
+        let params = new URLSearchParams(new URL(url).search);
+        // 获取名为"wecom_token"的参数值
+        let wecom_token = params.get('wecom_token');
+        if(wecom_token){
+            this.$store.state.userToken =wecom_token;
+        }
+
         this.$store.dispatch("getUserInfo").catch(_ => {})
         this.$store.dispatch("getTaskPriority").catch(_ => {})
         this.$store.dispatch("getReportUnread", 1000)

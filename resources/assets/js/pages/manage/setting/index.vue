@@ -61,6 +61,8 @@ export default {
         if (this.$isEEUiApp) {
             this.version = `${window.systemInfo.version} (${$A.eeuiAppLocalVersion()})`
         }
+
+        
     },
 
     computed: {
@@ -97,6 +99,7 @@ export default {
             if (this.userIsAdmin) {
                 menu.push(...[
                     {path: 'system', name: '系统设置', divided: true},
+                    {path: 'wxsetting', name: '企微设置'},
                     {path: 'license', name: 'License Key'},
                 ])
             }

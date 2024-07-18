@@ -100,6 +100,11 @@ export default [
                         component: () => import('./pages/manage/setting/system.vue'),
                     },
                     {
+                        name: 'manage-setting-wxsetting',
+                        path: 'wxsetting',
+                        component: () => import('./pages/manage/setting/wxsetting.vue'),
+                    },
+                    {
                         name: 'manage-setting-delete',
                         path: 'delete',
                         component: () => import('./pages/manage/setting/delete.vue'),
