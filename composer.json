@@ -33,7 +33,8 @@
         "orangehill/iseed": "^3.0.1",
         "overtrue/pinyin": "^4.0",
         "predis/predis": "^1.1.7",
-        "symfony/mailer": "^6.0"
+        "symfony/mailer": "^6.0",
+        "weeds/wechat-work": "^1.0"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^v2.10.0",

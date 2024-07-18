@@ -7,22 +7,27 @@ use Cache;
 use Request;
 use Redirect;
 use Response;
+use Carbon\Carbon;
 use App\Module\Doo;
 use App\Models\File;
+use App\Models\User;
 use App\Module\Base;
-use App\Module\Extranet;
-use App\Module\RandomColor;
+use App\Models\Project;
 use App\Tasks\LoopTask;
+use App\Module\Extranet;
 use App\Tasks\AppPushTask;
+use App\Module\RandomColor;
 use App\Tasks\JokeSoupTask;
 use App\Tasks\DeleteTmpTask;
 use App\Tasks\EmailNoticeTask;
+use App\Models\WebSocketDialog;
 use App\Tasks\AutoArchivedTask;
 use App\Tasks\DeleteBotMsgTask;
 use App\Tasks\CheckinRemindTask;
 use App\Tasks\CloseMeetingRoomTask;
-use App\Tasks\UnclaimedTaskRemindTask;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
+use App\Tasks\UnclaimedTaskRemindTask;
+use Weeds\WechatWork\Facades\WechatWork;
 use LasseRafn\InitialAvatarGenerator\InitialAvatar;
 
 
@@ -54,6 +59,97 @@ class IndexController extends InvokeController
      */
     public function main()
     {
+        $code = Request::input('code', '');
+        $isWxwork = strpos($_SERVER['HTTP_USER_AGENT'], 'wxwork') !== false;
+        $wecomToken = Request::input('wecom_token', '');
+        // 有code参数就解释
+        if (!$wecomToken && $isWxwork && $code) {
+            $error = '';
+            $error = "";
+            list($status, $accessToken) = WechatWork::access_token();
+            if (!$status) {
+                $error = "获取accessToken错误: " . $accessToken;
+            }
+            if (!$error) {
+                list($status, $userinfo) = WechatWork::getCurl("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo?access_token=$accessToken&code=$code");
+                if (!$status) {
+                    $error = "授权code错误: " . $userinfo;
+                } else if (!isset($userinfo['user_ticket'])) {
+                    $error = "因你未同意授权，应用未能取得手机号，不能正常访问！";
+                }
+            }
+            if (!$error) {
+                list($status, $userdetail) = WechatWork::postCurl("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserdetail?access_token=$accessToken", [
+                    'user_ticket' => $userinfo['user_ticket']
+                ]);
+                if (!$status) {
+                    $error = "获取user_ticket错误: " . $userdetail;
+                } else if (!isset($userdetail['mobile'])) {
+                    $error = "因你未同意授权，应用未能取得手机号，不能正常访问！";
+                }
+            }
+            if (!$error) {
+                list($status, $userDepartmentDetail) = WechatWork::user_get($userdetail['userid']);
+                if (!$status) {
+                    $error = "用户不存在: " . $userDepartmentDetail;
+                }
+            }
+            // 创建用户
+            if (!$error) {
+                $email = ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
+                $alias = $userDepartmentDetail['alias'] ?? '';
+                if (!$user = User::where('email', $email)->first()) {
+                    try {
+                        $user = Doo::userCreate($email, 'admin@dootask.com');
+                    } catch (\Throwable $e) {
+                        return response()->view('wecom', ['error' => $e->getMessage()]);
+                    }
+                    $user->created_ip = Base::getIp();
+                    //
+                    $dialog = WebSocketDialog::whereGroupType('all')->orderByDesc('id')->first();
+                    $dialog?->joinGroup($user->userid, 0);
+                }
+                //
+                $user->nickname = $userDepartmentDetail['name'] . ($alias ? " ($alias)" : '');
+                $user->userimg = $userdetail['avatar'];
+                $user->tel = $userdetail['mobile'];
+                $user->department = Base::arrayImplode($userDepartmentDetail['department']);
+                $user->profession = $userDepartmentDetail['position'];
+                $user->az = Base::getFirstCharter($userDepartmentDetail['name']);
+                $user->pinyin = Base::cn2pinyin($userDepartmentDetail['name']);
+                // 登录
+                $array = [
+                    'login_num' => $user->login_num + 1,
+                    'last_ip' => Base::getIp(),
+                    'last_at' => Carbon::now(),
+                    'line_ip' => Base::getIp(),
+                    'line_at' => Carbon::now(),
+                ];
+                $user->updateInstance($array);
+                $user->save();
+                User::generateToken($user);
+                //
+                if (!Project::withTrashed()->whereUserid($user->userid)->wherePersonal(1)->exists()) {
+                    Project::createProject([
+                        'name' => Doo::translate('个人项目'),
+                        'desc' => Doo::translate('注册时系统自动创建项目，你可以自由删除。'),
+                        'personal' => 1,
+                    ], $user->userid);
+                }
+                //
+                return redirect('/manage/dashboard?wecom_token=' . $user->token);
+            } else {
+                return response()->view('wecom', ['error' => $error]);
+            }
+        } else if (!$wecomToken && $isWxwork) {
+            info(config('wechatwork.corp_id'));
+            return response()->view('wecom', [
+                'error' => '',
+                'corpid' => config('wechatwork.corp_id'),
+                'agentid' => config('wechatwork.agents.application.agent_id'),
+            ]);
+        }
+        //
         $hotFile = public_path('hot');
         $manifestFile = public_path('manifest.json');
         if (file_exists($hotFile)) {

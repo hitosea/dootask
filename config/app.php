@@ -175,6 +175,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
+        Weeds\WechatWork\WechatWorkServiceProvider::class
     ],
 
     /*
@@ -228,6 +229,7 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
 
+        'WechatWork'=>Weeds\WechatWork\Facades\WechatWork::class
     ],
 
 ];
