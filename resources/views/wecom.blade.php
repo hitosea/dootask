@@ -98,20 +98,19 @@
                 <span></span>
             </div>
         </div>
+        <script>
+            const CORPID = '{{ $corpid }}'; //appid参数
+            const AGENTID = '{{ $agentid }}'; //agentid 参数
+            const REDIRECT_URI = encodeURI(window.location);  //redirect_uri参数
+            const searchParams = new URLSearchParams(window.location.search);
+            const code = (searchParams.get('code'));
+            const state = (searchParams.get('state'));
+            if (!code) {
+                const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${CORPID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=snsapi_privateinfo&state=4&agentid=${AGENTID}#wechat_redirect`;
+                window.location.replace(authUrl);
+            }
+        </script>
     @endif
 </div>
-
-<script>
-    const CORPID = '{{ $corpid }}'; //appid参数
-    const AGENTID = '{{ $agentid }}'; //agentid 参数
-    const REDIRECT_URI = encodeURI(window.location);  //redirect_uri参数
-    const searchParams = new URLSearchParams(window.location.search);
-    const code = (searchParams.get('code'));
-    const state = (searchParams.get('state'));
-    if (!code) {
-        const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${CORPID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=snsapi_privateinfo&state=4&agentid=${AGENTID}#wechat_redirect`;
-        window.location.replace(authUrl);
-    }
-</script>
 </body>
 </html>
