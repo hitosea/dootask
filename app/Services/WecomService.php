@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Cache;
 use App\Module\Doo;
 use App\Models\User;
 use App\Module\Base;
@@ -63,6 +64,12 @@ class WecomService
         $deleteUserWecoms = User::whereBot(0)->where('wecom_id', '<>', '')->whereNotIn('wecom_id', $departmenUsersIdKeys)->get();
         foreach ($deleteUserWecoms as $key=>$user) {
             $user->deleteUser('同步企业微信通讯录-已找不到当前用户');
+        }
+        // 删除部门
+        $deleteUserDepartmens = UserDepartment::where('wecom_id', '>', 0)->whereNotIn('wecom_id', array_keys($departmens))->get();
+        foreach ($deleteUserDepartmens as $key=>$userDepartment) {
+            $userDepartment->deleteDepartment();
+            Cache::forever("UserDepartment::rand", Base::generatePassword());
         }
         //
         $staySyncDepartmentUser = [];
