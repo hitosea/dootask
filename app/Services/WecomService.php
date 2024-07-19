@@ -92,6 +92,9 @@ class WecomService
                     $wUser = $departmenUsers[$uid];
                     $alias = $wUser['alias'] ?? '';
                     $user = User::createInstance();
+                    $user->email = '';
+                    $user->identity = '';
+                    $user->userimg = '';
                     $user->wecom_id = $wUser['userid'];
                     $user->nickname = $wUser['name'] . ($alias ? " ($alias)" : '');
                     $user->tel = $wUser['telephone'];
@@ -112,6 +115,15 @@ class WecomService
                 $user->profession = $wUser['position'];
                 $user->az = Base::getFirstCharter($wUser['name']);
                 $user->pinyin = Base::cn2pinyin($wUser['name']);
+                if (!$user->email) {
+                    $user->email ='';
+                }
+                if (!$user->identity) {
+                    $user->identity ='';
+                }
+                if (!$user->userimg) {
+                    $user->userimg ='';
+                }
                 $user->save();
                 //
                 $departmenUsers[$user->wecom_id]['_id'] = $user->userid;

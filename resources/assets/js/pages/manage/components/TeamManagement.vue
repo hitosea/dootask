@@ -341,7 +341,7 @@ export default {
                     key: 'email',
                     minWidth: 160,
                     render: (h, {row}) => {
-                        const arr = [h('AutoTip', row.email)];
+                        const arr = [h('AutoTip', row.email || '')];
                         const {email_verity, identity, disable_at, is_principal} = row;
                         if (email_verity) {
                             arr.push(h('Icon', {
