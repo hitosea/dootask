@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\WebSocketDialog;
-use App\Models\WebSocketDialogMsg;
 use Request;
 use Session;
 use Response;
@@ -17,9 +15,14 @@ use App\Module\Extranet;
 use LdapRecord\Container;
 use App\Module\BillExport;
 use Guanguans\Notify\Factory;
+use App\Services\WecomService;
+use App\Models\WebSocketDialog;
 use App\Models\UserCheckinRecord;
+use App\Models\WebSocketDialogMsg;
 use App\Module\BillMultipleExport;
 use LdapRecord\LdapRecordException;
+use Illuminate\Support\Facades\Config;
+use Weeds\WechatWork\Facades\WechatWork;
 use Guanguans\Notify\Messages\EmailMessage;
 
 /**
@@ -1372,5 +1375,68 @@ class SystemController extends AbstractController
             $url = str_replace('{version}', $version, $url);
             return url($url);
         }, array_values(array_filter($array)));
+    }
+
+    /**
+     * @api {get} api/system/setting/wecom          26. 获取企微设置、保存企微设置（限管理员）
+     *
+     * @apiVersion 1.0.0
+     * @apiGroup system
+     * @apiName setting__wecom
+     *
+     * @apiParam {String} agent_id          应用id
+     * @apiParam {String} copr_id           企业id
+     * @apiParam {String} app_secret        APP_SECRET
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function setting__wecom()
+    {
+        $user = User::auth();
+        //
+        $type = trim(Request::input('type'));
+        if ($type == 'save') {
+            if (env("SYSTEM_SETTING") == 'disabled') {
+                return Base::retError('当前环境禁止修改');
+            }
+            $user->identity('admin');
+            $all = Request::input();
+            foreach ($all as $key => $value) {
+                if (!in_array($key, [
+                    'copr_id',
+                    'agent_id',
+                    'app_secret',
+                ])) {
+                    unset($all[$key]);
+                }
+            }
+            //
+            Config::set('wechatwork.corp_id', $all['copr_id']);
+            Config::set('wechatwork.agents.application.agent_id', $all['agent_id']);
+            Config::set('wechatwork.agents.contacts.secret', $all['app_secret']);
+            list($status, $accessToken) = WechatWork::access_token();
+            if (!$status) {
+                return Base::retError("配置信息错误: " . $accessToken);
+            }
+            //
+            $setting = Base::setting('wecomSetting', Base::newTrim($all));
+            //
+            WecomService::synchronization();
+            //
+        } else {
+            $setting = Base::setting('wecomSetting');
+        }
+        //
+        $setting['copr_id'] = $setting['copr_id'] ?: '';
+        $setting['agent_id'] = $setting['agent_id'] ?: '';
+        $setting['app_secret'] = $setting['app_secret'] ?: '';
+        //
+        if ($type != 'save' && !in_array('admin', $user->identity)) {
+            $setting = array_intersect_key($setting, array_flip(['reg_verify']));
+        }
+        //
+        return Base::retSuccess('success', $setting ?: json_decode('{}'));
     }
 }

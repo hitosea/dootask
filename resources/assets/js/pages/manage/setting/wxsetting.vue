@@ -1,17 +1,17 @@
 <template>
     <div class="setting-item submit">
         <Loading v-if="configLoad > 0" />
-        <Form v-else ref="formDatum" :model="formDatum" :rules="ruleDatum" :labelPosition="formLabelPosition" :labelWidth="formLabelWidth" @submit.native.prevent>
-            <FormItem label="agent_id" prop="agent_id">
-                <Input v-model="formDatum.agent_id" :placeholder="$L('输入agent_id')" />
+        <Form v-else ref="formData" :model="formData" :rules="ruleDatum" :labelPosition="formLabelPosition" :labelWidth="formLabelWidth" @submit.native.prevent>
+            <FormItem label="AGENT_ID" prop="agent_id">
+                <Input v-model="formData.agent_id" :placeholder="$L('输入agent_id')" />
             </FormItem>
 
-            <FormItem label="copr_id" prop="copr_id">
-                <Input v-model="formDatum.copr_id" :placeholder="$L('输入copr_id')" />
+            <FormItem label="COPR_ID" prop="copr_id">
+                <Input v-model="formData.copr_id" :placeholder="$L('输入copr_id')" />
             </FormItem>
 
-            <FormItem label="app_secret" prop="app_secret">
-                <Input v-model="formDatum.app_secret" :placeholder="$L('输入app_secret')" />
+            <FormItem label="APP_SECRET" prop="app_secret">
+                <Input v-model="formData.app_secret" :placeholder="$L('输入app_secret')" />
             </FormItem>
 
         </Form>
@@ -31,7 +31,7 @@ export default {
             loadIng: 0,
             configLoad: 0,
 
-            formDatum: {
+            formData: {
                 copr_id: '',
                 agent_id: '',
                 app_secret: '',
@@ -84,34 +84,41 @@ export default {
         ...mapState(['formLabelPosition', 'formLabelWidth']),
 
     },
-    
+    mounted() {
+        this.systemSetting();
+    },
     methods: {
         submitForm() {
-            this.$refs.formDatum.validate((valid) => {
+            this.$refs.formData.validate((valid) => {
                 if (valid) {
-                    this.loadIng++;
-                    this.$store.dispatch("call", {
-                        url: 'users/email/edit',
-                        data: this.formDatum,
-                    }).then(({ data }) => {
-                        this.count = 0;
-                        this.sendBtnText = this.$L('发送验证码');
-                        $A.messageSuccess('修改成功');
-                        this.$store.dispatch("saveUserInfo", data);
-                        this.$refs.formDatum.resetFields();
-                        this.isSendButtonShow = true;
-                    }).catch(({ msg }) => {
-                        $A.modalError(msg);
-                    }).finally(_ => {
-                        this.loadIng--;
-                    });
+                    this.systemSetting(true);
                 }
             })
         },
 
         resetForm() {
-            this.$refs.formDatum.resetFields();
+            this.formData = $A.cloneJSON(this.formData_bak);
         },
+
+        systemSetting(save) {
+            this.loadIng++;
+            this.$store.dispatch("call", {
+                url: 'system/setting/wecom?type=' + (save ? 'save' : 'all'),
+                data: this.formData,
+            }).then(({data}) => {
+                if (save) {
+                    $A.messageSuccess('修改成功');
+                }
+                this.formData = data;
+                this.formData_bak = $A.cloneJSON(this.formData);
+            }).catch(({msg}) => {
+                if (save) {
+                    $A.modalError(msg);
+                }
+            }).finally(_ => {
+                this.loadIng--;
+            });
+        }
     },
 }
 </script>

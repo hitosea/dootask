@@ -18,7 +18,9 @@ use App\Module\Extranet;
 use App\Tasks\AppPushTask;
 use App\Module\RandomColor;
 use App\Tasks\JokeSoupTask;
+use App\Tasks\AyncWecomTask;
 use App\Tasks\DeleteTmpTask;
+use App\Models\UserDepartment;
 use App\Tasks\EmailNoticeTask;
 use App\Models\WebSocketDialog;
 use App\Tasks\AutoArchivedTask;
@@ -27,6 +29,7 @@ use App\Tasks\CheckinRemindTask;
 use App\Tasks\CloseMeetingRoomTask;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use App\Tasks\UnclaimedTaskRemindTask;
+use Illuminate\Support\Facades\Config;
 use Weeds\WechatWork\Facades\WechatWork;
 use LasseRafn\InitialAvatarGenerator\InitialAvatar;
 
@@ -62,9 +65,17 @@ class IndexController extends InvokeController
         $code = Request::input('code', '');
         $isWxwork = strpos($_SERVER['HTTP_USER_AGENT'], 'wxwork') !== false;
         $wecomToken = Request::input('wecom_token', '');
+        $setting = Base::setting('wecomSetting');
         // 有code参数就解释
         if (!$wecomToken && $isWxwork && $code) {
-            $error = '';
+            if (!$setting) {
+                return response()->view('wecom', ['error' => '未配置企微设置，请先前往配置！']);
+            }
+            //
+            Config::set('wechatwork.corp_id', $setting['copr_id']);
+            Config::set('wechatwork.agents.application.agent_id', $setting['agent_id']);
+            Config::set('wechatwork.agents.contacts.secret', $setting['app_secret']);
+            //
             $error = "";
             list($status, $accessToken) = WechatWork::access_token();
             if (!$status) {
@@ -94,11 +105,19 @@ class IndexController extends InvokeController
                     $error = "用户不存在: " . $userDepartmentDetail;
                 }
             }
-            // 创建用户
-            if (!$error) {
-                $email = ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
-                $alias = $userDepartmentDetail['alias'] ?? '';
-                if (!$user = User::where('email', $email)->first()) {
+            if ($error) {
+                return response()->view('wecom', ['error' => $error]);
+            }
+            // 创建用户 - 登录
+            $email = ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
+            $alias = $userDepartmentDetail['alias'] ?? '';
+            $user = User::where('tel', $userdetail['mobile'])->first();
+            if (!$user) {
+                $user = User::where('wecom_id', $userdetail['userid'])->first();
+                if (!$user) {
+                    $user = User::where('email', $email)->first();
+                }
+                if (!$user) {
                     try {
                         $user = Doo::userCreate($email, 'admin@dootask.com');
                     } catch (\Throwable $e) {
@@ -109,44 +128,44 @@ class IndexController extends InvokeController
                     $dialog = WebSocketDialog::whereGroupType('all')->orderByDesc('id')->first();
                     $dialog?->joinGroup($user->userid, 0);
                 }
-                //
-                $user->nickname = $userDepartmentDetail['name'] . ($alias ? " ($alias)" : '');
-                $user->userimg = $userdetail['avatar'];
-                $user->tel = $userdetail['mobile'];
-                $user->department = Base::arrayImplode($userDepartmentDetail['department']);
-                $user->profession = $userDepartmentDetail['position'];
-                $user->az = Base::getFirstCharter($userDepartmentDetail['name']);
-                $user->pinyin = Base::cn2pinyin($userDepartmentDetail['name']);
-                // 登录
-                $array = [
-                    'login_num' => $user->login_num + 1,
-                    'last_ip' => Base::getIp(),
-                    'last_at' => Carbon::now(),
-                    'line_ip' => Base::getIp(),
-                    'line_at' => Carbon::now(),
-                ];
-                $user->updateInstance($array);
-                $user->save();
-                User::generateToken($user);
-                //
-                if (!Project::withTrashed()->whereUserid($user->userid)->wherePersonal(1)->exists()) {
-                    Project::createProject([
-                        'name' => Doo::translate('个人项目'),
-                        'desc' => Doo::translate('注册时系统自动创建项目，你可以自由删除。'),
-                        'personal' => 1,
-                    ], $user->userid);
-                }
-                //
-                return redirect('/manage/dashboard?wecom_token=' . $user->token);
-            } else {
-                return response()->view('wecom', ['error' => $error]);
             }
+            if (in_array('disable', $user->identity)) {
+                return response()->view('wecom', ['error' => '帐号已停用...']);
+            }
+            // 更新
+            $user->wecom_id = $userdetail['userid'];
+            $user->email = $email;
+            $user->nickname = $userDepartmentDetail['name'] . ($alias ? " ($alias)" : '');
+            $user->userimg = $userdetail['avatar'];
+            $user->tel = $userdetail['mobile'];
+            $user->department = Base::arrayImplode(UserDepartment::whereIn('wecom_id', [1,2])->pluck('id')->toArray());
+            $user->profession = $userDepartmentDetail['position'];
+            $user->az = Base::getFirstCharter($userDepartmentDetail['name']);
+            $user->pinyin = Base::cn2pinyin($userDepartmentDetail['name']);
+            // 登录
+            $user->login_num = $user->login_num + 1;
+            $user->last_ip = Base::getIp();
+            $user->last_at = Carbon::now();
+            $user->line_ip = Base::getIp();
+            $user->line_at = Carbon::now();
+            $user->save();
+            //
+            User::generateToken($user);
+            //
+            if (!Project::withTrashed()->whereUserid($user->userid)->wherePersonal(1)->exists()) {
+                Project::createProject([
+                    'name' => Doo::translate('个人项目'),
+                    'desc' => Doo::translate('注册时系统自动创建项目，你可以自由删除。'),
+                    'personal' => 1,
+                ], $user->userid);
+            }
+            //
+            return redirect('/manage/dashboard?wecom_token=' . $user->token);
         } else if (!$wecomToken && $isWxwork) {
-            info(config('wechatwork.corp_id'));
             return response()->view('wecom', [
-                'error' => '',
-                'corpid' => config('wechatwork.corp_id'),
-                'agentid' => config('wechatwork.agents.application.agent_id'),
+                'error' => !$setting ? '未配置企微设置，请先前往配置！' : '',
+                'corpid' => $setting['copr_id'],
+                'agentid' =>$setting['agent_id'],
             ]);
         }
         //
@@ -264,7 +283,9 @@ class IndexController extends InvokeController
         Task::deliver(new UnclaimedTaskRemindTask());
         // 关闭会议室
         Task::deliver(new CloseMeetingRoomTask());
-
+        // 同步企业微信的通讯录
+        Task::deliver(new AyncWecomTask());
+        //
         return "success";
     }
 
