@@ -109,7 +109,7 @@ class IndexController extends InvokeController
                 return response()->view('wecom', ['error' => $error]);
             }
             // 创建用户 - 登录
-            $email = ($userdetail['biz_mail'] ?? '')  ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
+            $email = ($userdetail['biz_mail'] ?? '') ?: ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
             $alias = $userDepartmentDetail['alias'] ?? '';
             $user = User::where('tel', $userdetail['mobile'])->first();
             if (!$user) {
