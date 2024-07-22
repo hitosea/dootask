@@ -89,6 +89,16 @@ class User extends AbstractModel
     public static $basicField = ['userid', 'email', 'nickname', 'profession', 'department', 'userimg', 'bot', 'az', 'pinyin', 'line_at', 'disable_at'];
 
     /**
+     * 邮箱
+     * @param $value
+     * @return string
+     */
+    public function getEmailAttribute($value)
+    {
+        return $value ?: '';
+    }
+
+    /**
      * 昵称
      * @param $value
      * @return string
@@ -578,7 +588,7 @@ class User extends AbstractModel
             case 'ai-gemini@bot.system':
                 return url("images/avatar/default_gemini.png");
             case 'ai-zhipu@bot.system':
-                return url("images/avatar/default_zhipu.png");    
+                return url("images/avatar/default_zhipu.png");
             case 'bot-manager@bot.system':
                 return url("images/avatar/default_bot.png");
             case 'meeting-alert@bot.system':

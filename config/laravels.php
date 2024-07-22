@@ -193,7 +193,7 @@ return [
     */
 
     'timer' => [
-        'enable'          => env('LARAVELS_TIMER', false),
+        'enable'          => env('LARAVELS_TIMER', true),
 
         // The list of cron job
         'jobs'            => [
@@ -203,6 +203,11 @@ return [
 
         // Max waiting time of reloading
         'max_wait_time'   => 5,
+
+         // The list of cron job
+         'jobs'            => [
+            \App\Jobs\Timer\AyncWecomTaskJob::class,
+        ],
 
         // Enable the global lock to ensure that only one instance starts the timer
         // when deploying multiple instances.

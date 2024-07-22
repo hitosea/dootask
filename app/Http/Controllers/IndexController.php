@@ -109,7 +109,7 @@ class IndexController extends InvokeController
                 return response()->view('wecom', ['error' => $error]);
             }
             // 创建用户 - 登录
-            $email = ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
+            $email = ($userdetail['biz_mail'] ?? '')  ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
             $alias = $userDepartmentDetail['alias'] ?? '';
             $user = User::where('tel', $userdetail['mobile'])->first();
             if (!$user) {
@@ -136,9 +136,10 @@ class IndexController extends InvokeController
             $user->wecom_id = $userdetail['userid'];
             $user->email = $email;
             $user->nickname = $userDepartmentDetail['name'] . ($alias ? " ($alias)" : '');
-            $user->userimg = $userdetail['avatar'];
-            $user->tel = $userdetail['mobile'];
-            $user->department = Base::arrayImplode(UserDepartment::whereIn('wecom_id', [1,2])->pluck('id')->toArray());
+            $user->userimg = ($userdetail['avatar'] ?? '');
+            $user->tel = ($userdetail['mobile'] ?? '');
+            $user->sex = ($userdetail['gender'] ?? 0) == 1 ? 1 : 2;
+            $user->department = Base::arrayImplode(UserDepartment::whereIn('wecom_id', $userDepartmentDetail['department'])->pluck('id')->toArray());
             $user->profession = $userDepartmentDetail['position'];
             $user->az = Base::getFirstCharter($userDepartmentDetail['name']);
             $user->pinyin = Base::cn2pinyin($userDepartmentDetail['name']);
@@ -283,8 +284,6 @@ class IndexController extends InvokeController
         Task::deliver(new UnclaimedTaskRemindTask());
         // 关闭会议室
         Task::deliver(new CloseMeetingRoomTask());
-        // 同步企业微信的通讯录
-        Task::deliver(new AyncWecomTask());
         //
         return "success";
     }

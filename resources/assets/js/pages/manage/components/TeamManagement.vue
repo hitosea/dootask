@@ -504,6 +504,21 @@ export default {
                     },
                 },
                 {
+                    title: this.$L('性别'),
+                    key: 'sex',
+                    width: 60,
+                    render: (h, {row, column}) => {
+                        return h('TableAction', {
+                            props: {
+                                column: column,
+                                align: 'left'
+                            }
+                        }, [
+                            h("div", row.sex == 0 ? this.$L('未知') : row.sex == 1 ? this.$L('男') : this.$L('女')),
+                        ]);
+                    }
+                },
+                {
                     key: 'line_at',
                     width: 168,
                     renderHeader: (h) => {

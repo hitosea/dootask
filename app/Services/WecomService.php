@@ -57,7 +57,6 @@ class WecomService
                 $departmenUsers[$user['userid']] = $user;
             }
         }
-
         // 同步用户
         $departmenUsersIdKeys = array_keys($departmenUsers);
         // 删除用户
@@ -92,7 +91,6 @@ class WecomService
                     $wUser = $departmenUsers[$uid];
                     $alias = $wUser['alias'] ?? '';
                     $user = User::createInstance();
-                    $user->email = '';
                     $user->identity = '';
                     $user->userimg = '';
                     $user->wecom_id = $wUser['userid'];
@@ -115,9 +113,6 @@ class WecomService
                 $user->profession = $wUser['position'];
                 $user->az = Base::getFirstCharter($wUser['name']);
                 $user->pinyin = Base::cn2pinyin($wUser['name']);
-                if (!$user->email) {
-                    $user->email ='';
-                }
                 if (!$user->identity) {
                     $user->identity ='';
                 }
