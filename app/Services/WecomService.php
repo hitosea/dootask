@@ -131,7 +131,7 @@ class WecomService
             $data = [
                 'wecom_id' => $department['id'],
                 'wecom_parent_id' => $department['parentid'],
-                'parent_id' => $department['parentid'] ? UserDepartment::where('wecom_id', $department['parentid'])->value('id') : 0,
+                'parent_id' => $department['parentid'] ? (UserDepartment::where('wecom_id', $department['parentid'])->value('id') ?: 0)  : 0,
                 'owner_userid' => empty($department['department_leader']) ? 1  : (isset($departmenUsers[$department['department_leader'][0]]['_id']) ?: 1),
                 'name' => $department['name'],
             ];
