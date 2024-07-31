@@ -100,7 +100,7 @@
         <DrawerOverlay
             v-model="allUserShow"
             placement="right"
-            :size="1380">
+            :size="1480">
             <TeamManagement v-if="allUserShow" checkin-mac/>
         </DrawerOverlay>
     </div>

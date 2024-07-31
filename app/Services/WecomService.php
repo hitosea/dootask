@@ -48,11 +48,11 @@ class WecomService
             if (!$status) {
                 info('WecomService 同步用户错误：'. $result);
                 return false;
-            }
+
             $userlist = $result['userlist'] ?? [];
             foreach ($userlist as $user) {
                 if (isset($departmenUsers[$user['userid']])) {
-                    $user['department'] =array_unique(array_merge($user['department'], $departmenUsers[$user['userid']]['department']));
+                    $user['department'] =array_unique(array_merge([$department['id']], $user['department'], $departmenUsers[$user['userid']]['department']));
                 }
                 $departmenUsers[$user['userid']] = $user;
             }

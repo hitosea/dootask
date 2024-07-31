@@ -58,7 +58,7 @@
             }
         }
         .management-department {
-            width: 239px;
+            width: 450px;
             border-right: 1px solid #efefef;
             flex-shrink: 0;
             display: flex;
@@ -90,6 +90,39 @@
                     }
                     &.level-4 {
                         margin-left: 72px;
+                    }
+                    &.level-5 {
+                        margin-left: 96px;
+                    }
+                    &.level-6 {
+                        margin-left: 120px;
+                    }
+                    &.level-7 {
+                        margin-left: 144px;
+                    }
+                    &.level-8 {
+                        margin-left: 168px;
+                    }
+                    &.level-9 {
+                        margin-left: 192px;
+                    }
+                    &.level-10 {
+                        margin-left: 216px;
+                    }
+                    &.level-11 {
+                        margin-left: 240px;
+                    }
+                    &.level-12 {
+                        margin-left: 264px;
+                    }
+                    &.level-13 {
+                        margin-left: 288px;
+                    }
+                    &.level-14 {
+                        margin-left: 312px;
+                    }
+                    &.level-15 {
+                        margin-left: 336px;
                     }
                     .department-icon {
                         padding: 8px;

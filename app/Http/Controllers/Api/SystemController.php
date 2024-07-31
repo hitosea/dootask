@@ -14,6 +14,7 @@ use App\Models\Setting;
 use App\Module\Extranet;
 use LdapRecord\Container;
 use App\Module\BillExport;
+use App\Tasks\AyncWecomTask;
 use Guanguans\Notify\Factory;
 use App\Services\WecomService;
 use App\Models\WebSocketDialog;
@@ -21,6 +22,7 @@ use App\Models\UserCheckinRecord;
 use App\Models\WebSocketDialogMsg;
 use App\Module\BillMultipleExport;
 use LdapRecord\LdapRecordException;
+use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Config;
 use Weeds\WechatWork\Facades\WechatWork;
 use Guanguans\Notify\Messages\EmailMessage;
@@ -1423,7 +1425,7 @@ class SystemController extends AbstractController
             //
             $setting = Base::setting('wecomSetting', Base::newTrim($all));
             //
-            WecomService::synchronization();
+            Task::deliver(new AyncWecomTask(1));
             //
         } else {
             $setting = Base::setting('wecomSetting');

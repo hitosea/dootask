@@ -10,20 +10,17 @@ use Illuminate\Support\Facades\Cache;
 
 class AyncWecomTask extends AbstractTask
 {
-    public function __construct()
+
+    protected int $params = 0;
+
+    public function __construct($params = 0)
     {
+        $this->params = $params;
         parent::__construct();
     }
 
     public function start()
     {
-        // 10分钟执行一次
-        $time = intval(Cache::get("AyncWecomTask:Time"));
-        if (time() - $time < 600) {
-            return;
-        }
-        Cache::put("AyncWecomTask:Time", time(), Carbon::now()->addMinutes(10));
-        // 判断参数
         WecomService::synchronization();
     }
 
