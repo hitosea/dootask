@@ -48,7 +48,7 @@ class WecomService
             if (!$status) {
                 info('WecomService 同步用户错误：'. $result);
                 return false;
-
+            }
             $userlist = $result['userlist'] ?? [];
             foreach ($userlist as $user) {
                 if (isset($departmenUsers[$user['userid']])) {
