@@ -60,10 +60,11 @@ class WecomService
         // 同步用户
         $departmenUsersIdKeys = array_keys($departmenUsers);
         // 删除用户
-        $deleteUserWecoms = User::whereBot(0)->where('wecom_id', '<>', '')->whereNotIn('wecom_id', $departmenUsersIdKeys)->get();
-        foreach ($deleteUserWecoms as $key=>$user) {
-            $user->deleteUser('同步企业微信通讯录-已找不到当前用户');
-        }
+        // todo 因获取不到所有的用户，所以这删除逻辑暂时用不了
+        // $deleteUserWecoms = User::whereBot(0)->where('wecom_id', '<>', '')->whereNotIn('wecom_id', $departmenUsersIdKeys)->get();
+        // foreach ($deleteUserWecoms as $key=>$user) {
+        //     $user->deleteUser('同步企业微信通讯录-已找不到当前用户');
+        // }
         // 删除部门
         $deleteUserDepartmens = UserDepartment::where('wecom_id', '>', 0)->whereNotIn('wecom_id', array_keys($departmens))->get();
         foreach ($deleteUserDepartmens as $key=>$userDepartment) {
