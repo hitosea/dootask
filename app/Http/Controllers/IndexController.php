@@ -162,7 +162,8 @@ class IndexController extends InvokeController
                 ], $user->userid);
             }
             //
-            return redirect('/manage/dashboard?wecom_token=' . $user->token);
+            return Redirect::to(Base::fillUrl("/manage/dashboard?userid=$user->userid&wecom_token=$user->token"), 301);
+            //
         } else if ($path == '/' && !$wecomToken && $isWxwork) {
             return response()->view('wecom', [
                 'error' => !$setting ? '未配置企微设置，请先前往配置！' : '',
