@@ -87,7 +87,7 @@
         </div>
     @elseif($success_url)
         <script>
-            window.location.replace(window.location.origin + "{{$error}}");
+            window.location.replace(window.location.origin + "{{$success_url}}");
         </script>
     @else
         <div class="app-view-loading">
