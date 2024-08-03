@@ -64,11 +64,11 @@ class IndexController extends InvokeController
     {
         $code = Request::input('code', '');
         $isWxwork = strpos($_SERVER['HTTP_USER_AGENT'], 'wxwork') !== false;
-        $wecomToken = Request::input('wecom_token', '');
+        $token = Request::input('token', '');
         $setting = Base::setting('wecomSetting');
         $path = request()->path();
         // 有code参数就解释
-        if ($path == '/' && !$wecomToken && $isWxwork && $code) {
+        if ($path == '/' && !$token && $isWxwork && $code) {
             if (!$setting) {
                 return response()->view('wecom', ['error' => '未配置企微设置，请先前往配置！']);
             }
@@ -164,7 +164,7 @@ class IndexController extends InvokeController
             //
             return Redirect::to(Base::fillUrl("/manage/dashboard?userid=$user->userid&token=$user->token"), 301);
             //
-        } else if ($path == '/' && !$wecomToken && $isWxwork) {
+        } else if ($path == '/' && !$token && $isWxwork) {
             return response()->view('wecom', [
                 'error' => !$setting ? '未配置企微设置，请先前往配置！' : '',
                 'corpid' => $setting['copr_id'],
