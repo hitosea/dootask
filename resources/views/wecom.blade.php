@@ -86,6 +86,18 @@
             {{ $error }}
         </div>
     @elseif($token)
+        <div class="app-view-loading">
+            <div>
+                <div>PAGE LOADING</div>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
         <script>
             window.location.replace(window.location.origin + "/manage/dashboard?userid={{$userid}}&token={{$token}}");
         </script>
