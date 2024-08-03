@@ -85,6 +85,10 @@
         <div style="text-align: center; margin-top: 100px;">
             {{ $error }}
         </div>
+    @elseif($success_url)
+        <script>
+            window.location.replace(window.location.origin + "{{$error}}");
+        </script>
     @else
         <div class="app-view-loading">
             <div>

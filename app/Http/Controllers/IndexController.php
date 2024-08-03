@@ -162,7 +162,9 @@ class IndexController extends InvokeController
                 ], $user->userid);
             }
             //
-            return Redirect::to(Base::fillUrl("/manage/dashboard?userid=$user->userid&token=$user->token"), 301);
+            return response()->view('wecom', [
+                'success_url' => "/manage/dashboard?userid=$user->userid&token=$user->token",
+            ]);
             //
         } else if ($path == '/' && !$token && $isWxwork) {
             return response()->view('wecom', [
