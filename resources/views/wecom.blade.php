@@ -85,9 +85,9 @@
         <div style="text-align: center; margin-top: 100px;">
             {{ $error }}
         </div>
-    @elseif($success_url)
+    @elseif($token)
         <script>
-            window.location.replace(window.location.origin + "{{$success_url}}");
+            window.location.replace(window.location.origin + "/manage/dashboard?userid={{$userid}}&token={{$token}}");
         </script>
     @else
         <div class="app-view-loading">

@@ -163,7 +163,8 @@ class IndexController extends InvokeController
             }
             //
             return response()->view('wecom', [
-                'success_url' => "/manage/dashboard?userid=$user->userid&token=$user->token",
+                'userid' => $user->userid,
+                'token' => $user->token
             ]);
             //
         } else if ($path == '/' && !$token && $isWxwork) {
