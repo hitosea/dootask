@@ -23,7 +23,6 @@ class AyncWecomTaskJob extends CronJob
     // --- 重载对应的方法来返回配置：结束
     public function run()
     {
-        info("synchronization");
         WecomService::synchronization();
         // Task::deliver(new AyncWecomTask());
     }
