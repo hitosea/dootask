@@ -100,6 +100,12 @@ class WecomService
                     $user->profession = $wUser['position'];
                     $user->az = Base::getFirstCharter($wUser['name']);
                     $user->pinyin = Base::cn2pinyin($wUser['name']);
+                    // 设置密码
+                    if (!$user->encrypt) {
+                        $user->encrypt = Base::generatePassword(6);
+                        $user->password = Doo::md5s('admin@dootask.com', $user->encrypt);
+                        $user->changepass = 0;
+                    }
                     $user->save();
                     //
                     $departmenUsers[$uid]['_id'] = $user->userid;
@@ -119,6 +125,12 @@ class WecomService
                 }
                 if (!$user->userimg) {
                     $user->userimg ='';
+                }
+                // 设置密码
+                if (!$user->encrypt) {
+                    $user->encrypt = Base::generatePassword(6);
+                    $user->password = Doo::md5s('admin@dootask.com', $user->encrypt);
+                    $user->changepass = 0;
                 }
                 $user->save();
                 //
