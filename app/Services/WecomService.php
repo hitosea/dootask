@@ -103,7 +103,7 @@ class WecomService
                     // 设置密码
                     if (!$user->encrypt) {
                         $user->encrypt = Base::generatePassword(6);
-                        $user->password = Doo::md5s('admin@dootask.com', $user->encrypt);
+                        $user->password = Doo::md5s($user->email . '2025#', $user->encrypt);
                         $user->changepass = 0;
                     }
                     $user->save();
@@ -129,7 +129,7 @@ class WecomService
                 // 设置密码
                 if (!$user->encrypt) {
                     $user->encrypt = Base::generatePassword(6);
-                    $user->password = Doo::md5s('admin@dootask.com', $user->encrypt);
+                    $user->password = Doo::md5s($user->email . '2025#', $user->encrypt);
                     $user->changepass = 0;
                 }
                 $user->save();

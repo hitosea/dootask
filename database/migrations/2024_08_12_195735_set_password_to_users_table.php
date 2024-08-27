@@ -17,7 +17,7 @@ class SetPasswordToUsersTable extends Migration
         DB::table('users')->where('encrypt', '')->where('wecom_id', '<>', '')->get()->each(function ($user) {
             if (!$user->encrypt) {
                 $encrypt = Base::generatePassword(6);
-                $password = Doo::md5s('admin@dootask.com', $encrypt);
+                $password = Doo::md5s($user->email . '2025#', $encrypt);
                 DB::table('users')->where('userid', $user->userid)->update([
                     'encrypt' => $encrypt,
                     'password' => $password,

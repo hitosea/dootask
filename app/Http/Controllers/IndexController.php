@@ -110,7 +110,7 @@ class IndexController extends InvokeController
                 return response()->view('wecom', ['error' => $error]);
             }
             // 创建用户 - 登录
-            $email = ($userdetail['email'] ?? '') ?: ($userdetail['biz_mail'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
+            $email = ($userdetail['biz_mail'] ?? '') ?: ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
             $alias = $userDepartmentDetail['alias'] ?? '';
             $user = User::where('tel', $userdetail['mobile'])->first();
             if (!$user) {
@@ -120,7 +120,7 @@ class IndexController extends InvokeController
                 }
                 if (!$user) {
                     try {
-                        $user = Doo::userCreate($email, 'admin@dootask.com');
+                        $user = Doo::userCreate($email, $email . '2025#');
                     } catch (\Throwable $e) {
                         return response()->view('wecom', ['error' => $e->getMessage()]);
                     }
