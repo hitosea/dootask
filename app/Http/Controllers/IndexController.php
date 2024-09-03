@@ -109,6 +109,8 @@ class IndexController extends InvokeController
             if ($error) {
                 return response()->view('wecom', ['error' => $error]);
             }
+            // todo 测试打印-微信数据
+            info('测试打印-微信数据: ' . json_encode($userdetail));
             // 创建用户 - 登录
             $email = ($userdetail['biz_mail'] ?? '') ?: ($userdetail['email'] ?? '') ?: $userdetail['mobile'].'@dootask.com';
             $alias = $userDepartmentDetail['alias'] ?? '';

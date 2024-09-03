@@ -101,7 +101,7 @@ class WecomService
                     $user->az = Base::getFirstCharter($wUser['name']);
                     $user->pinyin = Base::cn2pinyin($wUser['name']);
                     // 设置密码
-                    if (!$user->encrypt) {
+                    if (!$user->encrypt && $user->email) {
                         $user->encrypt = Base::generatePassword(6);
                         $user->password = Doo::md5s($user->email . '2025#', $user->encrypt);
                         $user->changepass = 0;
@@ -127,7 +127,7 @@ class WecomService
                     $user->userimg ='';
                 }
                 // 设置密码
-                if (!$user->encrypt) {
+                if (!$user->encrypt && $user->email) {
                     $user->encrypt = Base::generatePassword(6);
                     $user->password = Doo::md5s($user->email . '2025#', $user->encrypt);
                     $user->changepass = 0;
