@@ -1433,10 +1433,6 @@ class SystemController extends AbstractController
                 if (!$status) {
                     return Base::retError("通讯录同步-SECRET错误-token: " . $accessTokens);
                 }
-                list($status, $result) = WechatWork::postCurl("https://qyapi.weixin.qq.com/cgi-bin/user/list_id?access_token=$accessTokens", ['cursor' => 1]);
-                if (!$status) {
-                    return Base::retError("通讯录同步-SECRET错误-user: " . $result);
-                }
             }
             //
             $setting = Base::setting('wecomSetting', Base::newTrim($all));
