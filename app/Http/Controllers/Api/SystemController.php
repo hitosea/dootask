@@ -1425,8 +1425,11 @@ class SystemController extends AbstractController
             }
             //
             if ($all['address_secret'] ?? '') {
-                Config::set('wechatwork.agents.contacts.secret', $all['address_secret']);
-                list($status, $accessToken) = WechatWork::access_token();
+                $array = [
+                    'corpid'        => $all['copr_id'],
+                    'corpsecret'    => $all['address_secret'],
+                ];
+                list($status, $accessToken) = WechatWork::getCurl('https://qyapi.weixin.qq.com/cgi-bin/gettoken?' . http_build_query($array));
                 if (!$status) {
                     return Base::retError("通讯录同步-SECRET错误-token: " . $accessToken);
                 }
