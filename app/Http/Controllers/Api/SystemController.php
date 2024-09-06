@@ -1410,6 +1410,7 @@ class SystemController extends AbstractController
                     'copr_id',
                     'agent_id',
                     'app_secret',
+                    'address_secret',
                 ])) {
                     unset($all[$key]);
                 }
@@ -1423,9 +1424,23 @@ class SystemController extends AbstractController
                 return Base::retError("配置信息错误: " . $accessToken);
             }
             //
+            if ($all['address_secret'] ?? '') {
+                Config::set('wechatwork.agents.contacts.secret', $all['address_secret']);
+                list($status, $accessToken) = WechatWork::access_token();
+                if (!$status) {
+                    return Base::retError("通讯录同步-SECRET错误: " . $accessToken);
+                }
+                list($status, $result) = WechatWork::postCurl("https://qyapi.weixin.qq.com/cgi-bin/user/list_id?access_token=$accessToken", ['cursor' => 1]);
+                if (!$status) {
+                    return Base::retError("通讯录同步-SECRET错误: " . $result);
+                }
+            }
+            //
             $setting = Base::setting('wecomSetting', Base::newTrim($all));
             //
-            Task::deliver(new AyncWecomTask(1));
+            Task::deliver(new AyncWecomTask());
+            //
+            Task::deliver(new AyncWecomTask(2));
             //
         } else {
             $setting = Base::setting('wecomSetting');

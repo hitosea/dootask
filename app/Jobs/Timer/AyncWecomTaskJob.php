@@ -2,7 +2,9 @@
 
 namespace App\Jobs\Timer;
 
+use App\Tasks\AyncWecomTask;
 use App\Services\WecomService;
+use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Hhxsv5\LaravelS\Swoole\Timer\CronJob;
 
 class AyncWecomTaskJob extends CronJob
@@ -24,6 +26,7 @@ class AyncWecomTaskJob extends CronJob
     public function run()
     {
         WecomService::synchronization();
-        // Task::deliver(new AyncWecomTask());
+        // 删除
+        Task::deliver(new AyncWecomTask(2));
     }
 }

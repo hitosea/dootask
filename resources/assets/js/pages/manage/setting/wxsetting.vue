@@ -14,6 +14,10 @@
                 <Input v-model="formData.app_secret" :placeholder="$L('输入app_secret')" />
             </FormItem>
 
+            <FormItem label="通讯录同步-SECRET" prop="address_secret">
+                <Input v-model="formData.address_secret" placeholder="" />
+            </FormItem>
+
         </Form>
         <div class="setting-footer">
             <Button :loading="loadIng > 0" type="primary" @click="submitForm">{{ $L('提交') }}</Button>
@@ -35,6 +39,7 @@ export default {
                 copr_id: '',
                 agent_id: '',
                 app_secret: '',
+                address_secret: '',
             },
 
             ruleDatum: {

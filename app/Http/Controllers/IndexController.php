@@ -252,6 +252,15 @@ class IndexController extends InvokeController
      * 接口文档
      * @return \Illuminate\Http\RedirectResponse
      */
+    public function wxcallback()
+    {
+        return true;
+    }
+
+    /**
+     * 接口文档
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function api()
     {
         return Redirect::to(Base::fillUrl('docs/index.html'), 301);

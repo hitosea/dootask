@@ -34,11 +34,13 @@ class WecomService
         // 取得所有部门
         list($status, $result) = WechatWork::department_list();
         if (!$status) {
-            info('WecomService同步部门错误：'. $result);
+            info('WecomService同步部门错误：' . $result);
             return false;
         }
         $departmens = $result['department'] ?? [];
-        usort($departmens, function($a, $b) { return $a['id'] - $b['id']; });
+        usort($departmens, function ($a, $b) {
+            return $a['id'] - $b['id'];
+        });
         $departmens = array_column($departmens, null, 'id');
 
         // 取得所有用户
@@ -46,13 +48,13 @@ class WecomService
         foreach ($departmens as $department) {
             list($status, $result) = WechatWork::user_list($department['id']);
             if (!$status) {
-                info('WecomService 同步用户错误：'. $result);
+                info('WecomService 同步用户错误：' . $result);
                 return false;
             }
             $userlist = $result['userlist'] ?? [];
             foreach ($userlist as $user) {
                 if (isset($departmenUsers[$user['userid']])) {
-                    $user['department'] =array_unique(array_merge([$department['id']], $user['department'], $departmenUsers[$user['userid']]['department']));
+                    $user['department'] = array_unique(array_merge([$department['id']], $user['department'], $departmenUsers[$user['userid']]['department']));
                 }
                 $departmenUsers[$user['userid']] = $user;
             }
@@ -67,7 +69,7 @@ class WecomService
         // }
         // 删除部门
         $deleteUserDepartmens = UserDepartment::where('wecom_id', '>', 0)->whereNotIn('wecom_id', array_keys($departmens))->get();
-        foreach ($deleteUserDepartmens as $key=>$userDepartment) {
+        foreach ($deleteUserDepartmens as $key => $userDepartment) {
             $userDepartment->deleteDepartment();
             Cache::forever("UserDepartment::rand", Base::generatePassword());
         }
@@ -87,7 +89,7 @@ class WecomService
             $userWecomIds = array_column($userWecoms->toArray(), 'wecom_id');
             $addUsers = array_values(array_diff($departmenUsersIdKeys, $userWecomIds));
             // 添加用户
-            foreach ($addUsers as $key=>$uid) {
+            foreach ($addUsers as $key => $uid) {
                 if ($key < $num) {
                     $wUser = $departmenUsers[$uid];
                     $alias = $wUser['alias'] ?? '';
@@ -113,7 +115,7 @@ class WecomService
                 }
             }
             // 更新用户
-            foreach ($userWecoms as $key=>$user) {
+            foreach ($userWecoms as $key => $user) {
                 $wUser = $departmenUsers[$user->wecom_id];
                 $alias = $wUser['alias'] ?? '';
                 $user->nickname = $wUser['name'] . ($alias ? " ($alias)" : '');
@@ -121,10 +123,10 @@ class WecomService
                 $user->az = Base::getFirstCharter($wUser['name']);
                 $user->pinyin = Base::cn2pinyin($wUser['name']);
                 if (!$user->identity) {
-                    $user->identity ='';
+                    $user->identity = '';
                 }
                 if (!$user->userimg) {
-                    $user->userimg ='';
+                    $user->userimg = '';
                 }
                 // 设置密码
                 if (!$user->encrypt && $user->email) {
@@ -176,4 +178,79 @@ class WecomService
         return true;
     }
 
+    /**
+     * 检测删除
+     * @param Server $server
+     * @param Request $request
+     */
+    public static function syncDeleteUser()
+    {
+        //  防止重复执行
+        if (Cache::get("WECOMSERVICE-SYNCDELETEUSER")) {
+            return false;
+        }
+        Cache::set("WECOMSERVICE-SYNCDELETEUSER", 1, 7200);
+        //
+        $setting = Base::setting('wecomSetting');
+        if (!$setting) {
+            Cache::delete("WECOMSERVICE-SYNCDELETEUSER");
+            return false;
+        }
+        //
+        if (!($setting['address_secret'] ?? '')) {
+            Cache::delete("WECOMSERVICE-SYNCDELETEUSER");
+            return false;
+        }
+        //
+        Config::set('wechatwork.corp_id', $setting['copr_id']);
+        Config::set('wechatwork.agents.application.agent_id', $setting['agent_id']);
+        Config::set('wechatwork.agents.contacts.secret', $setting['address_secret']);
+        //
+        list($status, $accessToken) = WechatWork::access_token();
+        if (!$status) {
+            info('WecomService同步删除用户错误：获取accessToken错误');
+            Cache::delete("WECOMSERVICE-SYNCDELETEUSER");
+            return false;
+        }
+        // 取得所有用户
+        $error = '';
+        $getAll = function ($accessToken, $next = '') use (&$getAll, &$error) {
+            $param = ['limit' => 10000];
+            if ($next) $param['cursor'] = $next;
+            list($status, $result) = WechatWork::postCurl("https://qyapi.weixin.qq.com/cgi-bin/user/list_id?access_token=$accessToken", $param);
+            if (!$status) {
+                $error = 'WecomService同步删除用户错误：' . $result;
+                return false;
+            }
+            $userlist = $result['dept_user'] ?? [];
+            if ($result['next_cursor'] ?? '') {
+                $res = $getAll($accessToken, $result['next_cursor']);
+                if (!$res) {
+                    $userlist = [];
+                } else {
+                    $userlist = array_merge($userlist, $res);
+                }
+            }
+            return $userlist;
+        };
+        if (!$userList = $getAll($accessToken)) {
+            info($error);
+            Cache::delete("WECOMSERVICE-SYNCDELETEUSER");
+            return false;
+        }
+        // 删除
+        $userIds = array_column($userList, 'userid');
+        info('WecomService同步删除用户 - 当前取得用户数量：' . count($userIds));
+        //
+        User::whereBot(0)->where('wecom_id', '<>', '')->select(['userid', 'wecom_id'],)->chunk(100, function($users) use ($userIds) {
+            foreach ($users as $user) {
+                if (!in_array($user->wecom_id, $userIds)) {
+                    $user->deleteUser('同步企业微信通讯录-已找不到当前用户');
+                }
+            }
+        });
+        //
+        Cache::delete("WECOMSERVICE-SYNCDELETEUSER");
+        return true;
+    }
 }

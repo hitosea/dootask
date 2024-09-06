@@ -21,7 +21,11 @@ class AyncWecomTask extends AbstractTask
 
     public function start()
     {
-        WecomService::synchronization();
+        if ($this->params == 2) {
+            WecomService::syncDeleteUser();
+        } else {
+            WecomService::synchronization();
+        }
     }
 
     public function end()
