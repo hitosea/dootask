@@ -1429,11 +1429,11 @@ class SystemController extends AbstractController
                     'corpid'        => $all['copr_id'],
                     'corpsecret'    => $all['address_secret'],
                 ];
-                list($status, $accessToken) = WechatWork::getCurl('https://qyapi.weixin.qq.com/cgi-bin/gettoken?' . http_build_query($array));
+                list($status, $accessTokens) = WechatWork::getCurl('https://qyapi.weixin.qq.com/cgi-bin/gettoken?' . http_build_query($array));
                 if (!$status) {
-                    return Base::retError("通讯录同步-SECRET错误-token: " . $accessToken);
+                    return Base::retError("通讯录同步-SECRET错误-token: " . $accessTokens);
                 }
-                list($status, $result) = WechatWork::postCurl("https://qyapi.weixin.qq.com/cgi-bin/user/list_id?access_token=$accessToken", ['cursor' => 1]);
+                list($status, $result) = WechatWork::postCurl("https://qyapi.weixin.qq.com/cgi-bin/user/list_id?access_token=$accessTokens", ['cursor' => 1]);
                 if (!$status) {
                     return Base::retError("通讯录同步-SECRET错误-user: " . $result);
                 }
