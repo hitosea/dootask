@@ -407,7 +407,7 @@
                     <div slot="head" class="head">
                         <Icon class="icon" type="ios-chatbubbles-outline" />
                         <div class="nav">
-                            <p :class="{active:navActive=='dialog'}" @click="navActive='dialog'">{{$L('聊天')}}</p>
+                            <p :class="{active:navActive=='dialog'}" @click="navActive='dialog'">{{$L('留言')}}</p>
                             <p :class="{active:navActive=='log'}" @click="navActive='log'">{{$L('动态')}}</p>
                             <div v-if="navActive=='log'" class="refresh">
                                 <Loading v-if="logLoadIng"/>
@@ -422,7 +422,7 @@
                 <div class="head">
                     <Icon class="icon" type="ios-chatbubbles-outline" />
                     <div class="nav">
-                        <p :class="{active:navActive=='dialog'}" @click="navActive='dialog'">{{$L('聊天')}}</p>
+                        <p :class="{active:navActive=='dialog'}" @click="navActive='dialog'">{{$L('留言')}}</p>
                         <p :class="{active:navActive=='log'}" @click="navActive='log'">{{$L('动态')}}</p>
                         <div v-if="navActive=='log'" class="refresh">
                             <Loading v-if="logLoadIng"/>

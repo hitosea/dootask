@@ -106,11 +106,11 @@
                             <i class="taskfont">&#xe6f5;</i>
                             <div class="menu-title">{{$L('日历')}}</div>
                         </li>
-                        <li @click="toggleRoute('messenger')" :class="classNameRoute('messenger')">
-                            <i class="taskfont">&#xe6eb;</i>
-                            <div class="menu-title">{{$L('消息')}}</div>
-                            <Badge class="menu-badge" :overflow-count="999" :text="msgUnreadMention"/>
-                        </li>
+<!--                        <li @click="toggleRoute('messenger')" :class="classNameRoute('messenger')">-->
+<!--                            <i class="taskfont">&#xe6eb;</i>-->
+<!--                            <div class="menu-title">{{$L('消息')}}</div>-->
+<!--                            <Badge class="menu-badge" :overflow-count="999" :text="msgUnreadMention"/>-->
+<!--                        </li>-->
                         <li @click="toggleRoute('file')" :class="classNameRoute('file')">
                             <i class="taskfont">&#xe6f3;</i>
                             <div class="menu-title">{{$L('文件')}}</div>
