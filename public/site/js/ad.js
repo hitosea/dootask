@@ -1,5 +1,20 @@
 window.onload = function () {
-    fetchStrapi();
+    const currentPath = window.location.pathname;
+    const isAdPage = currentPath.includes("ad.html");
+
+    const url = new URL(window.location.href);
+    const pathSegments = url.pathname.split("/");
+    const isZh = pathSegments.includes("zh");
+    const isEn = pathSegments.includes("en");
+    const language = isZh ? "zh" : isEn ? "en" : "zh";
+
+    if (isAdPage) {
+        changeNavBackgroundColor();
+        fetchStrapiAdPlan(language);
+        fetchStrapiAdIntro(language);
+    } else {
+        fetchStrapiAdBar(language);
+    }
 };
 
 function initAdBar() {
@@ -37,12 +52,7 @@ function moveUpNav() {
     navWrapper[0].style.top = 0;
 }
 
-function fetchStrapi() {
-    const url = new URL(window.location.href);
-    const pathSegments = url.pathname.split("/");
-    const isZh = pathSegments.includes("zh");
-    const isEn = pathSegments.includes("en");
-    const language = isZh ? "zh" : isEn ? "en" : "zh";
+function fetchStrapiAdBar(language) {
     const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-bar?locale=${language}&populate[0]=background`;
     fetch(apiUrl)
         .then((response) => response.json())
@@ -54,7 +64,28 @@ function fetchStrapi() {
             } = response;
 
             updateAdBar(background, text, buttonText);
-        });
+        })
+        .catch((err) => {});
+}
+
+function fetchStrapiAdPlan(language) {
+    const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-plan?locale=${language}&populate[0]=background`;
+    fetch(apiUrl)
+        .then((response) => response.json())
+        .then((response) => {
+            console.log(response);
+        })
+        .catch((err) => {});
+}
+
+function fetchStrapiAdIntro(language) {
+    const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-intro?locale=${language}&populate[0]=background`;
+    fetch(apiUrl)
+        .then((response) => response.json())
+        .then((response) => {
+            console.log(response);
+        })
+        .catch((err) => {});
 }
 
 function insertAdBarEl() {
@@ -109,4 +140,9 @@ function updateAdBar(background, text, buttonText) {
         buttonEl[0].innerText = buttonText;
     }
     initAdBar();
+}
+
+function changeNavBackgroundColor() {
+    const navWrapper = document.getElementsByClassName("nav");
+    navWrapper[0].style.backgroundColor = "#fff";
 }
