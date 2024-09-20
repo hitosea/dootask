@@ -1,0 +1,66 @@
+header .ad {
+    width: 100vw;
+    height: 0;
+    background-color: transparent;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+header .ad .ad-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0 20px;
+    position: relative;
+}
+
+header .ad .ad-content .ad-content-left {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+header .ad .ad-content .ad-close {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+header .ad .ad-content .ad-content-left .ad-text {
+    font-size: 28px;
+    font-weight: 600;
+    color: #441726;
+    font-family: Lexend;
+    margin-right: 16px;
+    line-height: 35px;
+}
+
+header .ad .ad-content .ad-content-left .ad-btn {
+    height: 36px;
+    min-width: 72px;
+    background: linear-gradient(
+        104.43deg,
+        #fc8c80 1.18%,
+        #f3596e 46.98%,
+        #ee61d4 93.24%
+    );
+    padding: 8px 16px 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-family: Lexend;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 20px;
+    text-align: left;
+    color: #fff;
+}
