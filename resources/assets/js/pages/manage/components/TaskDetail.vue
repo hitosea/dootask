@@ -432,14 +432,14 @@
                     <div class="menu">
                         <div v-if="navActive=='dialog' && taskDetail.msg_num > 0" class="menu-item" @click.stop="onSend('open')">
                             <div v-if="openLoad > 0" class="menu-load"><Loading/></div>
-                            {{$L('任务聊天')}}
+                            {{$L('任务留言')}}
                             <em>({{taskDetail.msg_num > 999 ? '999+' : taskDetail.msg_num}})</em>
                             <i class="taskfont">&#xe703;</i>
                         </div>
                     </div>
                 </div>
                 <ProjectLog v-if="navActive=='log' && taskId > 0" ref="log" :task-id="taskDetail.id" :show-load="false" @on-load-change="logLoadChange"/>
-                <div v-else class="no-dialog"
+                <div v-else class="no-dialog"y
                      @drop.prevent="taskPasteDrag($event, 'drag')"
                      @dragover.prevent="taskDragOver(true, $event)"
                      @dragleave.prevent="taskDragOver(false, $event)">
