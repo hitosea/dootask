@@ -1,4 +1,6 @@
 window.onload = function () {
+    insertAdBarCss();
+
     const currentPath = window.location.pathname;
     const isAdPage = currentPath.includes("ad.html");
 
@@ -121,7 +123,6 @@ function insertAdBarCss() {
 }
 
 function updateAdBar(background, text, buttonText) {
-    insertAdBarCss();
     insertAdBarEl();
 
     const adWrapper = document.getElementById("ad");

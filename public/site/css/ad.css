@@ -64,3 +64,21 @@ header .ad .ad-content .ad-content-left .ad-btn {
     text-align: left;
     color: #fff;
 }
+
+footer.ad-footer {
+    background-color: #1d0f14;
+    color: #fff;
+}
+
+footer.ad-footer .dootask {
+    color: #fff;
+}
+
+.ad-wrapper .arcs {
+    display: inline-block;
+    position: absolute;
+    width: 100%;
+    height: 50px;
+    left: 0;
+    top: 68px;
+}
