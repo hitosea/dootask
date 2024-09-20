@@ -213,7 +213,7 @@
                         <div v-if="loadIng > 0 || prevId > 0" class="loading" :class="{filled: allMsgs.length === 0}">
                             <span v-if="scrollOffset < 100"></span>
                         </div>
-                        <div v-else-if="allMsgs.length === 0" class="describe filled">{{$L('暂无消息')}}</div>
+                        <div v-else-if="allMsgs.length === 0" class="describe filled">{{$L('暂无留言')}}</div>
                     </div>
                 </template>
             </VirtualList>
@@ -262,7 +262,7 @@
                 :dialog-id="dialogId"
                 :emoji-bottom="windowPortrait"
                 :maxlength="200000"
-                :placeholder="$L('输入消息...')"
+                :placeholder="$L('输入留言...')"
                 :reply-msg-auto-mention="replyMsgAutoMention"
                 @on-focus="onEventFocus"
                 @on-blur="onEventBlur"
@@ -409,7 +409,7 @@
                     <Input v-model="modifyData.name" :maxlength="20" />
                 </FormItem>
                 <template v-if="dialogData.bot == userId">
-                    <FormItem v-if="typeof modifyData.clear_day !== 'undefined'" prop="clear_day" :label="$L('消息保留')">
+                    <FormItem v-if="typeof modifyData.clear_day !== 'undefined'" prop="clear_day" :label="$L('留言保留')">
                         <Input v-model="modifyData.clear_day" :maxlength="3" type="number">
                             <div slot="append">{{$L('天')}}</div>
                         </Input>

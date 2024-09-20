@@ -443,7 +443,7 @@
                      @drop.prevent="taskPasteDrag($event, 'drag')"
                      @dragover.prevent="taskDragOver(true, $event)"
                      @dragleave.prevent="taskDragOver(false, $event)">
-                    <div class="no-tip">{{$L('暂无消息')}}</div>
+                    <div class="no-tip">{{$L('暂无留言')}}</div>
                     <div class="no-input">
                         <ChatInput
                             ref="chatInput"
@@ -451,7 +451,7 @@
                             v-model="msgText"
                             :loading="sendLoad > 0"
                             :maxlength="200000"
-                            :placeholder="$L('输入消息...')"
+                            :placeholder="$L('输入留言...')"
                             :send-menu="false"
                             @on-more="onEventMore"
                             @on-file="onSelectFile"
