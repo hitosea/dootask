@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (isAdPage) {
         // 如果是广告页面，设置导航背景色并获取广告计划和介绍
         setNavBackgroundColor();
+        fetchAdBanner(language);
         fetchAdPlan(language);
         fetchAdIntro(language);
     } else {
@@ -87,6 +88,43 @@ function fetchAdBar(language) {
         .catch(handleError);
 }
 
+// 获取广告banner数据
+function fetchAdBanner(language) {
+    const query = window.Qs.stringify(
+        {
+            locale: language,
+            populate: {
+                title: {
+                    populate: "*",
+                },
+                description: {
+                    populate: "*",
+                },
+                background: {
+                    populate: "*",
+                },
+                underline: {
+                    populate: "*",
+                },
+                signUpButton: {
+                    populate: "*",
+                },
+                selfHostButton: {
+                    populate: "*",
+                },
+                localizations: {
+                    populate: "*",
+                },
+            },
+        },
+        {
+            encodeValuesOnly: true,
+        }
+    );
+    const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-banner?${query}`;
+    fetchData(apiUrl).then(handleAdBannerResponse).catch(handleError);
+}
+
 // 获取广告计划数据
 function fetchAdPlan(language) {
     const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-plan?locale=${language}&populate[0]=background`;
@@ -102,6 +140,138 @@ function fetchAdIntro(language) {
 // 通用数据获取函数
 function fetchData(url) {
     return fetch(url).then((response) => response.json());
+}
+
+function getMediaUrl(media) {
+    if (!media?.data?.attributes?.url) {
+        return "";
+    }
+    return `https://cms.hitosea.com${media.data.attributes.url}`;
+}
+
+function getStyle(style) {
+    if (!style) return null;
+    return Object.keys(style)
+        .map((key) => `${key}: ${style[key]}`)
+        .join("; ");
+}
+
+// 处理广告banner响应
+function handleAdBannerResponse(response) {
+    // 在此实现广告banner处理逻辑
+    try {
+        const {
+            data: {
+                attributes: {
+                    title,
+                    description,
+                    background,
+                    underline,
+                    signUpButton,
+                    selfHostButton,
+                },
+            },
+        } = response;
+        handleAdBannerTitle(title);
+        handleAdBannerDescription(description);
+        handleAdBannerBackground(background);
+        handleAdBannerUnderline(underline);
+        handleAdBannerSignUpButton(signUpButton);
+        handleAdBannerSelfHostButton(selfHostButton);
+    } catch (error) {
+        console.error("处理广告banner响应时出错:", error);
+    }
+}
+
+function handleAdBannerTitle(title) {
+    const titleText = {};
+    if (Array.isArray(title)) {
+        title.forEach((item) => {
+            titleText[item.key] = { text: item.text, style: item.style };
+        });
+    }
+    const titlePart1El = document.getElementById("ad-banner-title-part1");
+    const titlePart2El = document.getElementById("ad-banner-title-part2");
+    const titlePart3El = document.getElementById("ad-banner-title-part3");
+    if (titlePart1El && titleText["part1"]) {
+        titlePart1El.textContent = titleText["part1"].text;
+        titlePart1El.style = getStyle(titleText["part1"].style);
+    }
+    if (titlePart2El && titleText["part2"]) {
+        titlePart2El.textContent = titleText["part2"].text;
+        titlePart2El.style = getStyle(titleText["part2"].style);
+    }
+    if (titlePart3El && titleText["part3"]) {
+        titlePart3El.textContent = titleText["part3"].text;
+        titlePart3El.style = getStyle(titleText["part3"].style);
+    }
+}
+
+function handleAdBannerDescription(description) {
+    const descriptionText = {
+        text: description.text,
+        style: description.style,
+    };
+    const descriptionEl = document.getElementById("ad-banner-description");
+    if (descriptionEl && descriptionText.text) {
+        descriptionEl.textContent = descriptionText.text;
+        descriptionEl.style = getStyle(descriptionText.style);
+    }
+}
+
+function handleAdBannerBackground(background) {
+    const backgroundUrl = getMediaUrl(background);
+    const adBannerEl = document.getElementById("ad-banner");
+
+    if (adBannerEl && backgroundUrl) {
+        adBannerEl.style.backgroundImage = `url(${backgroundUrl})`;
+    }
+}
+
+function handleAdBannerUnderline(underline) {
+    const underlineUrl = getMediaUrl(underline);
+    const adBannerTitleUnderlineEl = document.getElementById(
+        "ad-banner-title-underline"
+    );
+    if (adBannerTitleUnderlineEl && underlineUrl) {
+        adBannerTitleUnderlineEl.innerHTML = `<img class="arcs ad" src="${underlineUrl}" alt="underline" />`;
+    }
+}
+
+function handleAdBannerSignUpButton({
+    theme,
+    style,
+    link: { label, href, target, slug },
+}) {
+    const signUpButtonEl = document.getElementById("ad-banner-sign-up-button");
+    if (signUpButtonEl) {
+        signUpButtonEl.innerHTML = `
+        <a href="${href}" ${target === "_blank" ? 'target="_blank"' : ""} >
+          <button class="btn btn-primary">
+            ${label}
+          </button>
+        </a>`;
+        signUpButtonEl.style = getStyle(style);
+    }
+}
+
+function handleAdBannerSelfHostButton({
+    theme,
+    style,
+    link: { label, href, target, slug },
+}) {
+    const selfHostButtonEl = document.getElementById(
+        "ad-banner-self-host-button"
+    );
+    if (selfHostButtonEl) {
+        selfHostButtonEl.innerHTML = `
+        <a href="${href}" ${target === "_blank" ? 'target="_blank"' : ""} >
+          <button class="btn btn-default">
+            ${label}
+          </button>
+        </a>`;
+        selfHostButtonEl.style = getStyle(style);
+    }
 }
 
 // 处理广告计划响应

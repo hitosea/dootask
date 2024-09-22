@@ -2,7 +2,7 @@
     color: #441726;
 }
 
-.ad-wrapper .head {
+.ad-wrapper #ad-banner {
     background-image: url(../img/ad/banner.png);
     background-size: cover;
     background-position: center;
@@ -131,6 +131,26 @@ footer.ad-footer .footer-layout {
         #ee61d4 93.24%
     );
     box-shadow: 0px 3px 6px 0px #ff010133;
+    transition: all 0.3s ease-in-out;
+    border: 1px solid transparent;
+}
+
+.ad-wrapper .topics .topics-btn {
+    gap: 16px;
+}
+
+.ad-wrapper .topics .topics-btn .btn {
+    min-width: 120px;
+}
+
+.ad-wrapper .topics .btn-primary:hover {
+    background: linear-gradient(
+        -104.43deg,
+        #ff7155 1.18%,
+        #ef3e56 46.98%,
+        #ee61d4 93.24%
+    );
+    border: 1px solid #f3474c;
 }
 
 .ad-wrapper .topics .btn-default {
@@ -138,6 +158,12 @@ footer.ad-footer .footer-layout {
     background-color: #fff;
     border: 1px solid #f3474c;
     box-shadow: 0px 3px 6px 0px #ff010133;
+    transition: all 0.3s ease-in-out;
+}
+
+.ad-wrapper .topics .btn-default:hover {
+    background-color: #f3474c;
+    color: #fff;
 }
 
 .ad-wrapper main {
@@ -197,7 +223,8 @@ footer.ad-footer .footer-layout {
     transition: all 0.5s ease-in-out;
 }
 
-.ad-plan .section-content .plan-item:hover {
+.ad-plan .section-content .plan-item:hover,
+.ad-plan .section-content .plan-item.active {
     border-color: #f3474c;
     box-shadow: 0px 24px 32px 16px #0000001f;
     animation: shake 1s ease-in-out infinite;
@@ -380,6 +407,10 @@ footer.ad-footer .footer-layout {
 @media screen and (max-width: 1200px) {
     .ad-plan .section-content {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+    .section-wrapper {
+        padding: 96px 24px 64px;
     }
 }
 
