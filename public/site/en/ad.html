@@ -21,6 +21,8 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PE77P6491J"></script>
   <script src="../js/googleAds.js"></script>
   <script src="../js/googleAnalyze.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/qs@6.13.0/dist/qs.min.js"></script>
 </head>
 
 <body>
@@ -71,12 +73,10 @@
                   <a class="txt-4001418 txt-sub" href="../en/help.html">Help Center</a>
                 </li>
                 <li class="submenu-pop-item" onclick="changeMenu()">
-                  <a class="txt-4001418 txt-sub" href="../en/privacy.html" target="_blank">Privacy
-                    Policy</a>
+                  <a class="txt-4001418 txt-sub" href="../en/privacy.html" target="_blank">Privacy Policy</a>
                 </li>
                 <li class="submenu-pop-item" onclick="changeMenu()">
-                  <a class="txt-4001418 txt-sub" href="../../docs/index.html" target="_blank">API
-                    document</a>
+                  <a class="txt-4001418 txt-sub" href="../../docs/index.html" target="_blank">API document</a>
                 </li>
               </ol>
             </li>
@@ -154,8 +154,8 @@
               </span>
             </div>
             <h4 class="txt-4001830 topics-h4 mb-32">
-              <span id="ad-banner-description">Empower the team to advance projects efficiently, making work
-                simpler.</span>
+              <span id="ad-banner-description">Empower the team to advance projects
+                efficiently, making work simpler.</span>
             </h4>
             <div class="topics-btn flex-cc">
               <div id="ad-banner-sign-up-button">
@@ -168,7 +168,7 @@
               <div id="ad-banner-self-host-button">
                 <a href="https://github.com/kuaifan/dootask/tree/pro" target="_blank">
                   <button class="btn btn-default">
-                    Private Setup
+                    Self Hosting
                   </button>
                 </a>
               </div>
@@ -262,21 +262,28 @@
       <section class="ad-plan">
         <div class="section-wrapper">
           <div class="section-title">
-            <span> September Double Deal Bonanza! </span>
+            <span id="ad-plan-title">
+              September Double Deal Bonanza!
+            </span>
           </div>
           <div class="section-description">
-            <span> Make life easier, make work more efficient. </span>
+            <span id="ad-plan-description">
+              Make life easier, make work more efficient.
+            </span>
           </div>
-          <div class="section-content">
-            <div class="plan-item">
+          <div id="ad-plan-content" class="section-content">
+            <div class="plan-item ">
               <div class="plan-item-title">
-                <span> Unlimited Pro </span>
+                <span>Unlimited Pro</span>
               </div>
               <div class="plan-item-price">
                 <span class="plan-item-price-current">
                   ¥16,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
                 </span>
-                <span class="plan-item-price-original">
+                <span class="plan-item-price-original price">
                   ¥18,888
                 </span>
               </div>
@@ -291,50 +298,527 @@
                 <ul class="plan-item-description-list">
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
+                    <span class="plan-item-description-item-content ">
                       Support private deployment
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
+                    <span class="plan-item-description-item-content ">
                       Technical Advisory Services
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
+                    <span class="plan-item-description-item-content ">
                       Custom logo design
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
+                    <span class="plan-item-description-item-content ">
                       Dedicated operations customer service
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
+                    <span class="plan-item-description-item-content ">
                       12-Hour service response
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
+                    <span class="plan-item-description-item-content ">
                       Free 1-Year Technical Maintenance Included
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>50-License Pro</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥13,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ￥16,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    Buy Now
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Support private deployment
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Technical Advisory Services
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Custom logo design
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Dedicated operations customer service
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12-Hour service response
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Free 1-Year Technical Maintenance Included
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item active">
+              <div class="plan-item-title">
+                <span>30-License Pro</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥11,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ￥15,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    Buy Now
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Support private deployment
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Technical Advisory Services
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Custom logo design
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Dedicated operations customer service
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12-Hour service response
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Free 1-Year Technical Maintenance Included
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>10-License Pro</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ￥5,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥8,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    Buy Now
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Support private deployment
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Technical Advisory Services
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Dedicated operations customer service
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12-Hour service response
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Free 1-Year Technical Maintenance Included
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>5-License Pro</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥3,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥6,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    Buy Now
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Support private deployment
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Technical Advisory Services
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Dedicated operations customer service
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12-Hour service response
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Free 1-Year Technical Maintenance Included
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>Annual Pro</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥200
+                  <span class="plan-item-price-payment">
+                    /per/year
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥288
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    Buy Now
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Support private deployment
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Technical Advisory Services
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Dedicated operations customer service
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12-Hour service response
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Free 1-Year Technical Maintenance Included
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>Supported Pro</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥600
+                  <span class="plan-item-price-payment">
+                    /per/year
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥680
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    Buy Now
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      For businesses established within 1 year
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Free for 5 or fewer people
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Valid for 1 year
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Support private deployment
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Custom logo design
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>Free</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  0
+                  <span class="plan-item-price-payment">
+                    /month
+                  </span>
+                </span>
+                <span class="plan-item-price-original ">
+                  Up to 3 People
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    Deploy Now
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Support private deployment
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Technical Advisory Services
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      Dedicated operations customer service
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12-Hour service response
                     </span>
                   </li>
                 </ul>
@@ -346,12 +830,14 @@
       <section class="ad-intro">
         <div class="section-wrapper">
           <div class="section-title">
-            <span> Why Choose DooTask? </span>
+            <span id="ad-intro-title">
+              Why Choose DooTask?
+            </span>
           </div>
           <div class="section-description">
-            <span> &nbsp; </span>
+            <span id="ad-intro-description"> &nbsp; </span>
           </div>
-          <div class="section-content">
+          <div class="section-content" id="ad-intro-content">
             <div class="ad-intro-item">
               <div class="ad-intro-item-header">
                 <img src="../img/ad/intro-card-head.png" alt="head" />
@@ -363,11 +849,15 @@
                 <span> Project Management </span>
               </div>
               <div class="ad-intro-item-description">
-                <span>Supports various project management methodologies such as Agile, Crystal, Kanban, and more,
-                  suitable for managing
-                  projects of all sizes and types. Users can utilize DooTask’s project management tools, including task
-                  assignment,
-                  progress tracking, resource allocation, and more to manage the entire project. </span>
+                <span>Supports various project management
+                  methodologies such as Agile, Crystal,
+                  Kanban, and more, suitable for managing
+                  projects of all sizes and types. Users
+                  can utilize DooTask’s project management
+                  tools, including task assignment,
+                  progress tracking, resource allocation,
+                  and more to manage the entire project.
+                </span>
               </div>
             </div>
             <div class="ad-intro-item">
@@ -381,11 +871,15 @@
                 <span> Team Collaboration </span>
               </div>
               <div class="ad-intro-item-description">
-                <span>DooTask’s rich and practical tools facilitate communication and collaboration among team members,
-                  enhancing work
-                  efficiency. For instance, team members can use DooTask’s document collaboration tools, online mind
-                  maps, flowcharts, and
-                  more for collaborative work. </span>
+                <span>DooTask’s rich and practical tools
+                  facilitate communication and
+                  collaboration among team members,
+                  enhancing work efficiency. For instance,
+                  team members can use DooTask’s document
+                  collaboration tools, online mind maps,
+                  flowcharts, and more for collaborative
+                  work.
+                </span>
               </div>
             </div>
             <div class="ad-intro-item">
@@ -399,10 +893,12 @@
                 <span> Data Security Protection </span>
               </div>
               <div class="ad-intro-item-description">
-                <span>DooTask uses asymmetric encryption for messaging to maximize user information security. It also
-                  features a powerful
-                  permission system to customize access and actions in project management based on user roles and
-                  duties.
+                <span>DooTask uses asymmetric encryption for
+                  messaging to maximize user information
+                  security. It also features a powerful
+                  permission system to customize access
+                  and actions in project management based
+                  on user roles and duties.
                 </span>
               </div>
             </div>
@@ -417,9 +913,12 @@
                 <span> Customizable Freely </span>
               </div>
               <div class="ad-intro-item-description">
-                <span>DooTask is a completely open-source tool that users can modify and customize freely, avoiding the
-                  additional costs
-                  associated with commercial software subscriptions. </span>
+                <span>DooTask is a completely open-source
+                  tool that users can modify and customize
+                  freely, avoiding the additional costs
+                  associated with commercial software
+                  subscriptions.
+                </span>
               </div>
             </div>
           </div>
@@ -471,12 +970,10 @@
                     <a class="txt-4001624 txt" href="../en/help.html">Help Center</a>
                   </li>
                   <li class="footer-ol-item mb-16">
-                    <a class="txt-4001624 txt" href="../en/privacy.html" target="_blank">Privacy
-                      Policy</a>
+                    <a class="txt-4001624 txt" href="../en/privacy.html" target="_blank">Privacy Policy</a>
                   </li>
                   <li class="footer-ol-item">
-                    <a class="txt-4001624 txt" href="../../docs/index.html" target="_blank">API
-                      document</a>
+                    <a class="txt-4001624 txt" href="../../docs/index.html" target="_blank">API document</a>
                   </li>
                 </ol>
               </li>
@@ -511,8 +1008,7 @@
             Copyright © 2022-2023 DooTask. All rights reserved.
           </span>
           <div class="footer_beian" style="display: flex">
-            <img src="../img/beian.png" alt="" /><span style="padding-left: 3px">桂公网安备
-              45010802000393号</span>
+            <img src="../img/beian.png" alt="" /><span style="padding-left: 3px">桂公网安备 45010802000393号</span>
           </div>
           <a class="footer_beian_a" href="http://beian.miit.gov.cn">桂ICP备2021003642号-5</a>
         </div>
@@ -612,15 +1108,27 @@
         // 回到顶部
         const back_top_button =
           document.getElementById("back_to_top");
+        let throttleTimer;
+        const throttle = (callback, time) => {
+          if (throttleTimer) return;
+          throttleTimer = true;
+          setTimeout(() => {
+            callback();
+            throttleTimer = false;
+          }, time);
+        };
+
         window.addEventListener("scroll", () => {
-          if (
-            document.body.scrollTop > 20 ||
-            document.documentElement.scrollTop > 20
-          ) {
-            back_top_button.style.display = "block";
-          } else {
-            back_top_button.style.display = "none";
-          }
+          throttle(() => {
+            if (
+              document.body.scrollTop > 20 ||
+              document.documentElement.scrollTop > 20
+            ) {
+              back_top_button.style.display = "block";
+            } else {
+              back_top_button.style.display = "none";
+            }
+          }, 200);
         });
         back_top_button.addEventListener("click", () => {
           window.scrollTo({

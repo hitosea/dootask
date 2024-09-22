@@ -19,6 +19,8 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PE77P6491J"></script>
   <script src="../js/googleAds.js"></script>
   <script src="../js/googleAnalyze.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/qs@6.13.0/dist/qs.min.js"></script>
 </head>
 
 <body>
@@ -256,21 +258,24 @@
       <section class="ad-plan">
         <div class="section-wrapper">
           <div class="section-title">
-            <span> 9月双重钜惠来袭！ </span>
+            <span id="ad-plan-title"> 9月双重钜惠来袭！ </span>
           </div>
           <div class="section-description">
-            <span> 让生活变轻松，让工作变高效 </span>
+            <span id="ad-plan-description"> 让生活变轻松，让工作变高效 </span>
           </div>
-          <div class="section-content">
-            <div class="plan-item">
+          <div id="ad-plan-content" class="section-content">
+            <div class="plan-item ">
               <div class="plan-item-title">
-                <span> 无限专业版 </span>
+                <span>无限专业版</span>
               </div>
               <div class="plan-item-price">
                 <span class="plan-item-price-current">
                   ¥16,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
                 </span>
-                <span class="plan-item-price-original">
+                <span class="plan-item-price-original price">
                   ¥18,888
                 </span>
               </div>
@@ -285,50 +290,527 @@
                 <ul class="plan-item-description-list">
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
-                      基础版
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
-                      基础版
+                    <span class="plan-item-description-item-content ">
+                      技术咨询服务
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
-                      基础版
+                    <span class="plan-item-description-item-content ">
+                      LOGO定制
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
-                      基础版
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
-                      基础版
+                    <span class="plan-item-description-item-content ">
+                      12小时服务响应
                     </span>
                   </li>
                   <li class="plan-item-description-item">
                     <i class="plan-item-description-item-icon">
-                      <img src="../img/ad/checked.svg" alt="checked" />
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
                     </i>
-                    <span class="plan-item-description-item-content">
-                      基础版
+                    <span class="plan-item-description-item-content ">
+                      赠1年免费技术维护
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>50人专业版</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥13,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ￥16,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    立即购买
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      技术咨询服务
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      LOGO定制
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12小时服务响应
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="https://cms.hitosea.com/uploads/plan_checked_ea40b42593.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      赠1年免费技术维护
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item active">
+              <div class="plan-item-title">
+                <span>30人专业版</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥11,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ￥15,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    立即购买
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      技术咨询服务
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      LOGO定制
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12小时服务响应
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      赠1年免费技术维护
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>10人专业版</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ￥5,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥8,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    立即购买
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      技术咨询服务
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12小时服务响应
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      赠1年免费技术维护
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>5人专业版</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥3,800
+                  <span class="plan-item-price-payment">
+
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥6,800
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    立即购买
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      技术咨询服务
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12小时服务响应
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      赠1年免费技术维护
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>年度专业版</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥200
+                  <span class="plan-item-price-payment">
+                    /人/年
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥288
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    立即购买
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      技术咨询服务
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12小时服务响应
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      赠1年免费技术维护
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>扶持专业版</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  ¥600
+                  <span class="plan-item-price-payment">
+                    /人/年
+                  </span>
+                </span>
+                <span class="plan-item-price-original price">
+                  ¥680
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    立即购买
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      适用于成立1年内企业
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      限5人内（含）免费
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      有效期一年
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="plan-item ">
+              <div class="plan-item-title">
+                <span>免费版</span>
+              </div>
+              <div class="plan-item-price">
+                <span class="plan-item-price-current">
+                  0
+                  <span class="plan-item-price-payment">
+                    /月
+                  </span>
+                </span>
+                <span class="plan-item-price-original ">
+                  最多3人
+                </span>
+              </div>
+              <div class="plan-item-button">
+                <a href="#">
+                  <button class="btn-primary">
+                    立即部署
+                  </button>
+                </a>
+              </div>
+              <div class="plan-item-description">
+                <ul class="plan-item-description-list">
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      支持私有化部署
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      技术咨询服务
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      专属运营客服
+                    </span>
+                  </li>
+                  <li class="plan-item-description-item">
+                    <i class="plan-item-description-item-icon">
+                      <img src="../img/ad/checked.svg" alt="undefined">
+                    </i>
+                    <span class="plan-item-description-item-content ">
+                      12小时服务响应
                     </span>
                   </li>
                 </ul>
@@ -589,15 +1071,27 @@
         // 回到顶部
         const back_top_button =
           document.getElementById("back_to_top");
+        let throttleTimer;
+        const throttle = (callback, time) => {
+          if (throttleTimer) return;
+          throttleTimer = true;
+          setTimeout(() => {
+            callback();
+            throttleTimer = false;
+          }, time);
+        };
+
         window.addEventListener("scroll", () => {
-          if (
-            document.body.scrollTop > 20 ||
-            document.documentElement.scrollTop > 20
-          ) {
-            back_top_button.style.display = "block";
-          } else {
-            back_top_button.style.display = "none";
-          }
+          throttle(() => {
+            if (
+              document.body.scrollTop > 20 ||
+              document.documentElement.scrollTop > 20
+            ) {
+              back_top_button.style.display = "block";
+            } else {
+              back_top_button.style.display = "none";
+            }
+          }, 200);
         });
         back_top_button.addEventListener("click", () => {
           window.scrollTo({
@@ -690,7 +1184,7 @@
       });
   });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/qs@6.13.0/dist/qs.min.js"></script>
+
 <script src="../js/ad.js"></script>
 
 </html>

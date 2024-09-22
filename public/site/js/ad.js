@@ -127,13 +127,52 @@ function fetchAdBanner(language) {
 
 // 获取广告计划数据
 function fetchAdPlan(language) {
-    const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-plan?locale=${language}&populate[0]=background`;
+    const query = window.Qs.stringify({
+        locale: language,
+        populate: {
+            plans: {
+                populate: {
+                    price: {
+                        populate: "*",
+                    },
+                    button: {
+                        populate: "*",
+                    },
+                    features: {
+                        populate: "*",
+                    },
+                },
+            },
+        },
+    });
+    const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-plan?${query}`;
     fetchData(apiUrl).then(handleAdPlanResponse).catch(handleError);
 }
 
 // 获取广告介绍数据
 function fetchAdIntro(language) {
-    const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-intro?locale=${language}&populate[0]=background`;
+    const query = window.Qs.stringify({
+        locale: language,
+        populate: {
+            intros: {
+                populate: {
+                    bar: {
+                        populate: "*",
+                    },
+                    cover: {
+                        populate: "*",
+                    },
+                    title: {
+                        populate: "*",
+                    },
+                    description: {
+                        populate: "*",
+                    },
+                },
+            },
+        },
+    });
+    const apiUrl = `https://cms.hitosea.com/api/doo-task-ad-intro?${query}`;
     fetchData(apiUrl).then(handleAdIntroResponse).catch(handleError);
 }
 
@@ -276,14 +315,160 @@ function handleAdBannerSelfHostButton({
 
 // 处理广告计划响应
 function handleAdPlanResponse(response) {
-    console.log(response);
     // 在此实现广告计划处理逻辑
+    try {
+        const {
+            data: {
+                attributes: { title, description, plans },
+            },
+        } = response;
+        handleAdPlanTitle(title);
+        handleAdPlanDescription(description);
+        handleAdPlanPlans(plans);
+    } catch (error) {
+        console.error("处理广告计划响应时出错:", error);
+    }
+}
+
+function handleAdPlanTitle(title) {
+    const planTitleEl = document.getElementById("ad-plan-title");
+    if (planTitleEl && title) {
+        planTitleEl.textContent = title;
+    }
+}
+
+function handleAdPlanDescription(description) {
+    const planDescriptionEl = document.getElementById("ad-plan-description");
+    if (planDescriptionEl && description) {
+        planDescriptionEl.textContent = description;
+    }
+}
+
+function handleAdPlanPlans(plans) {
+    const planContentEl = document.getElementById("ad-plan-content");
+    if (planContentEl && Array.isArray(plans)) {
+        planContentEl.innerHTML = "";
+        plans.sort((a, b) => a.priority - b.priority);
+        plans.forEach((plan) => {
+            const planItemEl = document.createElement("div");
+            planItemEl.className = `plan-item ${
+                plan.activated ? "active" : ""
+            }`;
+            planItemEl.innerHTML = `
+                <div class="plan-item-title">
+                    <span>${plan.title}</span>
+                </div>
+                <div class="plan-item-price">
+                    <span class="plan-item-price-current">
+                        ${plan.price.current}
+                        <span class="plan-item-price-payment">
+                            ${plan.price.payment ?? ""}
+                        </span>
+                    </span>
+                    <span class="plan-item-price-original ${
+                        plan.price.isPrice ? "price" : ""
+                    }">
+                        ${plan.price.original ?? ""}
+                    </span>
+                </div>
+                <div class="plan-item-button">
+                    <a href="${plan.button.href}" ${
+                plan.button.target === "_blank" ? 'target="_blank"' : ""
+            }>
+                        <button class="btn-primary">
+                            ${plan.button.label}
+                        </button>
+                    </a>
+                </div>
+                <div class="plan-item-description">
+                    <ul class="plan-item-description-list">
+                        ${plan.features
+                            .map((feature) => {
+                                const iconUrl = feature.icon.data
+                                    ? getMediaUrl(feature.icon)
+                                    : "../img/ad/checked.svg";
+                                return `<li class="plan-item-description-item">
+                            <i class="plan-item-description-item-icon">
+                                <img src="${iconUrl}" alt="${feature.title}" />
+                            </i>
+                            <span class="plan-item-description-item-content ${
+                                feature.activated ? "" : "disabled"
+                            }">
+                                        ${feature.text}
+                                    </span>
+                                </li>`;
+                            })
+                            .join("")}
+                    </ul>
+                </div>
+            `;
+            planContentEl.appendChild(planItemEl);
+        });
+    }
 }
 
 // 处理广告介绍响应
 function handleAdIntroResponse(response) {
-    console.log(response);
-    // 在此实现广告介绍处理逻辑
+    try {
+        const {
+            data: {
+                attributes: { title, description, intros },
+            },
+        } = response;
+        handleAdIntroTitle(title);
+        handleAdIntroDescription(description);
+        handleAdIntroIntros(intros);
+    } catch (error) {
+        console.error("处理广告介绍响应时出错:", error);
+    }
+}
+
+function handleAdIntroTitle(title) {
+    const introTitleEl = document.getElementById("ad-intro-title");
+    if (introTitleEl && title) {
+        introTitleEl.textContent = title;
+    }
+}
+
+function handleAdIntroDescription(description) {
+    const introDescriptionEl = document.getElementById("ad-intro-description");
+    if (introDescriptionEl && description) {
+        introDescriptionEl.textContent = description;
+    }
+}
+
+function handleAdIntroIntros(intros) {
+    const introContentEl = document.getElementById("ad-intro-content");
+    if (introContentEl && Array.isArray(intros)) {
+        introContentEl.innerHTML = "";
+        intros.sort((a, b) => a.priority - b.priority);
+
+        intros.forEach((intro, index) => {
+            const introItemEl = document.createElement("div");
+            const barUrl = intro.bar.data
+                ? getMediaUrl(intro.bar)
+                : "../img/ad/intro-card-head.png";
+            const coverUrl = intro.cover.data
+                ? getMediaUrl(intro.cover)
+                : `../img/ad/intro-card-img${index + 1}.svg`;
+            introItemEl.className = "ad-intro-item";
+            introItemEl.innerHTML = `
+                <div class="ad-intro-item-header">
+                    <img src="${barUrl}" alt="intro-bar" />
+                </div>
+                <div class="ad-intro-item-image">
+                    <img src="${coverUrl}" alt="intro-cover" />
+                </div>
+                <div class="ad-intro-item-title">
+                    <span>${intro.title}</span>
+                </div>
+                <div class="ad-intro-item-description">
+                    <span>${intro.description}</span>
+                </div>
+            `;
+            introContentEl.appendChild(introItemEl);
+        });
+    }
 }
 
 // 错误处理函数

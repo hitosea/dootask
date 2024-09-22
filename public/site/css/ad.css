@@ -262,12 +262,26 @@ footer.ad-footer .footer-layout {
     font-weight: 900;
 }
 
+.ad-plan .section-content .plan-item .plan-item-price .plan-item-price-payment {
+    font-size: 14px;
+    font-weight: 500;
+    color: #727570;
+}
+
 .ad-plan
     .section-content
     .plan-item
     .plan-item-price
     .plan-item-price-original {
     font-size: 14px;
+    color: #727570;
+}
+
+.ad-plan
+    .section-content
+    .plan-item
+    .plan-item-price
+    .plan-item-price-original.price {
     color: #f3474c;
     text-decoration: line-through;
 }
@@ -382,7 +396,7 @@ footer.ad-footer .footer-layout {
 
 .ad-intro .section-content .ad-intro-item .ad-intro-item-image {
     width: 100%;
-    height: 100%;
+    height: 260px;
 }
 
 .ad-intro .section-content .ad-intro-item .ad-intro-item-image img {
