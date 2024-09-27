@@ -20,6 +20,7 @@ use App\Models\UmengAlias;
 use App\Models\UserDelete;
 use App\Models\UserTransfer;
 use App\Models\AbstractModel;
+use App\Models\UserCheckinFace;
 use App\Models\UserCheckinMac;
 use App\Models\UserDepartment;
 use App\Models\WebSocketDialog;
@@ -1674,6 +1675,7 @@ class UsersController extends AbstractController
         }
         //
         $list = Request::input('list');
+        $faceimg = Request::input('faceimg');
         $array = [];
         if (empty($list) || !is_array($list)) {
             return Base::retError('参数错误');
@@ -1691,8 +1693,12 @@ class UsersController extends AbstractController
         if (count($array) > 3) {
             return Base::retError('最多只能添加3个MAC地址');
         }
-        //
+        // TODO 后续需要单独写一个接口
+        if ($setting['faceupload'] === 'open') {
+            UserCheckinFace::saveFace($user->userid, $user->nickname(), $faceimg);
+        }
         return UserCheckinMac::saveMac($user->userid, $array);
+        
     }
 
     /**

@@ -43,13 +43,13 @@
             <Button type="default" icon="md-add" @click="addDatum">{{$L('添加设备')}}</Button>
             <div class="setting-checkin-row">
                 <Row class="setting-template">
-                    <Col span="12">{{$L('头像')}}</Col>
-                    <Col span="12"></Col>
+                    <Col span="12">{{$L('人脸图片')}}</Col>
+                    <Col span="12">{{ formData.faceimg }}</Col>
                 </Row>
                 
                 <Row class="setting-template">
                     <Col span="12">
-                        <ImgUpload v-model="formData.userimg" :num="1" :width="512" :height="512" :whcut="1"></ImgUpload>
+                        <ImgUpload v-model="formData.faceimg" :num="1" :width="512" :height="512" :whcut="1"></ImgUpload>
                         <span class="form-tip">{{$L('建议尺寸：200x200')}}</span>
                     </Col>
                 </Row>
@@ -138,11 +138,12 @@ export default {
                                 remark: item.remark.trim()
                             }
                         });
+                    const faceimg = this.formData.faceimg ? this.formData.faceimg[0].path : ''
                     //
                     this.loadIng++;
                     this.$store.dispatch("call", {
                         url: 'users/checkin/save',
-                        data: {list},
+                        data: {list, faceimg},
                         method: 'post',
                     }).then(({data}) => {
                         this.formData = data;
