@@ -223,7 +223,20 @@ class UserBot extends AbstractModel
                         'remark' => '手动签到',
                     ];
                 }
-            }
+            } elseif (Base::leftExists($mac, "checkin-", true)) {
+                $mac = Base::leftDelete($mac, "checkin-", true);
+                if ($UserInfo = User::whereUserid($mac)->whereBot(0)->first()) {
+                    $array = [
+                        'userid' => $UserInfo->userid,
+                        'mac' => '00:00:00:00:00:00',
+                        'date' => $nowDate,
+                    ];
+                    $checkins[] = [
+                        'userid' => $UserInfo->userid,
+                        'remark' => '考勤机',
+                    ];
+                }
+            } 
             if ($array) {
                 $record = UserCheckinRecord::where($array)->first();
                 if (empty($record)) {
@@ -251,6 +264,8 @@ class UserBot extends AbstractModel
             $sendMsg = function($type, $checkin) use ($alreadyTip, $getJokeSoup, $botUser, $nowDate) {
                 $cacheKey = "Checkin::sendMsg-{$nowDate}-{$type}:" . $checkin['userid'];
                 $typeDesc = $type == "up" ? "上班" : "下班";
+                // TODO 方便测试
+                Cache::delete($cacheKey);
                 if (Cache::get($cacheKey) === "yes") {
                     if ($alreadyTip && $dialog = WebSocketDialog::checkUserDialog($botUser, $checkin['userid'])) {
                         $text = "<p>" . Doo::translate("今日已{$typeDesc}打卡，无需重复打卡。") . "</p>";

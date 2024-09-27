@@ -41,6 +41,19 @@
                 </Row>
             </div>
             <Button type="default" icon="md-add" @click="addDatum">{{$L('添加设备')}}</Button>
+            <div class="setting-checkin-row">
+                <Row class="setting-template">
+                    <Col span="12">{{$L('头像')}}</Col>
+                    <Col span="12"></Col>
+                </Row>
+                
+                <Row class="setting-template">
+                    <Col span="12">
+                        <ImgUpload v-model="formData.userimg" :num="1" :width="512" :height="512" :whcut="1"></ImgUpload>
+                        <span class="form-tip">{{$L('建议尺寸：200x200')}}</span>
+                    </Col>
+                </Row>
+            </div>
         </Form>
         <div class="setting-footer">
             <Button :loading="loadIng > 0" type="primary" @click="submitForm">{{$L('提交')}}</Button>
@@ -59,9 +72,10 @@
 
 <script>
 import CheckinCalendar from "../components/CheckinCalendar";
+import ImgUpload from "../../../components/ImgUpload";
 export default {
     name: "ManageCheckin",
-    components: {CheckinCalendar},
+    components: {CheckinCalendar, ImgUpload},
 
     data() {
         return {
