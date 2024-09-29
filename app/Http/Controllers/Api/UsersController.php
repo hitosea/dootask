@@ -776,6 +776,13 @@ class UsersController extends AbstractController
                 }
                 return $user;
             });
+            $list->transform(function (User $user) use ($getCheckinMac) {
+                if ($getCheckinMac) {
+                    $checkinFace = UserCheckinFace::query()->whereUserid($user->userid)->first();
+                    $user->checkin_face = $checkinFace ? Base::fillUrl($checkinFace->faceimg) : '';
+                }
+                return $user;
+            });
         }
         //
         return Base::retSuccess('success', $list);
@@ -796,6 +803,7 @@ class UsersController extends AbstractController
      * - settemp              设为临时帐号
      * - cleartemp            取消临时身份（取消临时帐号）
      * - checkin_macs         修改自动签到mac地址（需要参数 checkin_macs）
+     * - checkin_face         修改签到人脸图片（需要参数 checkin_face）
      * - department           修改部门（需要参数 department）
      * - setdisable           设为离职（需要参数 disable_time、transfer_userid）
      * - cleardisable         取消离职
@@ -806,6 +814,7 @@ class UsersController extends AbstractController
      * @apiParam {String} [nickname]            昵称
      * @apiParam {String} [profession]          职位
      * @apiParam {String} [checkin_macs]        自动签到mac地址
+     * @apiParam {String} [checkin_face]        人脸图片地址
      * @apiParam {String} [department]          部门
      * @apiParam {String} [disable_time]        离职时间
      * @apiParam {String} [transfer_userid]     离职交接人
@@ -869,6 +878,11 @@ class UsersController extends AbstractController
                     }
                 }
                 return UserCheckinMac::saveMac($userInfo->userid, $array);
+
+            case 'checkin_face':
+                $faceimg = $data['checkin_face'] ? $data['checkin_face'] : '';
+                
+                return UserCheckinFace::saveFace($userInfo->userid, $userInfo->nickname, $faceimg, "管理员上传");
 
             case 'department':
                 if (!is_array($data['department'])) {
@@ -1644,8 +1658,16 @@ class UsersController extends AbstractController
         $user = User::auth();
         //
         $list = UserCheckinMac::whereUserid($user->userid)->orderBy('id')->get();
+        $userface = UserCheckinFace::whereUserid($user->userid)->first();
+        
+        // 组装数据
+        // TODO 如何获取http连接
+        $data = [
+            'list' => $list,
+            'faceimg'=> $userface ? Base::fillUrl($userface->faceimg) : ''
+        ];
         //
-        return Base::retSuccess('success', $list);
+        return Base::retSuccess('success', $data);
     }
 
     /**
@@ -1694,10 +1716,29 @@ class UsersController extends AbstractController
             return Base::retError('最多只能添加3个MAC地址');
         }
         // TODO 后续需要单独写一个接口
-        if ($setting['faceupload'] === 'open') {
-            UserCheckinFace::saveFace($user->userid, $user->nickname(), $faceimg);
+        if ($setting['faceupload'] !== 'open' && $faceimg != '') {
+            return Base::retError('未开放修改权限，请联系管理员');
         }
-        return UserCheckinMac::saveMac($user->userid, $array);
+        if ($setting['faceupload'] === 'open') {
+            try{
+                $saveFaceRes = UserCheckinFace::saveFace($user->userid, $user->nickname(), $faceimg, "用户上传");
+                if ($saveFaceRes['ret'] == 0) {
+                    return $saveFaceRes;
+                }
+            } catch(\Throwable) {
+
+            }
+            
+        }
+        $saveMacRes = UserCheckinMac::saveMac($user->userid, $array);
+
+        
+        $data = [
+            'list' => $saveMacRes['data'],
+            'faceimg' =>  $faceimg
+        ];
+        $saveMacRes['data'] = $data;
+        return $saveMacRes;
         
     }
 

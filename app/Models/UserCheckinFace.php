@@ -31,30 +31,78 @@ use App\Module\Ihttp;
 class UserCheckinFace extends AbstractModel
 {
 
-    public static function saveFace($userid, $nickname, $faceimg)
+    public static function saveFace($userid, $nickname, $faceimg, $remark='')
     {
-        $faceFile = public_path($faceimg);
-        $record = base64_encode(file_get_contents($faceFile));
-
+        // 取上传图片的URL
+        $faceimg = Base::unFillUrl($faceimg);
+        $record = "";
+        if ($faceimg != '') {
+            $faceFile = public_path($faceimg);
+            $record = base64_encode(file_get_contents($faceFile));
+        }
+       
         $url = 'http://' . env('APP_IPPR') . '.55' . ":7788/user";
         $data = [
             'name' => $nickname,
             'enrollid' => $userid,
             'admin' => 0,
             'backupnum' => 50,
-            'record' => $record,
         ];
+        if ($record != '') {
+            $data['record'] = $record;
+        }
         
-        $ret = Ihttp::ihttp_post($url, json_encode($data));
+        $res = Ihttp::ihttp_post($url, json_encode($data));
+        if($res['data'] && $data = json_decode($res['data'])){
+            if($data->ret != 1 && $data->msg){
+                return Base::retError($data->msg);
+            }
+        }
         
-        return AbstractModel::transaction(function() use ($userid, $faceimg) {
-            self::updateInsert([
-                'userid' => $userid,
-                'faceimg' => $faceimg,
-                'status' => 1
-            ]);
-
+        
+        return AbstractModel::transaction(function() use ($userid, $faceimg, $remark) {
+            // self::updateInsert([
+            //     'userid' => $userid,
+            //     'faceimg' => $faceimg,
+            //     'status' => 1,
+            //     'remark' => $remark
+            // ]);
+            $checkinFace = self::query()->whereUserid($userid)->first();
+            if ($checkinFace) {
+                self::updateData(['id' => $checkinFace->id], [
+                    'faceimg' => $faceimg,
+                    'status' => 1,
+                    'remark' => $remark
+                ]);
+            } else {
+                $checkinFace = new UserCheckinFace();
+                $checkinFace->faceimg = $faceimg;
+                $checkinFace->userid = $userid;
+                $checkinFace->remark = $remark;
+                $checkinFace->save();
+            }
+            if ($faceimg == '') {
+                $res = UserCheckinFace::deleteDeviceUser($userid);
+                if ($res) {
+                    return $res;
+                }
+            }
             return Base::retSuccess('上传成功');
         });
+    }
+
+    public static function deleteDeviceUser($userid) {
+        $url = 'http://' . env('APP_IPPR') . '.55' . ":7788/user/delete";
+        $data = [
+            'enrollid' => $userid,
+            'backupnum' => 50,
+        ];
+        
+        $res = Ihttp::ihttp_post($url, json_encode($data));
+        if($res['data'] && $data = json_decode($res['data'])){
+            if($data->ret != 1 && $data->msg){
+                return Base::retError($data->msg);
+            }
+        }
     }
 }
