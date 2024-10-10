@@ -11,7 +11,9 @@ use App\Models\WebSocketDialogMsgRead;
 use App\Module\Base;
 use Carbon\Carbon;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
+use Illuminate\Support\Facades\Log;
 use Request;
+use Weeds\WechatWork\Facades\WechatWork;
 
 
 /**
@@ -163,6 +165,7 @@ class WebSocketDialogMsgTask extends AbstractTask
         }
         // 开始推送消息
         $umengUserid = [];
+        $wecomUserid = [];
         foreach ($array as $item) {
             $this->endPush[] = [
                 'userid' => $item['userid'],
@@ -182,6 +185,7 @@ class WebSocketDialogMsgTask extends AbstractTask
             if ($item['userid'] != $msg->userid && !$item['silence'] && !$this->silence) {
                 $umengUserid[] = $item['userid'];
             }
+            $wecomUserid[] = $item['userid'];
         }
         // umeng推送app
         if ($umengUserid) {
@@ -200,7 +204,17 @@ class WebSocketDialogMsgTask extends AbstractTask
                 ]);
             }
         }
-
+        // 推送wecom
+        if (Base::setting('wecomSetting') && !empty($wecomUserid)) {
+            $wecomIds = User::whereIn('userid', $wecomUserid)->where('wecom_id', '!=', '')->pluck('wecom_id')->toArray();
+            if (!empty($wecomIds)) {
+                $text = $msg->previewMsg();
+                list($status, $errMsg) = WechatWork::message_send_text($wecomIds, $text);
+                if (!$status) {
+                    Log::error('wecom-dialogPush', ['msg' => $errMsg]);
+                }
+            }
+        }
         // 推送目标②：正在打开这个任务会话的会员
         if ($dialog->type == 'group' && $dialog->group_type == 'task') {
             $list = User::whereTaskDialogId($dialog->id)->pluck('userid')->toArray();

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use DB;
 use Arr;
+use Illuminate\Support\Facades\Log;
 use Request;
 use Carbon\Carbon;
 use App\Module\Base;
@@ -12,6 +13,7 @@ use App\Exceptions\ApiException;
 use App\Observers\ProjectTaskObserver;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Weeds\WechatWork\Facades\WechatWork;
 
 /**
  * App\Models\ProjectTask
@@ -1694,8 +1696,13 @@ class ProjectTask extends AbstractModel
             default => "您有一个新任务 {$taskHtml}。",
         };
 
+        $wecomIds = [];
+
         /** @var User $user */
         foreach ($receivers as $receiver) {
+            if ($receiver->wecom_id) {
+                $wecomIds[] = $receiver->wecom_id;
+            }
             $data = [
                 'type' => $type,
                 'userid' => $receiver->userid,
@@ -1705,13 +1712,20 @@ class ProjectTask extends AbstractModel
                 continue;
             }
             //
-            $replace = $owners[$receiver->userid] ? "您负责的任务" : "您协助的任务";
             $dialog = WebSocketDialog::checkUserDialog($botUser, $receiver->userid);
             if ($dialog) {
+                $replace = $owners[$receiver->userid] ? "您负责的任务" : "您协助的任务";
+                $text = str_replace("您的任务", $replace, $text) . $suffix;
                 ProjectTaskPushLog::createInstance($data)->save();
                 WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', [
-                    'text' => str_replace("您的任务", $replace, $text) . $suffix
+                    'text' => $text
                 ], in_array($type, [0, 3]) ? $userid : $botUser->userid);
+            }
+        }
+        if (Base::setting('wecomSetting') && !empty($wecomIds)) {
+            list($status, $errMsg) = WechatWork::message_send_text($wecomIds, $text);
+            if (!$status) {
+                Log::error('wecom-taskPush', ['msg' => $errMsg]);
             }
         }
     }
