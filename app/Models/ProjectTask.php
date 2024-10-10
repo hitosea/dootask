@@ -450,9 +450,6 @@ class ProjectTask extends AbstractModel
         $tmpArray = [];
         foreach ($owner as $uid) {
             if (intval($uid) == 0) continue;
-            if (!ProjectUser::whereProjectId($project_id)->whereUserid($uid)->exists()) {
-                throw new ApiException($retPre . '负责人填写错误');
-            }
             if (ProjectTask::authData($uid)
                     ->whereNull('project_tasks.complete_at')
                     ->whereNull('project_tasks.archived_at')
@@ -504,6 +501,13 @@ class ProjectTask extends AbstractModel
                     'userid' => $uid,
                     'owner' => 1,
                 ])->save();
+                if (!ProjectUser::whereProjectId($task->project_id)->whereUserid($uid)->exists()) {
+                    ProjectUser::createInstance([
+                        'project_id' => $task->project_id,
+                        'userid' => $uid,
+                        'owner' => 0,
+                    ])->save();
+                }
             }
             $assist = array_values(array_unique(array_diff($assist, $owner)));
             foreach ($assist as $uid) {
@@ -514,6 +518,13 @@ class ProjectTask extends AbstractModel
                     'userid' => $uid,
                     'owner' => 0,
                 ])->save();
+                if (!ProjectUser::whereProjectId($task->project_id)->whereUserid($uid)->exists()) {
+                    ProjectUser::createInstance([
+                        'project_id' => $task->project_id,
+                        'userid' => $uid,
+                        'owner' => 0,
+                    ])->save();
+                }
             }
 
             // 可见性

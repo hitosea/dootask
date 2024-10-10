@@ -78,7 +78,7 @@
                     v-model="addData.owner"
                     :multiple-max="10"
                     :title="$L('选择任务负责人')"
-                    :project-id="addData.project_id"
+                    :project-id="0"
                     :avatar-size="24"
                     border/>
             </FormItem>
@@ -87,7 +87,7 @@
                     v-model="addData.assist"
                     :multiple-max="10"
                     :title="$L('选择任务协助人员')"
-                    :project-id="addData.project_id"
+                    :project-id="0"
                     :disabled-choice="addData.owner"
                     :avatar-size="24"
                     border/>
