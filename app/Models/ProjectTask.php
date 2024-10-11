@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Services\WecomService;
 use DB;
 use Arr;
-use Illuminate\Support\Facades\Log;
 use Request;
 use Carbon\Carbon;
 use App\Module\Base;
@@ -14,7 +13,6 @@ use App\Exceptions\ApiException;
 use App\Observers\ProjectTaskObserver;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Weeds\WechatWork\Facades\WechatWork;
 
 /**
  * App\Models\ProjectTask

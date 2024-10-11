@@ -279,7 +279,7 @@ class WecomService
         Config::set('wechatwork.agents.application.agent_id', $setting['agent_id']);
         Config::set('wechatwork.agents.application.secret', $setting['app_secret']);
 
-        list($status, $errMsg) = WechatWork::message_send_text($touser, $content);
+        list($status, $errMsg) = WechatWork::message_send_text(implode('|', $touser), ['content' => $content]);
         if (!$status) {
             Log::error('wecom-taskPush', ['msg' => $errMsg]);
             return false;
