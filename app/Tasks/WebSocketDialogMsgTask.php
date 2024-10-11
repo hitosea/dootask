@@ -9,6 +9,7 @@ use App\Models\WebSocketDialog;
 use App\Models\WebSocketDialogMsg;
 use App\Models\WebSocketDialogMsgRead;
 use App\Module\Base;
+use App\Services\WecomService;
 use Carbon\Carbon;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
@@ -209,12 +210,10 @@ class WebSocketDialogMsgTask extends AbstractTask
             $wecomIds = User::whereIn('userid', $wecomUserid)->where('wecom_id', '!=', '')->pluck('wecom_id')->toArray();
             if (!empty($wecomIds)) {
                 $text = $msg->previewMsg();
-                list($status, $errMsg) = WechatWork::message_send_text($wecomIds, $text);
-                if (!$status) {
-                    Log::error('wecom-dialogPush', ['msg' => $errMsg]);
-                }
+                WecomService::sendTextMessage($wecomIds, $text);
             }
         }
+
         // 推送目标②：正在打开这个任务会话的会员
         if ($dialog->type == 'group' && $dialog->group_type == 'task') {
             $list = User::whereTaskDialogId($dialog->id)->pluck('userid')->toArray();

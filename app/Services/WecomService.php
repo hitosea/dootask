@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Module\Base;
 use App\Models\UserDepartment;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Weeds\WechatWork\Facades\WechatWork;
 
 class WecomService
@@ -251,6 +252,39 @@ class WecomService
         });
         //
         Cache::delete("WECOMSERVICE-SYNCDELETEUSER");
+        return true;
+    }
+
+    /**
+     * 发送文本消息
+     *
+     * @param $touser
+     * @param $content
+     * @param $toparty
+     * @param $totag
+     * @param $safe
+     * @param $enable_duplicate_check
+     * @param $duplicate_check_interval
+     * @param $enable_id_trans
+     * @return bool
+     */
+    public static function sendTextMessage($touser, $content, $toparty = '', $totag = '', $safe = 0, $enable_duplicate_check = 0, $duplicate_check_interval = 1800, $enable_id_trans = 0)
+    {
+        $setting = Base::setting('wecomSetting');
+        if (!$setting) {
+            return false;
+        }
+        //
+        Config::set('wechatwork.corp_id', $setting['copr_id']);
+        Config::set('wechatwork.agents.application.agent_id', $setting['agent_id']);
+        Config::set('wechatwork.agents.application.secret', $setting['app_secret']);
+
+        list($status, $errMsg) = WechatWork::message_send_text($touser, $content);
+        if (!$status) {
+            Log::error('wecom-taskPush', ['msg' => $errMsg]);
+            return false;
+        }
+
         return true;
     }
 }

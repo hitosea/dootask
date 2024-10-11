@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\WecomService;
 use DB;
 use Arr;
 use Illuminate\Support\Facades\Log;
@@ -1733,12 +1734,7 @@ class ProjectTask extends AbstractModel
                 ], in_array($type, [0, 3]) ? $userid : $botUser->userid);
             }
         }
-        if (Base::setting('wecomSetting') && !empty($wecomIds)) {
-            list($status, $errMsg) = WechatWork::message_send_text($wecomIds, $text);
-            if (!$status) {
-                Log::error('wecom-taskPush', ['msg' => $errMsg]);
-            }
-        }
+        WecomService::sendTextMessage($wecomIds, $text);
     }
 
     /**
