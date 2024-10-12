@@ -209,7 +209,7 @@ class WebSocketDialogMsgTask extends AbstractTask
             if (!empty($wecomIds)) {
                 $baseUrl = config('app.base_url');
                 $text = $msg->previewMsg();
-                $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id={$$dialog->id}\">$text</a>";
+                $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id={$dialog->id}\">$text</a>";
                 WecomService::sendTextMessage($wecomIds, $wecomHtml);
             }
         }
