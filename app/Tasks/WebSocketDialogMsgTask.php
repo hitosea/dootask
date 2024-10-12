@@ -12,9 +12,7 @@ use App\Module\Base;
 use App\Services\WecomService;
 use Carbon\Carbon;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
-use Illuminate\Support\Facades\Log;
 use Request;
-use Weeds\WechatWork\Facades\WechatWork;
 
 
 /**
@@ -185,8 +183,8 @@ class WebSocketDialogMsgTask extends AbstractTask
             ];
             if ($item['userid'] != $msg->userid && !$item['silence'] && !$this->silence) {
                 $umengUserid[] = $item['userid'];
+                $wecomUserid[] = $item['userid'];
             }
-            $wecomUserid[] = $item['userid'];
         }
         // umeng推送app
         if ($umengUserid) {
@@ -206,11 +204,13 @@ class WebSocketDialogMsgTask extends AbstractTask
             }
         }
         // 推送wecom
-        if (Base::setting('wecomSetting') && !empty($wecomUserid)) {
+        if (!empty($wecomUserid)) {
             $wecomIds = User::whereIn('userid', $wecomUserid)->where('wecom_id', '!=', '')->pluck('wecom_id')->toArray();
             if (!empty($wecomIds)) {
+                $baseUrl = config('app.base_url');
                 $text = $msg->previewMsg();
-                WecomService::sendTextMessage($wecomIds, $text);
+                $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id={$$dialog->id}\">$text</a>";
+                WecomService::sendTextMessage($wecomIds, $wecomHtml);
             }
         }
 

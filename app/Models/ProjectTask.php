@@ -1699,12 +1699,22 @@ class ProjectTask extends AbstractModel
 
         $dataId = $this->parent_id ?: $this->id;
         $taskHtml = "<span class=\"mention task\" data-id=\"{$dataId}\">#{$this->name}</span>";
+        $baseUrl = config('app.base_url');
+        $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id=0\">#{$this->name}</a>";
         $text = match ($type) {
             1 => "您的任务 {$taskHtml} 即将超时。",
             2 => "您的任务 {$taskHtml} 已经超时。",
             3 => "您的任务 {$taskHtml} 时间已修改。",
             default => "您有一个新任务 {$taskHtml}。",
         };
+        $text .= $suffix;
+        $wecomText = match ($type) {
+            1 => "您的任务 {$wecomHtml} 即将超时。",
+            2 => "您的任务 {$wecomHtml} 已经超时。",
+            3 => "您的任务 {$wecomHtml} 时间已修改。",
+            default => "您有一个新任务 {$wecomHtml}。",
+        };
+        $wecomText .= $suffix;
 
         $wecomIds = [];
 
@@ -1725,11 +1735,13 @@ class ProjectTask extends AbstractModel
             $dialog = WebSocketDialog::checkUserDialog($botUser, $receiver->userid);
             if ($dialog) {
                 $replace = $owners[$receiver->userid] ? "您负责的任务" : "您协助的任务";
-                $text = str_replace("您的任务", $replace, $text) . $suffix;
+                $text = str_replace("您的任务", $replace, $text);
                 ProjectTaskPushLog::createInstance($data)->save();
                 WebSocketDialogMsg::sendMsg(null, $dialog->id, 'text', [
                     'text' => $text
                 ], in_array($type, [0, 3]) ? $userid : $botUser->userid);
+                $wecomText = str_replace("您的任务", $replace, $wecomText);
+                $wecomText = preg_replace('/dialog_id=([0-9]+)/', "dialog_id=$dialog->id", $wecomText);
             }
         }
         WecomService::sendTextMessage($wecomIds, $text);
