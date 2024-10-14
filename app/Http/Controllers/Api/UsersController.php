@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use Arr;
 use Cache;
 use Captcha;
+use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Facades\Log;
 use Request;
 use Carbon\Carbon;
 use App\Module\Doo;
@@ -493,8 +495,9 @@ class UsersController extends AbstractController
         $user = User::auth();
         //
         $columns = User::$basicField;
-        $columns[] = 'created_at';
-        $columns[] = 'identity';
+        $columns[] = 'users.created_at';
+        $columns[] = 'users.identity';
+        $columns[] = 'user_departments.name as department_one';
         $builder = User::select($columns);
         //
         $keys = Request::input('keys');
@@ -505,14 +508,32 @@ class UsersController extends AbstractController
         $sorts = is_array($sorts) ? $sorts : [];
         //
         if ($keys['key']) {
+            $builder->join('user_departments', function (JoinClause $join) use ($keys) {
+                $prefix = DB::getTablePrefix();
+                $join->whereRaw("FIND_IN_SET({$prefix}user_departments.id, {$prefix}users.department)")->where('user_departments.name', 'like', "%{$keys['key']}%");
+            });
+            $departmentIds = UserDepartment::where('name', 'like', "%{$keys['key']}%")->pluck('id')->toArray();
             if (str_contains($keys['key'], "@")) {
-                $builder->where("email", "like", "%{$keys['key']}%");
+                $builder->where(function ($query) use ($keys, $departmentIds) {
+                    $query->where("email", "like", "%{$keys['key']}%");
+                    foreach ($departmentIds as $departmentId) {
+                        $query->orWhereRaw("FIND_IN_SET('{$departmentId}', department)");
+                    }
+                });
             } else {
-                $builder->where(function($query) use ($keys) {
+                $builder->where(function($query) use ($keys, $departmentIds) {
                     $query->where("nickname", "like", "%{$keys['key']}%")
                         ->orWhere("pinyin", "like", "%{$keys['key']}%");
+                    foreach ($departmentIds as $departmentId) {
+                        $query->orWhereRaw("FIND_IN_SET('{$departmentId}', department)");
+                    }
                 });
             }
+        } else {
+            $builder->leftJoin('user_departments', function (JoinClause $join) {
+                $prefix = DB::getTablePrefix();
+                $join->whereRaw("FIND_IN_SET({$prefix}user_departments.id, {$prefix}users.department)");
+            });
         }
         if (intval($keys['disable']) == 0) {
             $builder->whereNull("disable_at");
@@ -564,9 +585,9 @@ class UsersController extends AbstractController
         }
         //
         if (Request::exists('page')) {
-            $list = $builder->orderBy('userid')->paginate(Base::getPaginate(100, 10));
+            $list = $builder->orderBy('user_departments.name')->paginate(Base::getPaginate(100, 10));
         } else {
-            $list = $builder->orderBy('userid')->take(Base::getPaginate(100, 10, 'take'))->get();
+            $list = $builder->orderBy('user_departments.name')->take(Base::getPaginate(100, 10, 'take'))->get();
         }
         //
         $list->transform(function (User $userInfo) use ($user, $state) {

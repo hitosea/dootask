@@ -117,10 +117,10 @@
                             <i v-else-if="item.group_type=='okr'" class="taskfont icon-avatar task">&#xe6f4;</i>
                             <Icon v-else class="icon-avatar" type="ios-people" />
                             <div class="avatar-name">
-                                <span>{{item.name}}</span>
+                                <span>{{item.department_one ? item.department_one + '-' : ''}}{{item.name}}</span>
                             </div>
                         </div>
-                        <UserAvatar v-else class="user-modal-avatar" :userid="item.userid" :size="40" show-name/>
+                        <UserAvatar v-else class="user-modal-avatar" :userid="item.userid" :size="40" show-name :department-name="item.department_one"/>
                     </li>
                 </ul>
             </Scrollbar>
