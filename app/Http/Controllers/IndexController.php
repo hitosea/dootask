@@ -18,7 +18,6 @@ use App\Module\Extranet;
 use App\Tasks\AppPushTask;
 use App\Module\RandomColor;
 use App\Tasks\JokeSoupTask;
-use App\Tasks\AyncWecomTask;
 use App\Tasks\DeleteTmpTask;
 use App\Models\UserDepartment;
 use App\Tasks\EmailNoticeTask;
@@ -68,7 +67,7 @@ class IndexController extends InvokeController
         $setting = Base::setting('wecomSetting');
         $path = request()->path();
         // 有code参数就解释
-        if ($path == '/' && !$token && $isWxwork && $code) {
+        if (($path == '/' || $path == 'manage/messenger') && !$token && $isWxwork && $code) {
             if (!$setting) {
                 return response()->view('wecom', ['error' => '未配置企微设置，请先前往配置！']);
             }
@@ -169,7 +168,7 @@ class IndexController extends InvokeController
                 'token' => $user->token
             ]);
             //
-        } else if ($path == '/' && !$token && $isWxwork) {
+        } else if (($path == '/' || $path == 'manage/messenger') && !$token && $isWxwork) {
             return response()->view('wecom', [
                 'error' => !$setting ? '未配置企微设置，请先前往配置！' : '',
                 'corpid' => $setting['copr_id'],

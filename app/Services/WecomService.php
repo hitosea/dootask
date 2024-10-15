@@ -277,14 +277,32 @@ class WecomService
         //
         Config::set('wechatwork.corp_id', $setting['copr_id']);
         Config::set('wechatwork.agents.application.agent_id', $setting['agent_id']);
-        Config::set('wechatwork.agents.application.secret', $setting['app_secret']);
+        Config::set('wechatwork.agents.contacts.secret', $setting['app_secret']);
+        //
+        list($status, $token) = WechatWork::access_token();
+        if (!$status) {
+            Log::error('wecom-taskPush', ['msg' => "获取accessToken错误: " . $token]);
+            return false;
+        }
 
-        list($status, $errMsg) = WechatWork::message_send_text(implode('|', $touser), ['content' => $content]);
+        $url = 'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=' . $token;
+
+        $json = [
+            'agentid' => $setting['agent_id'],
+            'msgtype' => 'text',
+            'enable_duplicate_check' => $enable_duplicate_check,
+            'duplicate_check_interval' => $duplicate_check_interval,
+        ];
+        if (!empty($touser)) $json['touser'] = implode('|', $touser);
+        if (!empty($toparty)) $json['toparty'] = $toparty;
+        if (!empty($totag)) $json['totag'] = $totag;
+
+        $json['text'] = ['content' => $content];
+        list($status, $errMsg) = WechatWork::postCurl($url, $json);
         if (!$status) {
             Log::error('wecom-taskPush', ['msg' => $errMsg]);
             return false;
         }
-
         return true;
     }
 }
