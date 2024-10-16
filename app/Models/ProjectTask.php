@@ -117,6 +117,7 @@ class ProjectTask extends AbstractModel
         'percent',
         'today',
         'overdue',
+        'parent_type',
     ];
 
     /**
@@ -226,6 +227,23 @@ class ProjectTask extends AbstractModel
             }
         }
         return false;
+    }
+
+    /**
+     * 父级任务类型
+     *
+     * @return string
+     */
+    public function getParentTypeAttribute()
+    {
+        if ($this->parent_id == 0) {
+            return '';
+        }
+        $pTask = self::find($this->parent_id);
+        if ($pTask->parent_id == 0) {
+            return 'main';
+        }
+        return 'sub';
     }
 
     /**
@@ -927,6 +945,29 @@ class ProjectTask extends AbstractModel
                     ]);
                     $this->column_id = $column->id;
                 }
+                // 优先级
+                $p = false;
+                $oldPName = $this->p_name;
+                if (Arr::exists($data, 'p_level') && $this->p_level != $data['p_level']) {
+                    $this->p_level = intval($data['p_level']);
+                    $p = true;
+                }
+                if (Arr::exists($data, 'p_name') && $this->p_name != $data['p_name']) {
+                    $this->p_name = trim($data['p_name']);
+                    $p = true;
+                }
+                if (Arr::exists($data, 'p_color') && $this->p_color != $data['p_color']) {
+                    $this->p_color = trim($data['p_color']);
+                    $p = true;
+                }
+                if ($p) {
+                    $this->addLog("修改{任务}优先级", [
+                        'change' => [$oldPName, $this->p_name]
+                    ]);
+                }
+            }
+            // 仅主任务及一级子任务可修改内容
+            if ($this->parent_id == 0 || $this->parent_type == 'main') {
                 // 内容
                 if (Arr::exists($data, 'content')) {
                     $logRecord = [];
@@ -949,26 +990,6 @@ class ProjectTask extends AbstractModel
                     ])->save();
                     $this->addLog("修改{任务}详细描述", $logRecord);
                     $updateMarking['is_update_content'] = true;
-                }
-                // 优先级
-                $p = false;
-                $oldPName = $this->p_name;
-                if (Arr::exists($data, 'p_level') && $this->p_level != $data['p_level']) {
-                    $this->p_level = intval($data['p_level']);
-                    $p = true;
-                }
-                if (Arr::exists($data, 'p_name') && $this->p_name != $data['p_name']) {
-                    $this->p_name = trim($data['p_name']);
-                    $p = true;
-                }
-                if (Arr::exists($data, 'p_color') && $this->p_color != $data['p_color']) {
-                    $this->p_color = trim($data['p_color']);
-                    $p = true;
-                }
-                if ($p) {
-                    $this->addLog("修改{任务}优先级", [
-                        'change' => [$oldPName, $this->p_name]
-                    ]);
                 }
             }
             $this->save();
@@ -1426,11 +1447,15 @@ class ProjectTask extends AbstractModel
      */
     public function addLog($detail, $record = [], $userid = 0, $taskOnly = 0)
     {
-        $detail = str_replace("{任务}", $this->parent_id ? "子任务" : "任务", $detail);
+        $taskId = $this->id;
+        if ($this->parent_type == 'sub') {
+            $taskId = $this->parent_id;
+        }
+        $detail = str_replace("{任务}", $this->parent_type == 'sub' ? "子任务" : "任务", $detail);
         $array = [
             'project_id' => $this->project_id,
             'column_id' => $this->column_id,
-            'task_id' => $this->parent_id ?: $this->id,
+            'task_id' => $taskId,
             'userid' => $userid ?: User::userid(),
             'detail' => $detail,
         ];
@@ -1696,7 +1721,7 @@ class ProjectTask extends AbstractModel
             return;
         }
 
-        $dataId = $this->parent_id ?: $this->id;
+        $dataId = $this->parent_type == 'sub' ? $this->parent_id : $this->id;
         $taskHtml = "<span class=\"mention task\" data-id=\"{$dataId}\">#{$this->name}</span>";
         $text = match ($type) {
             1 => "您的任务 {$taskHtml} 即将超时。",

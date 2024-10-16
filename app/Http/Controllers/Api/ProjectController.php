@@ -2053,7 +2053,7 @@ class ProjectController extends AbstractController
         //
         $task = ProjectTask::userTask($task_id);
         //
-        if ($task->parent_id > 0) {
+        if ($task->parent_type == 'sub') {
             return Base::retError('子任务不支持此功能');
         }
         //

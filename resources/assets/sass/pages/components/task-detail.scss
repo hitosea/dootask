@@ -306,6 +306,12 @@
                                         opacity: 0.7;
                                     }
                                 }
+                                .subtask-detail {
+                                    .detail {
+                                        transform: translateX(0);
+                                        opacity: 0.7;
+                                    }
+                                }
                             }
                             .subtask-icon {
                                 padding-top: 1px;
@@ -370,8 +376,18 @@
                                     }
                                 }
                             }
+                            .subtask-detail {
+                                margin-right: 2px;
+                                .detail {
+                                    margin: 3px 2px;
+                                    font-size: 20px;
+                                    transition: all 0.2s;
+                                    transform: translateX(50%);
+                                    opacity: 0;
+                                }
+                            }
                             .subtask-time {
-                                margin-right: 8px;
+                                margin-right: 2px;
                                 .time {
                                     overflow: hidden;
                                     text-overflow: ellipsis;

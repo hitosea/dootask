@@ -1995,11 +1995,62 @@ export default {
     openTask({state, dispatch}, task) {
         let task_id = task;
         if ($A.isJson(task)) {
-            if (task.parent_id > 0) {
-                task_id = task.parent_id;
+            task_id = task.id;
+        }
+        if ($A.isSubElectron) {
+            if (task_id > 0) {
+                $A.Electron.sendMessage('updateChildWindow', {
+                    name: `task-${task_id}`,
+                    path: `/single/task/${task_id}`,
+                });
             } else {
-                task_id = task.id;
+                $A.Electron.sendMessage('windowClose');
             }
+            return
+        }
+        // state.taskArchiveView = task_id;
+        // state.taskId = task_id;
+        if (task_id > 0) {
+            dispatch("getTaskOne", {
+                task_id,
+                archived: 'all'
+            }).then((data) => {
+                if (data.data.parent_type != 'main') {
+                    state.taskArchiveView = task_id;
+                    state.taskId = task_id;
+                } else {
+                    state.taskArchiveView = task_id;
+                    state.taskSubId = task_id;
+                }
+                dispatch("getTaskContent", task_id);
+                dispatch("getTaskFiles", task_id);
+                dispatch("getTaskForParent", task_id).catch(() => {});
+                dispatch("saveTaskBrowse", task_id);
+            }).catch(({msg}) => {
+                $A.modalWarning({
+                    content: msg,
+                    onOk: () => {
+                        state.taskId = 0;
+                    }
+                });
+            });
+        } else {
+            state.taskArchiveView = 0;
+            state.taskId = 0;
+            state.taskOperation = {};
+        }
+    },
+
+    /**
+     * 打开子任务详情页
+     * @param state
+     * @param dispatch
+     * @param task
+     */
+    openSubtask({state, dispatch}, task) {
+        let task_id = task;
+        if ($A.isJson(task)) {
+            task_id = task.id;
         }
         if ($A.isSubElectron) {
             if (task_id > 0) {
@@ -2013,7 +2064,7 @@ export default {
             return
         }
         state.taskArchiveView = task_id;
-        state.taskId = task_id;
+        state.taskSubId = task_id;
         if (task_id > 0) {
             dispatch("getTaskOne", {
                 task_id,

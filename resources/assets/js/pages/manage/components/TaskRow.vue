@@ -240,6 +240,9 @@ export default {
         },
 
         openTask(task, receive) {
+            if (task.parent_type == 'sub') {
+                return;
+            }
             this.$store.dispatch("openTask", task)
             if (receive === true) {
                 // 向任务窗口发送领取任务请求
