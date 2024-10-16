@@ -182,7 +182,9 @@ class WebSocketDialogMsgTask extends AbstractTask
                 ]
             ];
             if ($item['userid'] != $msg->userid && !$item['silence'] && !$this->silence) {
-                $umengUserid[] = $item['userid'];
+                if (!$item['silence'] && !$this->silence) {
+                    $umengUserid[] = $item['userid'];
+                }
                 $wecomUserid[] = $item['userid'];
             }
         }

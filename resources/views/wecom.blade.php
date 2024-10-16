@@ -99,7 +99,13 @@
             </div>
         </div>
         <script>
-            window.location.replace(window.location.origin + "/manage/dashboard?userid={{$userid}}&token={{$token}}");
+            const searchParams = new URLSearchParams(window.location.search);
+            const dialogId = (searchParams.get('dialog_id'));
+            if (!dialogId) {
+                window.location.replace(window.location.origin + "/manage/dashboard?userid={{$userid}}&token={{$token}}");
+            } else {
+                window.location.replace(window.location.origin + "/manage/messenger?dialog_id=" + dialogId + "&userid={{$userid}}&token={{$token}}");
+            }
         </script>
     @else
         <div class="app-view-loading">
