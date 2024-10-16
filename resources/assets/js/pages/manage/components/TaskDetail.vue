@@ -53,7 +53,7 @@
             :avatar-size="20"
             :title="$L('修改负责人')"
             :add-icon="false"
-            :project-id="taskDetail.project_id"
+            :project-id="0"
             :before-submit="onOwner"/>
     </li>
     <!--主任务-->
@@ -181,7 +181,7 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :title="$L('修改负责人')"
-                            :project-id="taskDetail.project_id"
+                            :project-id="0"
                             :add-icon="false"
                             :before-submit="onOwner"/>
                     </FormItem>
@@ -196,7 +196,7 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :title="$L(getAssist.length > 0 ? '修改协助人员' : '添加协助人员')"
-                            :project-id="taskDetail.project_id"
+                            :project-id="0"
                             :disabled-choice="assistData.disabled"
                             :add-icon="false"
                             :before-submit="onAssist"/>

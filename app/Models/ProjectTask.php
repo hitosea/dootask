@@ -732,7 +732,6 @@ class ProjectTask extends AbstractModel
                 }
                 foreach ($owner as $uid) {
                     if (intval($uid) == 0) continue;
-                    if (!$this->project->useridInTheProject($uid)) continue;
                     $row = ProjectTaskUser::where("task_id", $this->id)
                         ->where("userid", $uid)
                         ->where("owner", '!=', 2)
@@ -750,6 +749,13 @@ class ProjectTask extends AbstractModel
                         $row->task_pid = $this->parent_id ?: $this->id;
                         $row->owner = 1;
                         $row->save();
+                    }
+                    if (!ProjectUser::whereProjectId($this->project_id)->whereUserid($uid)->exists()) {
+                        ProjectUser::createInstance([
+                            'project_id' => $this->project_id,
+                            'userid' => $uid,
+                            'owner' => 0,
+                        ])->save();
                     }
                     $array[] = $uid;
                 }
@@ -902,7 +908,6 @@ class ProjectTask extends AbstractModel
                     }
                     foreach ($assist as $uid) {
                         if (intval($uid) == 0) continue;
-                        if (!$this->project->useridInTheProject($uid)) continue;
                         //
                         ProjectTaskUser::updateInsert([
                             'task_id' => $this->id,
@@ -912,6 +917,13 @@ class ProjectTask extends AbstractModel
                             'task_pid' => $this->id,
                             'owner' => 0,
                         ]);
+                        if (!ProjectUser::whereProjectId($this->project_id)->whereUserid($uid)->exists()) {
+                            ProjectUser::createInstance([
+                                'project_id' => $this->project_id,
+                                'userid' => $uid,
+                                'owner' => 0,
+                            ])->save();
+                        }
                         $array[] = $uid;
                     }
                     if ($array) {
