@@ -122,7 +122,7 @@ class ProjectController extends AbstractController
         $all = Request::input('all');
         $type = Request::input('type', 'all');
         $archived = Request::input('archived', 'no');
-        $getcolumn = Request::input('getcolumn', 'no');
+        $getcolumn = Request::input('getcolumn', 'yes');
         $getuserid = Request::input('getuserid', 'no');
         $getstatistics = Request::input('getstatistics', 'yes');
         $keys = Request::input('keys');
@@ -162,17 +162,23 @@ class ProjectController extends AbstractController
         }
         //
         if ($timerange->updated) {
-            $builder->where('projects.updated_at', '>', $timerange->updated);
+//            $builder->where('projects.updated_at', '>', $timerange->updated);
         }
         //
         $list = $builder->orderByDesc('projects.id')->paginate(Base::getPaginate(100, 50));
-        $list->transform(function (Project $project) use ($getstatistics, $getuserid, $user) {
+        $list->transform(function (Project $project) use ($getstatistics, $getuserid, $user, $getcolumn) {
             $array = $project->toArray();
             if ($getuserid == 'yes') {
                 $array['userid_list'] = ProjectUser::whereProjectId($project->id)->pluck('userid')->toArray();
             }
             if ($getstatistics == 'yes') {
                 $array = array_merge($array, $project->getTaskStatistics($user->userid));
+            }
+            if ($getcolumn == 'yes') {
+                foreach ($array['project_column'] as $key =>  $column) {
+                    $data = $project->getColumnStatistics($column['id'], $user->userid);
+                    $array['project_column'][$key]['statistics'] = $data;
+                }
             }
             return $array;
         });
@@ -243,6 +249,12 @@ class ProjectController extends AbstractController
         $data = array_merge($project->toArray(), $project->getTaskStatistics($user->userid), [
             'project_user' => $project->projectUser,
         ]);
+        $data['project_column'] = [];
+        foreach ($project->projectColumn as $key => $column) {
+            $array = $column->toArray();
+            $array['statistics'] = $project->getColumnStatistics($array['id'], $user->userid);
+            $data['project_column'][$key] = $array;
+        }
         //
         return Base::retSuccess('success', $data);
     }

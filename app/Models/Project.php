@@ -191,6 +191,17 @@ class Project extends AbstractModel
         return $array;
     }
 
+    public function getColumnStatistics($columnId, $userid)
+    {
+        $array = [];
+        $builder = ProjectTask::authData($userid, 1)->where('project_tasks.project_id', $this->id)->where('project_tasks.column_id', $columnId)->whereNull('project_tasks.archived_at');
+        $array['task_my_num'] = $builder->count();
+        $array['task_my_complete'] = $builder->whereNotNull('complete_at')->count();
+        $array['task_my_percent'] = $array['task_my_num'] ? intval($array['task_my_complete'] / $array['task_my_num'] * 100) : 0;
+        //
+        return $array;
+    }
+
     /**
      * 加入项目
      * @param int $userid   加入的会员ID
