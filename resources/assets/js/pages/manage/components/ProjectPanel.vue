@@ -56,6 +56,7 @@
                             <EDropdownItem command="workflow">{{$L('工作流设置')}}</EDropdownItem>
                             <EDropdownItem command="user" divided>{{$L('成员管理')}}</EDropdownItem>
                             <EDropdownItem command="invite">{{$L('邀请链接')}}</EDropdownItem>
+                            <EDropdownItem command="assist">{{$L('协助人员')}}</EDropdownItem>
                             <EDropdownItem command="log" divided>{{$L('项目动态')}}</EDropdownItem>
                             <EDropdownItem command="archived_task">{{$L('已归档任务')}}</EDropdownItem>
                             <EDropdownItem command="deleted_task">{{$L('已删除任务')}}</EDropdownItem>
@@ -64,7 +65,10 @@
                             <EDropdownItem command="delete" style="color:#f40">{{$L('删除项目')}}</EDropdownItem>
                         </EDropdownMenu>
                         <EDropdownMenu v-else slot="dropdown">
-                            <EDropdownItem command="log">{{$L('项目动态')}}</EDropdownItem>
+                            <EDropdownItem v-if="projectData.owner && projectData.assist" command="user">{{$L('成员管理')}}</EDropdownItem>
+                            <EDropdownItem v-if="projectData.owner && projectData.assist" command="invite">{{$L('邀请链接')}}</EDropdownItem>
+                            <EDropdownItem v-if="projectData.owner && projectData.assist" command="assist">{{$L('协助人员')}}</EDropdownItem>
+                            <EDropdownItem command="log" divided>{{$L('项目动态')}}</EDropdownItem>
                             <EDropdownItem command="archived_task">{{$L('已归档任务')}}</EDropdownItem>
                             <EDropdownItem command="deleted_task">{{$L('已删除任务')}}</EDropdownItem>
                             <EDropdownItem command="exit" divided style="color:#f40">{{$L('退出项目')}}</EDropdownItem>
@@ -421,6 +425,22 @@
             </div>
         </Modal>
 
+        <!--协助人员-->
+        <Modal
+            v-model="assistShow"
+            :title="$L('协助人员')"
+            :mask-closable="false">
+            <Form :model="assistData" label-width="auto" @submit.native.prevent>
+                <FormItem prop="userids" :label="$L('协助人员')">
+                    <UserSelect v-model="assistData.userids" :uncancelable="assistData.uncancelable" :multiple-max="100" :title="$L('选择协助人员')"/>
+                </FormItem>
+            </Form>
+            <div slot="footer" class="adaption">
+                <Button type="default" @click="assistShow=false">{{$L('取消')}}</Button>
+                <Button type="primary" :loading="assistLoad > 0" @click="onAssist">{{$L('保存')}}</Button>
+            </div>
+        </Modal>
+
         <!--移交项目-->
         <Modal
             v-model="transferShow"
@@ -534,6 +554,10 @@ export default {
             userShow: false,
             userData: {},
             userLoad: 0,
+
+            assistShow: false,
+            assistData: {},
+            assistLoad: 0,
 
             inviteShow: false,
             inviteData: {},
@@ -1191,6 +1215,26 @@ export default {
             });
         },
 
+        onAssist() {
+            this.assistLoad++;
+            this.$store.dispatch("call", {
+                url: 'project/assist',
+                data: {
+                    project_id: this.projectId,
+                    userid: this.assistData.userids,
+                },
+            }).then(({msg}) => {
+                $A.messageSuccess(msg);
+                this.assistShow = false;
+                this.$store.dispatch("getProjectOne", this.projectId).catch(() => {});
+                this.$store.dispatch("getTaskForProject", this.projectId).catch(() => {})
+            }).catch(({msg}) => {
+                $A.modalError(msg);
+            }).finally(_ => {
+                this.assistLoad--;
+            });
+        },
+
         onTransfer() {
             this.transferLoad++;
             this.$store.dispatch("call", {
@@ -1285,7 +1329,7 @@ export default {
                     break;
 
                 case "user":
-                    if (this.projectData.owner_userid !== this.userId) {
+                    if (this.projectData.owner_userid !== this.userId && !this.projectData.owner && !this.projectData.asstst) {
                         return;
                     }
                     const userids = this.projectData.project_user.map(({userid}) => userid);
@@ -1299,6 +1343,14 @@ export default {
                     this.inviteData = {};
                     this.inviteShow = true;
                     this.inviteGet()
+                    break;
+
+                case "assist":
+                    const assists = this.projectData.project_user?.filter(({assist}) => assist == 1).map(({userid}) => userid);
+                    this.$set(this.assistData, 'userids', assists);
+                    this.$set(this.assistData, 'useridbak', assists);
+                    this.$set(this.assistData, 'uncancelable', [this.projectData.owner_userid]);
+                    this.assistShow = true;
                     break;
 
                 case "workflow":

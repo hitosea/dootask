@@ -508,6 +508,7 @@ class ProjectTask extends AbstractModel
         //
         return AbstractModel::transaction(function () use ($assist, $times, $subtasks, $content, $owner, $task, $visibility_userids) {
             $task->save();
+            $addProjectUser = [];
             $owner = array_values(array_unique($owner));
             foreach ($owner as $uid) {
                 ProjectTaskUser::createInstance([
@@ -518,11 +519,7 @@ class ProjectTask extends AbstractModel
                     'owner' => 1,
                 ])->save();
                 if (!ProjectUser::whereProjectId($task->project_id)->whereUserid($uid)->exists()) {
-                    ProjectUser::createInstance([
-                        'project_id' => $task->project_id,
-                        'userid' => $uid,
-                        'owner' => 0,
-                    ])->save();
+                    $addProjectUser[] = $uid;
                 }
             }
             $assist = array_values(array_unique(array_diff($assist, $owner)));
@@ -535,12 +532,19 @@ class ProjectTask extends AbstractModel
                     'owner' => 0,
                 ])->save();
                 if (!ProjectUser::whereProjectId($task->project_id)->whereUserid($uid)->exists()) {
-                    ProjectUser::createInstance([
-                        'project_id' => $task->project_id,
-                        'userid' => $uid,
-                        'owner' => 0,
-                    ])->save();
+                    $addProjectUser[] = $uid;
                 }
+            }
+
+            // 添加不在项目成员中的任务负责人和协助人到项目中
+            foreach ($addProjectUser as $uid) {
+                $task->project->joinProject($uid);
+                $projectUser = ProjectUser::whereProjectId($task->project_id)->pluck('userid')->toArray();
+                if (count($projectUser) > 100) {
+                    throw new ApiException('项目人数最多100个', [ 'project_id' => $task->project_id ]);
+                }
+                $task->project->user_simple = count($projectUser) . "|" . implode(",", array_slice($projectUser, 0, 3));
+                $task->project->save();
             }
 
             // 可见性
@@ -750,12 +754,13 @@ class ProjectTask extends AbstractModel
                         $row->owner = 1;
                         $row->save();
                     }
-                    if (!ProjectUser::whereProjectId($this->project_id)->whereUserid($uid)->exists()) {
-                        ProjectUser::createInstance([
-                            'project_id' => $this->project_id,
-                            'userid' => $uid,
-                            'owner' => 0,
-                        ])->save();
+                    if (!ProjectUser::whereProjectId($this->project_id)->whereUserid($uid)->exists() && $this->project->joinProject($uid)) {
+                        $projectUser = ProjectUser::whereProjectId($this->project_id)->pluck('userid')->toArray();
+                        if (count($projectUser) > 100) {
+                            throw new ApiException('项目人数最多100个', [ 'project_id' => $this->project_id ]);
+                        }
+                        $this->project->user_simple = count($projectUser) . "|" . implode(",", array_slice($projectUser, 0, 3));
+                        $this->project->save();
                     }
                     $array[] = $uid;
                 }
@@ -917,12 +922,13 @@ class ProjectTask extends AbstractModel
                             'task_pid' => $this->id,
                             'owner' => 0,
                         ]);
-                        if (!ProjectUser::whereProjectId($this->project_id)->whereUserid($uid)->exists()) {
-                            ProjectUser::createInstance([
-                                'project_id' => $this->project_id,
-                                'userid' => $uid,
-                                'owner' => 0,
-                            ])->save();
+                        if (!ProjectUser::whereProjectId($this->project_id)->whereUserid($uid)->exists() && $this->project->joinProject($uid)) {
+                            $projectUser = ProjectUser::whereProjectId($this->project_id)->pluck('userid')->toArray();
+                            if (count($projectUser) > 100) {
+                                throw new ApiException('项目人数最多100个', [ 'project_id' => $this->project_id ]);
+                            }
+                            $this->project->user_simple = count($projectUser) . "|" . implode(",", array_slice($projectUser, 0, 3));
+                            $this->project->save();
                         }
                         $array[] = $uid;
                     }
@@ -936,6 +942,7 @@ class ProjectTask extends AbstractModel
                             $row->delete();
                         }
                     }
+                    $updateMarking['is_update_project'] = true;
                     $this->syncDialogUser();
                 }
                 // 背景色

@@ -72,6 +72,7 @@ class Project extends AbstractModel
 
     protected $appends = [
         'owner_userid',
+        'assist_userid',
     ];
 
     /**
@@ -81,10 +82,19 @@ class Project extends AbstractModel
     public function getOwnerUseridAttribute()
     {
         if (!isset($this->appendattrs['owner_userid'])) {
-            $ownerUser = ProjectUser::whereProjectId($this->id)->whereOwner(1)->first();
+            $ownerUser = ProjectUser::whereProjectId($this->id)->whereOwner(1)->whereAssist(0)->first();
             $this->appendattrs['owner_userid'] = $ownerUser ? $ownerUser->userid : 0;
         }
         return $this->appendattrs['owner_userid'];
+    }
+
+    public function getAssistUseridAttribute()
+    {
+        if (!isset($this->appendattrs['assist_userid'])) {
+            $ownerUser = ProjectUser::whereProjectId($this->id)->whereOwner(1)->whereAssist(1)->pluck('userid')->toArray();
+            $this->appendattrs['assist_userid'] = $ownerUser;
+        }
+        return $this->appendattrs['assist_userid'];
     }
 
     /**
@@ -124,6 +134,7 @@ class Project extends AbstractModel
             ->select([
                 'projects.*',
                 'project_users.owner',
+                'project_users.assist',
                 'project_users.top_at',
             ])
             ->leftJoin('project_users', function ($leftJoin) use ($userid) {
@@ -148,6 +159,7 @@ class Project extends AbstractModel
             ->select([
                 'projects.*',
                 'project_users.owner',
+                'project_users.assist',
                 'project_users.top_at',
             ])
             ->join('project_users', 'projects.id', '=', 'project_users.project_id')
