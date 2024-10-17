@@ -2649,7 +2649,7 @@ class ProjectController extends AbstractController
     }
 
     /**
-     * @api {get} api/project/assist          修改项目协助人
+     * @api {get} api/project/assist          47. 修改项目协助人
      *
      * @apiDescription 需要token身份（限：项目负责人、项目协助人）
      * @apiVersion 1.0.0
