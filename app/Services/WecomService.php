@@ -277,9 +277,9 @@ class WecomService
         //
         Config::set('wechatwork.corp_id', $setting['copr_id']);
         Config::set('wechatwork.agents.application.agent_id', $setting['agent_id']);
-        Config::set('wechatwork.agents.contacts.secret', $setting['app_secret']);
+        Config::set('wechatwork.agents.application.secret', $setting['app_secret']);
         //
-        list($status, $token) = WechatWork::access_token();
+        list($status, $token) = WechatWork::access_token('application');
         if (!$status) {
             Log::error('wecom-taskPush', ['msg' => "获取accessToken错误: " . $token]);
             return false;
