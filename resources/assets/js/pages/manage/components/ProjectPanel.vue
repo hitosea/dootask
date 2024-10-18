@@ -253,6 +253,7 @@
                         </div>
                     </Col>
                     <Col span="3">{{$L('负责人')}}</Col>
+                    <Col span="3">{{$L('协助人')}}</Col>
                     <Col span="3">
                         <div class="sort" @click="onSort('end_at')">
                             <span class="head-title">{{$L('到期时间')}}</span>
@@ -276,6 +277,7 @@
                     <Col span="3"></Col>
                     <Col span="3"></Col>
                     <Col span="3"></Col>
+                    <Col span="3"></Col>
                 </Row>
                 <TaskRow v-if="projectData.cacheParameter.showMy" :list="transforTasks(myList)" open-key="my" @on-priority="addTaskOpen" fast-add-task/>
             </div>
@@ -287,6 +289,7 @@
                         <div class="row-h1">{{$L('协助的任务')}}</div>
                         <div class="row-num">({{helpList.length}})</div>
                     </Col>
+                    <Col span="3"></Col>
                     <Col span="3"></Col>
                     <Col span="3"></Col>
                     <Col span="3"></Col>
@@ -306,6 +309,7 @@
                     <Col span="3"></Col>
                     <Col span="3"></Col>
                     <Col span="3"></Col>
+                    <Col span="3"></Col>
                 </Row>
                 <TaskRow v-if="projectData.cacheParameter.showUndone" :list="unList" open-key="undone" @on-priority="addTaskOpen"/>
             </div>
@@ -317,6 +321,7 @@
                         <div class="row-h1">{{$L('已完成任务')}}</div>
                         <div class="row-num">({{completedList.length}})</div>
                     </Col>
+                    <Col span="3"></Col>
                     <Col span="3"></Col>
                     <Col span="3"></Col>
                     <Col span="3"></Col>

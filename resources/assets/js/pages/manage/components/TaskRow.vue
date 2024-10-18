@@ -82,6 +82,13 @@
                         </li>
                     </ul>
                 </Col>
+                <Col span="3" class="row-user">
+                    <ul @click="openTask(item)">
+                        <li v-for="(user, keyu) in assistUser(item.task_user)" :key="keyu" v-if="keyu < 3">
+                            <UserAvatar :userid="user.userid" size="32" :borderWitdh="2" :borderColor="item.color" :showName="assistUser(item.task_user).length === 1"/>
+                        </li>
+                    </ul>
+                </Col>
                 <Col span="3" class="row-time">
                     <ETooltip
                         v-if="!item.complete_at && item.end_at"
@@ -261,6 +268,12 @@ export default {
 
         ownerUser(list) {
             return list.filter(({owner}) => owner == 1).sort((a, b) => {
+                return a.id - b.id;
+            });
+        },
+
+        assistUser(list) {
+            return list.filter(({owner}) => owner == 0).sort((a, b) => {
                 return a.id - b.id;
             });
         },
