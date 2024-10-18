@@ -508,7 +508,7 @@ class UsersController extends AbstractController
         $sorts = is_array($sorts) ? $sorts : [];
         //
         if ($keys['key']) {
-            $builder->join('user_departments', function (JoinClause $join) use ($keys) {
+            $builder->leftJoin('user_departments', function (JoinClause $join) use ($keys) {
                 $prefix = DB::getTablePrefix();
                 $join->whereRaw("FIND_IN_SET({$prefix}user_departments.id, {$prefix}users.department)")->where('user_departments.name', 'like', "%{$keys['key']}%");
             });
