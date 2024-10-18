@@ -510,23 +510,18 @@ class UsersController extends AbstractController
         if ($keys['key']) {
             $builder->leftJoin('user_departments', function (JoinClause $join) use ($keys) {
                 $prefix = DB::getTablePrefix();
-                $join->whereRaw("FIND_IN_SET({$prefix}user_departments.id, {$prefix}users.department)")->where('user_departments.name', 'like', "%{$keys['key']}%");
+                $join->whereRaw("FIND_IN_SET({$prefix}user_departments.id, {$prefix}users.department)");
             });
-            $departmentIds = UserDepartment::where('name', 'like', "%{$keys['key']}%")->pluck('id')->toArray();
             if (str_contains($keys['key'], "@")) {
-                $builder->where(function ($query) use ($keys, $departmentIds) {
-                    $query->where("email", "like", "%{$keys['key']}%");
-                    foreach ($departmentIds as $departmentId) {
-                        $query->orWhereRaw("FIND_IN_SET('{$departmentId}', department)");
-                    }
+                $builder->where(function ($query) use ($keys) {
+                    $query->where("email", "like", "%{$keys['key']}%")
+                        ->orWhere("user_departments.name", "like", "%{$keys['key']}%");
                 });
             } else {
-                $builder->where(function($query) use ($keys, $departmentIds) {
+                $builder->where(function($query) use ($keys) {
                     $query->where("nickname", "like", "%{$keys['key']}%")
-                        ->orWhere("pinyin", "like", "%{$keys['key']}%");
-                    foreach ($departmentIds as $departmentId) {
-                        $query->orWhereRaw("FIND_IN_SET('{$departmentId}', department)");
-                    }
+                        ->orWhere("pinyin", "like", "%{$keys['key']}%")
+                        ->orWhere("user_departments.name", "like", "%{$keys['key']}%");
                 });
             }
         } else {
