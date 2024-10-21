@@ -17,10 +17,10 @@ class AppPushTask extends AbstractTask
 
     public function start()
     {
-        $setting = Base::setting('appPushSetting');
-        if ($setting['push'] !== 'open') {
-            return;
-        }
+//        $setting = Base::setting('appPushSetting');
+//        if ($setting['push'] !== 'open') {
+//            return;
+//        }
         ProjectTask::whereNull("complete_at")
             ->whereNull("archived_at")
             ->whereBetween("end_at", [

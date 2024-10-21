@@ -261,8 +261,9 @@ class WebSocketDialog extends AbstractModel
                         }
                         break;
                     case 'task':
-                        $this->group_info = ProjectTask::withTrashed()->select(['id', 'name', 'complete_at', 'archived_at', 'deleted_at'])->whereDialogId($this->id)->first()?->cancelAppend()->cancelHidden();
+                        $this->group_info = ProjectTask::withTrashed()->select(['id', 'parent_id', 'name', 'complete_at', 'archived_at', 'deleted_at'])->whereDialogId($this->id)->first()?->cancelAppend()->cancelHidden();
                         if ($this->group_info) {
+                            $this->group_info->parent_type = $this->group_info->getParentTypeAttribute();
                             $this->name = $this->group_info->name;
                         } else {
                             $this->name = '[Delete]';

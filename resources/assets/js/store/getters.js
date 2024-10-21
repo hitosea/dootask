@@ -44,6 +44,9 @@ export default {
      */
     taskData(state) {
         let taskId = state.taskId;
+        if (state.taskSubId > 0) {
+            taskId = state.taskSubId;
+        }
         if (taskId == 0) {
             taskId = $A.runNum(window.__taskId);
         }

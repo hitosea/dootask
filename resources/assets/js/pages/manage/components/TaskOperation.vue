@@ -355,6 +355,10 @@ export default {
                         this.$store.dispatch(typeDispatch, typeData).then(({msg}) => {
                             resolve(msg);
                             this.$store.dispatch("saveTaskBrowse", typeData.task_id);
+                            if (this.task.parent_id > 0 && typeDispatch == 'removeTask') {
+                                this.$store.dispatch('openSubtask', 0)
+                                this.$store.dispatch('openTask', this.task.parent_id)
+                            }
                         }).catch(({msg}) => {
                             reject(msg);
                         });

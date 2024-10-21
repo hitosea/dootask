@@ -142,6 +142,7 @@ export default {
     projectTotal: 0,
     projectLoad: 0,
     taskId: 0,
+    taskSubId: 0,
     taskCompleteTemps: [],
     taskContents: [],
     taskFiles: [],

@@ -139,15 +139,10 @@
                                 <div v-if="item.task_my_num - item.task_my_complete > 0" class="num">{{item.task_my_num - item.task_my_complete}}</div>
                             </div>
                             <div class="project-h2">
-                                <p>
-                                    <em>{{$L('我的')}}:</em>
-                                    <span>{{item.task_my_complete}}/{{item.task_my_num}}</span>
-                                    <Progress :percent="item.task_my_percent" :stroke-width="6" />
-                                </p>
-                                <p>
-                                    <em>{{$L('全部')}}:</em>
-                                    <span>{{item.task_complete}}/{{item.task_num}}</span>
-                                    <Progress :percent="item.task_percent" :stroke-width="6" />
+                                <p v-for="column in getColumnStatistics(item.id)">
+                                    <em style="width: 65px;"><AutoTip>{{column.name}}</AutoTip></em>
+                                    <span>{{column.statistics.task_my_complete}}/{{column.statistics.task_my_num}}</span>
+                                    <Progress :percent="column.statistics.task_my_percent" :stroke-width="6" />
                                 </p>
                             </div>
                         </li>
@@ -509,6 +504,7 @@ export default {
             'cacheTasks',
             'cacheDialogs',
             'cacheProjects',
+            'cacheColumns',
             'projectTotal',
             'wsOpenNum',
             'columnTemplate',
@@ -1300,6 +1296,10 @@ export default {
                 });
             }
         },
+
+        getColumnStatistics(id) {
+            return this.cacheColumns.filter(({project_id}) => project_id == id)
+        }
     }
 }
 </script>

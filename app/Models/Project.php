@@ -72,6 +72,7 @@ class Project extends AbstractModel
 
     protected $appends = [
         'owner_userid',
+        'assist_userid',
     ];
 
     /**
@@ -81,10 +82,19 @@ class Project extends AbstractModel
     public function getOwnerUseridAttribute()
     {
         if (!isset($this->appendattrs['owner_userid'])) {
-            $ownerUser = ProjectUser::whereProjectId($this->id)->whereOwner(1)->first();
+            $ownerUser = ProjectUser::whereProjectId($this->id)->whereOwner(1)->whereAssist(0)->first();
             $this->appendattrs['owner_userid'] = $ownerUser ? $ownerUser->userid : 0;
         }
         return $this->appendattrs['owner_userid'];
+    }
+
+    public function getAssistUseridAttribute()
+    {
+        if (!isset($this->appendattrs['assist_userid'])) {
+            $ownerUser = ProjectUser::whereProjectId($this->id)->whereOwner(1)->whereAssist(1)->pluck('userid')->toArray();
+            $this->appendattrs['assist_userid'] = $ownerUser;
+        }
+        return $this->appendattrs['assist_userid'];
     }
 
     /**
@@ -124,6 +134,7 @@ class Project extends AbstractModel
             ->select([
                 'projects.*',
                 'project_users.owner',
+                'project_users.assist',
                 'project_users.top_at',
             ])
             ->leftJoin('project_users', function ($leftJoin) use ($userid) {
@@ -148,6 +159,7 @@ class Project extends AbstractModel
             ->select([
                 'projects.*',
                 'project_users.owner',
+                'project_users.assist',
                 'project_users.top_at',
             ])
             ->join('project_users', 'projects.id', '=', 'project_users.project_id')
@@ -174,6 +186,17 @@ class Project extends AbstractModel
         $builder = ProjectTask::authData($userid, 1)->where('project_tasks.project_id', $this->id)->whereNull('project_tasks.archived_at');
         $array['task_my_num'] = $builder->count();
         $array['task_my_complete'] = $builder->whereNotNull('project_tasks.complete_at')->count();
+        $array['task_my_percent'] = $array['task_my_num'] ? intval($array['task_my_complete'] / $array['task_my_num'] * 100) : 0;
+        //
+        return $array;
+    }
+
+    public function getColumnStatistics($columnId, $userid)
+    {
+        $array = [];
+        $builder = ProjectTask::authData($userid, 1)->where('project_tasks.project_id', $this->id)->where('project_tasks.column_id', $columnId)->whereNull('project_tasks.archived_at');
+        $array['task_my_num'] = $builder->count();
+        $array['task_my_complete'] = $builder->whereNotNull('complete_at')->count();
         $array['task_my_percent'] = $array['task_my_num'] ? intval($array['task_my_complete'] / $array['task_my_num'] * 100) : 0;
         //
         return $array;

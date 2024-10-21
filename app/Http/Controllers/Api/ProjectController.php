@@ -122,7 +122,7 @@ class ProjectController extends AbstractController
         $all = Request::input('all');
         $type = Request::input('type', 'all');
         $archived = Request::input('archived', 'no');
-        $getcolumn = Request::input('getcolumn', 'no');
+        $getcolumn = Request::input('getcolumn', 'yes');
         $getuserid = Request::input('getuserid', 'no');
         $getstatistics = Request::input('getstatistics', 'yes');
         $keys = Request::input('keys');
@@ -162,17 +162,23 @@ class ProjectController extends AbstractController
         }
         //
         if ($timerange->updated) {
-            $builder->where('projects.updated_at', '>', $timerange->updated);
+//            $builder->where('projects.updated_at', '>', $timerange->updated);
         }
         //
         $list = $builder->orderByDesc('projects.id')->paginate(Base::getPaginate(100, 50));
-        $list->transform(function (Project $project) use ($getstatistics, $getuserid, $user) {
+        $list->transform(function (Project $project) use ($getstatistics, $getuserid, $user, $getcolumn) {
             $array = $project->toArray();
             if ($getuserid == 'yes') {
                 $array['userid_list'] = ProjectUser::whereProjectId($project->id)->pluck('userid')->toArray();
             }
             if ($getstatistics == 'yes') {
                 $array = array_merge($array, $project->getTaskStatistics($user->userid));
+            }
+            if ($getcolumn == 'yes') {
+                foreach ($array['project_column'] as $key =>  $column) {
+                    $data = $project->getColumnStatistics($column['id'], $user->userid);
+                    $array['project_column'][$key]['statistics'] = $data;
+                }
             }
             return $array;
         });
@@ -243,6 +249,12 @@ class ProjectController extends AbstractController
         $data = array_merge($project->toArray(), $project->getTaskStatistics($user->userid), [
             'project_user' => $project->projectUser,
         ]);
+        $data['project_column'] = [];
+        foreach ($project->projectColumn as $key => $column) {
+            $array = $column->toArray();
+            $array['statistics'] = $project->getColumnStatistics($array['id'], $user->userid);
+            $data['project_column'][$key] = $array;
+        }
         //
         return Base::retSuccess('success', $data);
     }
@@ -1551,8 +1563,10 @@ class ProjectController extends AbstractController
         $isArchived = str_replace(['all', 'yes', 'no'], [null, false, true], $archived);
         $task = ProjectTask::userTask($task_id, $isArchived, true, ['taskUser', 'taskTag']);
         // 项目可见性
-        $project_userid = ProjectUser::whereProjectId($task->project_id)->whereOwner(1)->value('userid');     // 项目负责人
-        if ($task->visibility != 1 && $user->userid != $project_userid) {
+        $project_userid = ProjectUser::whereProjectId($task->project_id)->where(function ($query) {
+            $query->where('owner', 1)->orWhere('assist', 1);
+        })->pluck('userid')->toArray();     // 项目负责人、协助人
+        if ($task->visibility != 1 && !in_array($user->userid, $project_userid)) {
             $taskUserids = ProjectTaskUser::whereTaskId($task_id)->pluck('userid')->toArray();                      //任务负责人、协助人
             $subTaskUserids = ProjectTaskUser::whereTaskPid($task_id)->pluck('userid')->toArray();                  //子任务负责人、协助人
             $visibleUserids = ProjectTaskVisibilityUser::whereTaskId($task_id)->pluck('userid')->toArray();         //可见人
@@ -2053,7 +2067,7 @@ class ProjectController extends AbstractController
         //
         $task = ProjectTask::userTask($task_id);
         //
-        if ($task->parent_id > 0) {
+        if ($task->parent_type == 'sub') {
             return Base::retError('子任务不支持此功能');
         }
         //
@@ -2632,5 +2646,66 @@ class ProjectController extends AbstractController
         ]);
         $projectPermission = ProjectPermission::updatePermissions($projectId, Base::newArrayRecursive('intval', $permissions));
         return Base::retSuccess("success",  $projectPermission);
+    }
+
+    /**
+     * @api {get} api/project/assist          47. 修改项目协助人
+     *
+     * @apiDescription 需要token身份（限：项目负责人、项目协助人）
+     * @apiVersion 1.0.0
+     * @apiGroup project
+     * @apiName assist
+     *
+     * @apiParam {Number} project_id        项目ID
+     * @apiParam {Number} userid            成员ID 或 成员ID组
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function assist()
+    {
+        User::auth();
+        //
+        $project_id = intval(Request::input('project_id'));
+        $userid = Request::input('userid');
+        $userid = is_array($userid) ? $userid : [$userid];
+        //
+        $project = Project::userProject($project_id);
+        if (!$project->owner && !$project->assist) {
+            throw new ApiException('仅限项目负责人或项目协助人操作', [ 'project_id' => $project_id ]);
+        }
+        //
+        AbstractModel::transaction(function() use ($project, $userid) {
+            $user = ProjectUser::whereProjectId($project->id)->whereOwner(1)->whereAssist(1)->pluck('userid')->toArray();
+            $deleteUser = [];
+            foreach ($user as $item) {
+                if (!in_array($item, $userid)) {
+                    $deleteUser[] = $item;
+                }
+            }
+            foreach ($userid as $uid) {
+                if ($uid) {
+                    ProjectUser::updateInsert([
+                        'project_id' => $project->id,
+                        'userid' => $uid,
+                    ], ['owner' => 1, 'assist' => 1]);
+                }
+            }
+            if (!empty($deleteUser)) {
+                ProjectUser::whereProjectId($project->id)->whereIn('userid', $deleteUser)->update(['owner' => 0, 'assist' => 0]);
+            }
+            $array = ProjectUser::whereProjectId($project->id)->pluck('userid')->toArray();
+            if (count($array) > 100) {
+                throw new ApiException('项目人数最多100个', [ 'project_id' => $project->id ]);
+            }
+            $project->syncDialogUser();
+            $project->addLog("修改项目协助人员");
+            $project->user_simple = count($array) . "|" . implode(",", array_slice($array, 0, 3));
+            $project->save();
+        });
+        //
+        $project->pushMsg('detail');
+        return Base::retSuccess('修改成功', ['id' => $project->id]);
     }
 }

@@ -1,6 +1,6 @@
 <template>
     <!--子任务-->
-    <li v-if="ready && taskDetail.parent_id > 0">
+    <li v-if="ready && taskDetail.parent_id > 0 && !isSubtask">
         <div class="subtask-icon">
             <TaskMenu
                 :ref="`taskMenu_${taskDetail.id}`"
@@ -24,6 +24,9 @@
                 @on-blur="updateBlur('name')"
                 @on-keydown="onNameKeydown"
             />
+        </div>
+        <div v-if="taskDetail.parent_type == 'main'" class="subtask-detail">
+            <Icon class="detail" type="ios-eye-outline" @click="openSubtask(taskDetail, true)" />
         </div>
         <DatePicker
             v-model="timeValue"
@@ -50,7 +53,7 @@
             :avatar-size="20"
             :title="$L('修改负责人')"
             :add-icon="false"
-            :project-id="taskDetail.project_id"
+            :project-id="0"
             :before-submit="onOwner"/>
     </li>
     <!--主任务-->
@@ -178,7 +181,7 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :title="$L('修改负责人')"
-                            :project-id="taskDetail.project_id"
+                            :project-id="0"
                             :add-icon="false"
                             :before-submit="onOwner"/>
                     </FormItem>
@@ -193,7 +196,7 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :title="$L(getAssist.length > 0 ? '修改协助人员' : '添加协助人员')"
-                            :project-id="taskDetail.project_id"
+                            :project-id="0"
                             :disabled-choice="assistData.disabled"
                             :add-icon="false"
                             :before-submit="onAssist"/>
@@ -565,6 +568,10 @@ export default {
             type: Boolean,
             default: false
         },
+        isSubtask: {
+            type: Boolean,
+            default: false
+        },
     },
     data() {
         return {
@@ -812,40 +819,42 @@ export default {
         menuList() {
             const {taskDetail} = this;
             const list = [];
-            if (!taskDetail.p_name) {
-                list.push({
-                    command: 'priority',
-                    icon: '&#xe6ec;',
-                    name: '优先级',
-                });
-            }
-            if (!($A.isArray(taskDetail.task_user) && taskDetail.task_user.find(({owner}) => owner === 0 ))) {
-                list.push({
-                    command: 'assist',
-                    icon: '&#xe63f;',
-                    name: '协助人员',
-                });
-            }
-            if (taskDetail.visibility <= 1 && !this.visibleKeep) {
-                list.push({
-                    command: 'visible',
-                    icon: '&#xe77b;',
-                    name: '可见性',
-                });
-            }
-            if (!taskDetail.end_at) {
-                list.push({
-                    command: 'times',
-                    icon: '&#xe6e8;',
-                    name: '截止时间',
-                });
-            }
-            if (!taskDetail.loop || taskDetail.loop == 'never') {
-                list.push({
-                    command: 'loop',
-                    icon: '&#xe93f;',
-                    name: '重复周期',
-                });
+            if (taskDetail.parent_type == '') {
+                if (!taskDetail.p_name) {
+                    list.push({
+                        command: 'priority',
+                        icon: '&#xe6ec;',
+                        name: '优先级',
+                    });
+                }
+                if (!($A.isArray(taskDetail.task_user) && taskDetail.task_user.find(({owner}) => owner === 0 ))) {
+                    list.push({
+                        command: 'assist',
+                        icon: '&#xe63f;',
+                        name: '协助人员',
+                    });
+                }
+                if (taskDetail.visibility <= 1 && !this.visibleKeep) {
+                    list.push({
+                        command: 'visible',
+                        icon: '&#xe77b;',
+                        name: '可见性',
+                    });
+                }
+                if (!taskDetail.end_at) {
+                    list.push({
+                        command: 'times',
+                        icon: '&#xe6e8;',
+                        name: '截止时间',
+                    });
+                }
+                if (!taskDetail.loop || taskDetail.loop == 'never') {
+                    list.push({
+                        command: 'loop',
+                        icon: '&#xe93f;',
+                        name: '重复周期',
+                    });
+                }
             }
             if (this.fileList.length == 0) {
                 list.push({
@@ -1811,6 +1820,16 @@ export default {
 
         updateVisible() {
             this.updateData(['visibility', 'visibility_appointor'])
+        },
+
+        openSubtask(task, receive) {
+            this.$store.dispatch("openTask", task)
+            if (receive === true) {
+                // 向任务窗口发送领取任务请求
+                setTimeout(() => {
+                    Store.set('receiveTask', true);
+                }, 300)
+            }
         }
     }
 }

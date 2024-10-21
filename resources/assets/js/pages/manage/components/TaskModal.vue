@@ -1,13 +1,26 @@
 <template>
-    <Modal
-        :value="show"
-        :styles="styles"
-        :mask-closable="false"
-        :footer-hide="true"
-        :beforeClose="onBeforeClose"
-        class-name="task-modal">
-        <TaskDetail ref="taskDetail" :task-id="taskId" :open-task="taskData" modalMode/>
-    </Modal>
+    <div>
+        <!-- 主任务 -->
+        <Modal
+            :value="show"
+            :styles="styles"
+            :mask-closable="false"
+            :footer-hide="true"
+            :beforeClose="onBeforeClose"
+            class-name="task-modal">
+            <TaskDetail ref="taskDetail" :task-id="taskId" :open-task="taskData" modalMode/>
+        </Modal>
+        <!-- 子任务 -->
+        <Modal
+            :value="subShow"
+            :styles="styles"
+            :mask-closable="false"
+            :footer-hide="true"
+            :beforeClose="onSubBeforeClose"
+            class-name="task-modal">
+            <TaskDetail ref="taskDetail" :task-id="taskSubId" :open-task="taskData" is-subtask modalMode/>
+        </Modal>
+    </div>
 </template>
 
 <style lang="scss">
@@ -32,11 +45,15 @@ export default {
     components: {TaskDetail},
 
     computed: {
-        ...mapState(['taskId']),
+        ...mapState(['taskId', 'taskSubId']),
         ...mapGetters(['taskData']),
 
         show() {
             return this.taskId > 0
+        },
+
+        subShow() {
+            return this.taskSubId > 0
         },
 
         styles() {
@@ -58,6 +75,12 @@ export default {
                 this.$refs.taskDetail.checkUpdate(true);
                 return true;
             }
+        },
+        onSubBeforeClose() {
+            return new Promise(_ => {
+                this.$store.dispatch("openSubtask", 0)
+                this.$store.dispatch("openTask", this.taskId)
+            })
         }
     }
 }

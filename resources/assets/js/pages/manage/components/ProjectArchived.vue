@@ -55,8 +55,12 @@
 </template>
 
 <script>
+import UserAvatarTip from "../../../components/UserAvatar/tip.vue";
 export default {
     name: "ProjectArchived",
+    components: {
+        UserAvatarTip,
+    },
     data() {
         return {
             loadIng: 0,
@@ -121,6 +125,41 @@ export default {
                                 userid: row.owner_userid,
                             }
                         })
+                    }
+                },
+                {
+                    title: this.$L('协助人'),
+                    minWidth: 80,
+                    render: (h, {row}) => {
+                        const length = row.assist_userid.length;
+                        if (length > 0) {
+                            if (length == 1) {
+                                return h('UserAvatar', {
+                                    props: {
+                                        showName: true,
+                                        size: 22,
+                                        userid: row.assist_userid[0],
+                                    }
+                                })
+                            } else {
+                                const arr = row.assist_userid.map((userid) => {
+                                    return h(UserAvatarTip, {
+                                        props: {
+                                            showName: false,
+                                            size: 22,
+                                            userid: userid,
+                                        }
+                                    })
+                                });
+                                return h('div', {
+                                    style: {
+                                        display: 'flex'
+                                    }
+                                }, arr)
+                            }
+                        } else {
+                            return h('span', {}, '-');
+                        }
                     }
                 },
                 {

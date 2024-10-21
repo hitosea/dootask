@@ -267,6 +267,7 @@ class WecomService
      * @param $duplicate_check_interval
      * @param $enable_id_trans
      * @return bool
+     * @throws \Exception
      */
     public static function sendTextMessage($touser, $content, $toparty = '', $totag = '', $safe = 0, $enable_duplicate_check = 0, $duplicate_check_interval = 1800, $enable_id_trans = 0)
     {
@@ -275,11 +276,7 @@ class WecomService
             return false;
         }
         //
-        Config::set('wechatwork.corp_id', $setting['copr_id']);
-        Config::set('wechatwork.agents.application.agent_id', $setting['agent_id']);
-        Config::set('wechatwork.agents.application.secret', $setting['app_secret']);
-        //
-        list($status, $token) = WechatWork::access_token('application');
+        list($status, $token) = self::access_token('application', $setting['copr_id'], $setting['app_secret']);
         if (!$status) {
             Log::error('wecom-taskPush', ['msg' => "获取accessToken错误: " . $token]);
             return false;
@@ -304,5 +301,33 @@ class WecomService
             return false;
         }
         return true;
+    }
+
+    /**
+     * 获取企微AccessToken
+     *
+     * @param $agents
+     * @param $corpId
+     * @param $secret
+     * @return array
+     * @throws \Exception
+     */
+    public static function access_token($agents, $corpId, $secret): array
+    {
+        $accessTokenKey = 'WeedsWechat_access_token';
+        $key = $accessTokenKey."-". $agents . '-' . ':' . $corpId . ':' . $secret;
+        if (!cache($key)) {
+            $array = [
+                'corpid'        => $corpId,
+                'corpsecret'    => $secret,
+            ];
+            $url = 'https://qyapi.weixin.qq.com/cgi-bin/gettoken?' . http_build_query($array);
+            list($status, $re) = WechatWork::getCurl($url);
+            if (!$status) {
+                return [false, $re];
+            }
+            cache([$key=>$re['access_token']], $re['expires_in']);
+        }
+        return [true, cache($key)];
     }
 }

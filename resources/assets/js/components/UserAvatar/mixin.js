@@ -34,6 +34,10 @@ export default {
         },
         userResult: {
             default: null
+        },
+        departmentName: {
+            type: String,
+            default: null
         }
     }
 }

@@ -4,6 +4,7 @@ namespace App\Tasks;
 
 @error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 
+use App\Models\ProjectTask;
 use App\Models\User;
 use App\Models\WebSocketDialog;
 use App\Models\WebSocketDialogMsg;
@@ -209,8 +210,43 @@ class WebSocketDialogMsgTask extends AbstractTask
         if (!empty($wecomUserid)) {
             $wecomIds = User::whereIn('userid', $wecomUserid)->where('wecom_id', '!=', '')->pluck('wecom_id')->toArray();
             if (!empty($wecomIds)) {
+                $prefix = '[%s]';
+                $suffix = '';
+                if ($dialog->type == 'group') {
+                    $dialogName = $dialog->name;
+                    if ($dialogName) {
+                        if (mb_strlen($dialogName) > 30) {
+                            $dialogName = mb_substr($dialogName, 0, 30) . '...';
+                        }
+                    } else {
+                        $prefix = '';
+                    }
+                    $prefix = match ($dialog->group_type) {
+                        'project' => sprintf($prefix, "{$dialogName}项目"),
+                        'task' => sprintf($prefix, "{$dialogName}任务"),
+                        'user' => sprintf($prefix, "{$dialogName}群聊"),
+                        default => '',
+                    };
+                } elseif ($dialog->type == 'user') {
+                    preg_match('/data-id="(\d+)"/', $msg->msg['text'], $matches);
+                    info('msg', $msg->toArray());
+                    if (isset($matches[1])) {
+                        $task = ProjectTask::whereId($matches[1])->first();
+                        if (!empty($task)) {
+                            $prefix = sprintf($prefix, "{$task->name}任务");
+                        }
+                    } else {
+                        $prefix = '';
+                    }
+                    $user = User::whereUserid($msg->userid)->first();
+                    if (!empty($user)) {
+                        $suffix = sprintf('（操作人：%s）', ($user->nickname ?: $user->email));
+                    }
+                } else {
+                    $prefix = '';
+                }
+                $text = $prefix . $msg->previewMsg() . $suffix;
                 $baseUrl = config('app.base_url');
-                $text = $msg->previewMsg();
                 $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id={$dialog->id}\">$text</a>";
                 WecomService::sendTextMessage($wecomIds, $wecomHtml);
             }
