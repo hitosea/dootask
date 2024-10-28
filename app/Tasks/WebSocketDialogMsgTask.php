@@ -244,7 +244,7 @@ class WebSocketDialogMsgTask extends AbstractTask
                 } else {
                     $prefix = '';
                 }
-                $msgUserid = '';
+                $msgUserid = '系统消息';
                 if ($msg->userid) {
                     $msgUserid = $msg->userid . '：';
                 }
