@@ -497,7 +497,6 @@ class UsersController extends AbstractController
         $columns = User::$basicField;
         $columns[] = 'users.created_at';
         $columns[] = 'users.identity';
-        $columns[] = 'user_departments.name as department_one';
         $builder = User::select($columns);
         //
         $keys = Request::input('keys');
@@ -508,27 +507,16 @@ class UsersController extends AbstractController
         $sorts = is_array($sorts) ? $sorts : [];
         //
         if ($keys['key']) {
-            $builder->leftJoin('user_departments', function (JoinClause $join) use ($keys) {
-                $prefix = DB::getTablePrefix();
-                $join->whereRaw("FIND_IN_SET({$prefix}user_departments.id, {$prefix}users.department)");
-            });
             if (str_contains($keys['key'], "@")) {
-                $builder->where(function ($query) use ($keys) {
-                    $query->where("email", "like", "%{$keys['key']}%")
-                        ->orWhere("user_departments.name", "like", "%{$keys['key']}%");
-                });
+                $builder->where("email", "like", "%{$keys['key']}%");
             } else {
                 $builder->where(function($query) use ($keys) {
                     $query->where("nickname", "like", "%{$keys['key']}%")
-                        ->orWhere("pinyin", "like", "%{$keys['key']}%")
-                        ->orWhere("user_departments.name", "like", "%{$keys['key']}%");
+                        ->orWhere("pinyin", "like", "%{$keys['key']}%");
                 });
             }
-        } else {
-            $builder->leftJoin('user_departments', function (JoinClause $join) {
-                $prefix = DB::getTablePrefix();
-                $join->whereRaw("FIND_IN_SET({$prefix}user_departments.id, {$prefix}users.department)");
-            });
+            $depIds = UserDepartment::where("name", "like", "%{$keys['key']}%")->pluck('id')->toArray();
+            $keys['departments'] = $depIds;
         }
         if (intval($keys['disable']) == 0) {
             $builder->whereNull("disable_at");
@@ -562,7 +550,7 @@ class UsersController extends AbstractController
             if (!is_array($keys['departments'])) {
                 $keys['departments'] = explode(",", $keys['departments']);
             }
-            $builder->where(function($query) use ($keys) {
+            $builder->orWhere(function($query) use ($keys) {
                 foreach ($keys['departments'] AS $department) {
                     $query->orWhereRaw("FIND_IN_SET('{$department}', department)");
                 }
@@ -580,14 +568,24 @@ class UsersController extends AbstractController
         }
         //
         if (Request::exists('page')) {
-            $list = $builder->orderBy('user_departments.name')->paginate(Base::getPaginate(100, 10));
+            $list = $builder->orderBy('userid')->paginate(Base::getPaginate(100, 10));
         } else {
-            $list = $builder->orderBy('user_departments.name')->take(Base::getPaginate(100, 10, 'take'))->get();
+            $list = $builder->orderBy('userid')->take(Base::getPaginate(100, 10, 'take'))->get();
         }
+
         //
         $list->transform(function (User $userInfo) use ($user, $state) {
             $tags = [];
+            $departmentOne = '';
             $dep = $userInfo->getDepartmentName();
+            $depShow = explode(', ', $dep);
+            if ($depShow) {
+                foreach ($depShow as $key => $item) {
+                    $item = preg_replace("/\(M\)$/", "", trim($item));
+                    $depShow[$key] = $item;
+                }
+                $departmentOne = implode(', ', $depShow);
+            }
             $dep = array_values(array_filter(explode(",", $dep), function($item) {
                 return preg_match("/\(M\)$/", $item);
             }));
@@ -606,6 +604,7 @@ class UsersController extends AbstractController
                 }
             }
             $userInfo->tags = $tags;
+            $userInfo->department_one = $departmentOne;
             //
             if ($state === 1) {
                 $userInfo->online = $userInfo->getOnlineStatus();

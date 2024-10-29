@@ -229,7 +229,6 @@ class WebSocketDialogMsgTask extends AbstractTask
                     };
                 } elseif ($dialog->type == 'user') {
                     preg_match('/data-id="(\d+)"/', $msg->msg['text'], $matches);
-                    info('msg', $msg->toArray());
                     if (isset($matches[1])) {
                         $task = ProjectTask::whereId($matches[1])->first();
                         if (!empty($task)) {
@@ -245,7 +244,11 @@ class WebSocketDialogMsgTask extends AbstractTask
                 } else {
                     $prefix = '';
                 }
-                $text = $prefix . $msg->previewMsg() . $suffix;
+                $msgUserid = '系统消息';
+                if ($msg->userid) {
+                    $msgUserid = $msg->userid . '：';
+                }
+                $text = $prefix . $msgUserid . $msg->previewMsg() . $suffix;
                 $baseUrl = config('app.base_url');
                 $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id={$dialog->id}\">$text</a>";
                 WecomService::sendTextMessage($wecomIds, $wecomHtml);
