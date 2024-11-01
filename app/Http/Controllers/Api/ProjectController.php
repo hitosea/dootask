@@ -1019,9 +1019,9 @@ class ProjectController extends AbstractController
                 $builder->betweenTime(Carbon::parse($time[0])->startOfDay(), Carbon::parse($time[1])->endOfDay());
             }
         }
-        if ($timerange->updated) {
-            $builder->where('project_tasks.updated_at', '>', $timerange->updated);
-        }
+//        if ($timerange->updated) {
+//            $builder->where('project_tasks.updated_at', '>', $timerange->updated);
+//        }
         //
         if ($archived == 'yes') {
             $builder->whereNotNull('project_tasks.archived_at');

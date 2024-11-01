@@ -582,7 +582,7 @@ class UsersController extends AbstractController
             if ($depShow) {
                 foreach ($depShow as $key => $item) {
                     $item = preg_replace("/\(M\)$/", "", trim($item));
-                    $depShow[$key] = $item;
+                    $depShow[$key] = preg_replace('/[（(][^（(]*[）)]$/u', '', $item);
                 }
                 $departmentOne = implode(', ', $depShow);
             }

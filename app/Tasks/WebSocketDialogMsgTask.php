@@ -244,11 +244,14 @@ class WebSocketDialogMsgTask extends AbstractTask
                 } else {
                     $prefix = '';
                 }
-                $msgUserid = '系统消息';
+                $msgUser = '系统消息：';
                 if ($msg->userid) {
-                    $msgUserid = $msg->userid . '：';
+                    $user = User::whereUserid($msg->userid)->first();
+                    if (!empty($user)) {
+                        $msgUser = ($user->nickname ?: $user->email) . '：';
+                    }
                 }
-                $text = $prefix . $msgUserid . $msg->previewMsg() . $suffix;
+                $text = $prefix . $msgUser . $msg->previewMsg() . $suffix;
                 $baseUrl = config('app.base_url');
                 $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id={$dialog->id}\">$text</a>";
                 WecomService::sendTextMessage($wecomIds, $wecomHtml);
