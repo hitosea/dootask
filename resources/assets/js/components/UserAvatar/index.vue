@@ -15,7 +15,7 @@
         </div>
         <div v-if="showName" class="avatar-name" :style="nameStyle">
             <div v-if="user.bot" class="taskfont bot">&#xe68c;</div>
-            <span>{{departmentName ? departmentName + ' - ' : ''}}{{nameText || user.nickname}}</span>
+            <span style="overflow-x: auto;text-overflow: clip;">{{nameText || user.nickname}}{{departmentName ? ' - ' + departmentName : ''}}</span>
         </div>
     </div>
 </template>
