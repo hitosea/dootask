@@ -117,7 +117,7 @@
                             <i v-else-if="item.group_type=='okr'" class="taskfont icon-avatar task">&#xe6f4;</i>
                             <Icon v-else class="icon-avatar" type="ios-people" />
                             <div class="avatar-name">
-                                <span style="overflow-x: auto;text-overflow: clip;">{{item.department_one ? item.department_one + ' - ' : ''}}{{item.name}}</span>
+                                <span style="overflow-x: auto;text-overflow: clip;">{{item.name}}{{item.department_one ? ' - ' + item.department_one : ''}}</span>
                             </div>
                         </div>
                         <UserAvatar v-else class="user-modal-avatar" :userid="item.userid" :size="40" show-name :department-name="item.department_one"/>
