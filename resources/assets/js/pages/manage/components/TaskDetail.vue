@@ -25,9 +25,6 @@
                 @on-keydown="onNameKeydown"
             />
         </div>
-        <div v-if="taskDetail.parent_type == 'main'" class="subtask-detail">
-            <Icon class="detail" type="ios-eye-outline" @click="openSubtask(taskDetail, true)" />
-        </div>
         <DatePicker
             v-model="timeValue"
             :open="timeOpen"
@@ -46,6 +43,9 @@
             </div>
             <Icon v-else class="clock" type="ios-clock-outline" @click="openTime" />
         </DatePicker>
+        <div v-if="taskDetail.parent_type == 'main'" class="subtask-detail">
+            <Icon class="detail" type="ios-eye-outline" @click="openSubtask(taskDetail, true)" />
+        </div>
         <UserSelect
             class="subtask-avatar"
             v-model="ownerData.owner_userid"
@@ -53,7 +53,7 @@
             :avatar-size="20"
             :title="$L('修改负责人')"
             :add-icon="false"
-            :project-id="0"
+            :project-id="taskDetail.project_id"
             :before-submit="onOwner"/>
     </li>
     <!--主任务-->
@@ -181,7 +181,7 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :title="$L('修改负责人')"
-                            :project-id="0"
+                            :project-id="taskDetail.project_id"
                             :add-icon="false"
                             :before-submit="onOwner"/>
                     </FormItem>
@@ -196,7 +196,7 @@
                             :multiple-max="10"
                             :avatar-size="28"
                             :title="$L(getAssist.length > 0 ? '修改协助人员' : '添加协助人员')"
-                            :project-id="0"
+                            :project-id="taskDetail.project_id"
                             :disabled-choice="assistData.disabled"
                             :add-icon="false"
                             :before-submit="onAssist"/>

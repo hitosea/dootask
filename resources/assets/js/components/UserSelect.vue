@@ -62,7 +62,7 @@
             </div>
 
             <!-- 切换 -->
-            <ul v-if="isWhole" class="user-modal-switch">
+            <ul class="user-modal-switch">
                 <li
                     v-for="item in switchItems" :key="item.key"
                     :class="{active:switchActive===item.key}"
@@ -272,11 +272,6 @@ export default {
     },
     data() {
         return {
-            switchItems: [
-                {key: 'recent', label: '最近'},
-                {key: 'contact', label: '通讯录'},
-                {key: 'project', label: '项目成员'},
-            ],
             switchActive: 'recent',
 
             loadIng: 0,     // 搜索框等待效果
@@ -312,11 +307,7 @@ export default {
 
         isWhole: {
             handler(value) {
-                if (value || this.onlyGroup) {
-                    this.switchActive = 'recent'
-                } else {
-                    this.switchActive = 'contact'
-                }
+                this.switchActive = 'recent'
             },
             immediate: true
         },
@@ -354,11 +345,14 @@ export default {
         lists({switchActive, searchKey, recents, contacts, projects}) {
             switch (switchActive) {
                 case 'recent':
-                    if (searchKey) {
-                        return recents.filter(item => {
-                            return `${item.name}`.indexOf(searchKey) > -1
-                        })
+                    if (this.projectId == 0) {
+                        if (searchKey) {
+                            return recents.filter(item => {
+                                return `${item.name}`.indexOf(searchKey) > -1
+                            })
+                        }
                     }
+
                     return recents
 
                 case 'contact':
@@ -403,7 +397,22 @@ export default {
             } else {
                 return placeholder;
             }
-        }
+        },
+
+        switchItems() {
+            if (this.projectId == 0) {
+                return [
+                    {key: 'recent', label: '最近'},
+                    {key: 'contact', label: '通讯录'},
+                    {key: 'project', label: '项目成员'},
+                ]
+            } else {
+                return [
+                    {key: 'recent', label: '项目成员'},
+                    {key: 'contact', label: '通讯录'},
+                ]
+            }
+        },
     },
     methods: {
         isUncancelable(value) {
@@ -472,34 +481,80 @@ export default {
         },
 
         searchRecent() {
-            this.recents = this.cacheDialogs.filter(dialog => {
-                if (this.onlyGroup && dialog.type != 'group') {
-                    return false
-                }
-                if (dialog.name === undefined || dialog.dialog_delete === 1) {
-                    return false
-                }
-                if (!this.showBot && dialog.bot) {
-                    return false
-                }
-                return this.showDialog || dialog.type === 'user'
-            }).sort((a, b) => {
-                if (a.top_at || b.top_at) {
-                    return $A.Date(b.top_at) - $A.Date(a.top_at);
-                }
-                if (a.todo_num > 0 || b.todo_num > 0) {
-                    return b.todo_num - a.todo_num;
-                }
-                return $A.Date(b.last_at) - $A.Date(a.last_at);
-            }).map(({id, name, type, group_type, avatar, dialog_user}) => {
-                return {
-                    name,
-                    type,
-                    group_type,
-                    avatar,
-                    userid: type === 'user' ? dialog_user.userid : `d:${id}`,
-                }
-            });
+            if (this.projectId == 0) {
+                this.recents = this.cacheDialogs.filter(dialog => {
+                    if (this.onlyGroup && dialog.type != 'group') {
+                        return false
+                    }
+                    if (dialog.name === undefined || dialog.dialog_delete === 1) {
+                        return false
+                    }
+                    if (!this.showBot && dialog.bot) {
+                        return false
+                    }
+                    return this.showDialog || dialog.type === 'user'
+                }).sort((a, b) => {
+                    if (a.top_at || b.top_at) {
+                        return $A.Date(b.top_at) - $A.Date(a.top_at);
+                    }
+                    if (a.todo_num > 0 || b.todo_num > 0) {
+                        return b.todo_num - a.todo_num;
+                    }
+                    return $A.Date(b.last_at) - $A.Date(a.last_at);
+                }).map(({id, name, type, group_type, avatar, dialog_user}) => {
+                    return {
+                        name,
+                        type,
+                        group_type,
+                        avatar,
+                        userid: type === 'user' ? dialog_user.userid : `d:${id}`,
+                    }
+                });
+            } else {
+                let key = this.searchKey;
+                //
+                this.waitIng++
+                setTimeout(() => {
+                    if (this.searchKey != key) {
+                        this.waitIng--
+                        return;
+                    }
+                    setTimeout(() => {
+                        this.loadIng++
+                    }, 300)
+                    this.$store.dispatch("call", {
+                        url: 'users/search',
+                        data: {
+                            keys: {
+                                key,
+                                project_id: this.projectId,
+                                no_project_id: this.noProjectId,
+                                dialog_id: this.dialogId,
+                                bot: this.showBot && key ? 2 : 0,
+                                disable: this.showDisable && key ? 2 : 0,
+                            },
+                            take: 50
+                        },
+                    }).then(({data}) => {
+                        data = data.map(item => Object.assign(item, {type: 'user'}))
+                        this.recents = data
+                        //
+                        const index = this.searchCache.findIndex(item => item.key == key);
+                        const tmpData = {type: 'contact', key, data, time: $A.Time()};
+                        if (index > -1) {
+                            this.searchCache.splice(index, 1, tmpData)
+                        } else {
+                            this.searchCache.push(tmpData)
+                        }
+                    }).catch(({msg}) => {
+                        this.recents = []
+                        $A.messageWarning(msg)
+                    }).finally(_ => {
+                        this.loadIng--;
+                        this.waitIng--;
+                    });
+                }, this.searchCache.length > 0 ? 300 : 0)
+            }
         },
 
         searchContact() {
@@ -523,7 +578,7 @@ export default {
                     data: {
                         keys: {
                             key,
-                            project_id: this.projectId,
+                            project_id: 0,
                             no_project_id: this.noProjectId,
                             dialog_id: this.dialogId,
                             bot: this.showBot && key ? 2 : 0,
