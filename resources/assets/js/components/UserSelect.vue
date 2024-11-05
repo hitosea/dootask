@@ -501,12 +501,13 @@ export default {
                         return b.todo_num - a.todo_num;
                     }
                     return $A.Date(b.last_at) - $A.Date(a.last_at);
-                }).map(({id, name, type, group_type, avatar, dialog_user}) => {
+                }).map(({id, name, type, group_type, avatar, dialog_user, department_one}) => {
                     return {
                         name,
                         type,
                         group_type,
                         avatar,
+                        department_one,
                         userid: type === 'user' ? dialog_user.userid : `d:${id}`,
                     }
                 });

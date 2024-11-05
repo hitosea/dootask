@@ -91,7 +91,7 @@ class WebSocketDialog extends AbstractModel
             ->join('web_socket_dialog_users as u', 'web_socket_dialogs.id', '=', 'u.dialog_id')
             ->where('u.userid', $userid);
         if ($updated) {
-            $builder->where('u.updated_at', '>', $updated);
+//            $builder->where('u.updated_at', '>', $updated);
         }
         $list = $builder
             ->orderByDesc('u.top_at')
@@ -239,6 +239,15 @@ class WebSocketDialog extends AbstractModel
                     $this->userimg = $basic->userimg;
                     $this->bot = $basic->getBotOwner();
                     $this->quick_msgs = UserBot::quickMsgs($basic->email);
+                    $dep = $basic->getDepartmentName();
+                    $depShow = explode(', ', $dep);
+                    if ($depShow) {
+                        foreach ($depShow as $key => $item) {
+                            $item = preg_replace("/\(M\)$/", "", trim($item));
+                            $depShow[$key] = preg_replace('/[（(][^（(]*[）)]$/u', '', $item);
+                        }
+                        $this->department_one = implode(', ', $depShow);
+                    }
                 } else {
                     $this->name = 'non-existent';
                     $this->dialog_delete = 1;
