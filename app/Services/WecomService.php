@@ -301,6 +301,7 @@ class WecomService
             Log::error('wecom-taskPush', ['msg' => $errMsg]);
             return false;
         }
+        info('[推送wecom]', ['content' => $content]);
         return true;
     }
 
