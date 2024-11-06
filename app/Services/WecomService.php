@@ -273,6 +273,7 @@ class WecomService
     {
         $setting = Base::setting('wecomSetting');
         if (!$setting) {
+            Log::error('wecom-taskPush', ['msg' => '获取不到企微配置']);
             return false;
         }
         //
