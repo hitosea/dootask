@@ -209,6 +209,7 @@ class WebSocketDialogMsgTask extends AbstractTask
         // 推送wecom
         if (!empty($wecomUserid)) {
             $wecomIds = User::whereIn('userid', $wecomUserid)->where('wecom_id', '!=', '')->pluck('wecom_id')->toArray();
+            info('[推送wecom]', ['wecom_ids' => $wecomIds]);
             if (!empty($wecomIds)) {
                 $prefix = '[%s]';
                 $suffix = '';
@@ -252,6 +253,7 @@ class WebSocketDialogMsgTask extends AbstractTask
                     }
                 }
                 $text = $prefix . $msgUser . $msg->previewMsg() . $suffix;
+                info('[推送wecom]', ['text' => $text]);
                 $baseUrl = config('app.base_url');
                 $wecomHtml = "<a href=\"$baseUrl/manage/messenger?dialog_id={$dialog->id}\">$text</a>";
                 WecomService::sendTextMessage($wecomIds, $wecomHtml);
