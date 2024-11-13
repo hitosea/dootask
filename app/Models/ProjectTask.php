@@ -907,12 +907,17 @@ class ProjectTask extends AbstractModel
                 // 协助人员
                 if (Arr::exists($data, 'assist')) {
                     $array = [];
+                    $pushUserIds = [];
                     $assist = is_array($data['assist']) ? $data['assist'] : [$data['assist']];
                     if (count($assist) > 10) {
                         throw new ApiException('任务协助人员最多不能超过10个');
                     }
                     foreach ($assist as $uid) {
                         if (intval($uid) == 0) continue;
+                        //
+                        if (!ProjectTaskUser::where(['userid' => $uid, 'task_id' => $this->id])->exists()) {
+                            $pushUserIds[] = $uid;
+                        }
                         //
                         ProjectTaskUser::updateInsert([
                             'task_id' => $this->id,
@@ -944,6 +949,9 @@ class ProjectTask extends AbstractModel
                     }
                     $updateMarking['is_update_project'] = true;
                     $this->syncDialogUser();
+                    if ($pushUserIds) {
+                        $this->taskPush($pushUserIds, 0);
+                    }
                 }
                 // 背景色
                 if (Arr::exists($data, 'color') && $this->color != $data['color']) {
