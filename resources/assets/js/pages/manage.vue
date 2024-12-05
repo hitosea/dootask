@@ -267,8 +267,9 @@
             </Form>
             <div slot="footer" class="adaption">
                 <Button type="default" @click="createGroupShow=false">{{$L('取消')}}</Button>
-                <Button type="primary" :loading="createGroupLoad > 0" @click="submitCreateGroup">{{$L('创建')}}</Button>
+                <Button type="primary" :loading="createGroupLoad > 0" @click="submitCreateGroup(false)">{{$L('创建')}}</Button>
             </div>
+            <GroupExistTips ref="groupExistTipsRef" @onContinue="submitCreateGroup(true)"/>
         </Modal>
 
         <!--导出任务统计-->
@@ -366,6 +367,7 @@ import UserSelect from "../components/UserSelect.vue";
 import ImgUpload from "../components/ImgUpload.vue";
 import ApproveDetails from "./manage/approve/details.vue";
 import notificationKoro from "notification-koro1";
+import GroupExistTips from "./manage/components/GroupExistTips";
 import {Store} from "le5le-store";
 
 export default {
@@ -388,7 +390,8 @@ export default {
         TeamManagement,
         ProjectArchived,
         MicroApps,
-        ComplaintManagement
+        ComplaintManagement,
+        GroupExistTips
     },
     directives: {longpress},
     data() {
@@ -1045,7 +1048,18 @@ export default {
             this.createGroupShow = true
         },
 
-        submitCreateGroup() {
+        submitCreateGroup(affirm = false) {
+            if (!affirm) {
+                this.$refs.groupExistTipsRef.isExistGroup({
+                    userids: this.createGroupData.userids,
+                }, 600).then(res => {
+                    if (!res) {
+                        this.submitCreateGroup(true)
+                    }
+                });
+                return
+            }
+            
             this.createGroupLoad++;
             this.$store.dispatch("call", {
                 url: 'dialog/group/add',
@@ -1063,6 +1077,7 @@ export default {
                 this.createGroupLoad--;
             });
         },
+
 
         addDialogMsg(data) {
             if (!this.natificationReady && !this.$isEEUiApp) {

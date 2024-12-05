@@ -2774,4 +2774,57 @@ class DialogController extends AbstractController
             'list' => Extranet::sticker($key)
         ]);
     }
+     /**
+     * @api {get} api/dialog/group/check          57. 群组检查
+     *
+     * @apiDescription 需要token身份
+     * @apiVersion 1.0.0
+     * @apiGroup dialog
+     * @apiName group__check
+     *
+     * @apiParam {Array} userids                群成员，格式: [userid1, userid2, userid3]
+     *
+     * @apiSuccess {Number} ret     返回状态码（1正确、0错误）
+     * @apiSuccess {String} msg     返回信息（错误描述）
+     * @apiSuccess {Object} data    返回数据
+     */
+    public function group__check()
+    {
+        $user = User::auth();
+        //
+        $userids = Request::input('userids');
+        //
+        if (!is_array($userids)) {
+            return Base::retError('请选择群成员');
+        }
+        $userids = array_merge([$user->userid], $userids);
+        $userids = array_values(array_filter(array_unique($userids)));
+        if (count($userids) < 2) {
+            return Base::retError('群成员至少2人');
+        }
+        //
+        $dialogs = WebSocketDialog::whereGroupType('user')->whereType('group')->get();
+
+        $commonDialogs = WebSocketDialogUser::select('dialog_id')
+                ->whereIn('dialog_id', $dialogs->pluck('id'))
+                ->whereIn('userid', $userids)
+                ->groupBy('dialog_id')
+                ->havingRaw('COUNT(DISTINCT userid) = ?', [count($userids)])
+                ->pluck('dialog_id') // 转为一列数据
+                ->toArray();         // 转为纯数组
+        
+        $result = $dialogs->whereIn('id', $commonDialogs)->map(function ($dialog) {
+            return [
+                'dialog_id' => $dialog->id,
+                'avatar'    => $dialog->avatar,
+                'name'      => $dialog->name, // 假设 `name` 是对话的名称字段
+                'type'      => $dialog->type, // 假设 `type` 是对话类型字段
+                'group_type'=> $dialog->group_type, // 假设 `group_type` 是分组类型字段
+            ];
+        })->values();
+
+        return Base::retSuccess('success', [
+            'list' => $result
+        ]);
+    }
 }
