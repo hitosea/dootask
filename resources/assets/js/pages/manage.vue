@@ -269,7 +269,7 @@
                 <Button type="default" @click="createGroupShow=false">{{$L('取消')}}</Button>
                 <Button type="primary" :loading="createGroupLoad > 0" @click="submitCreateGroup(false)">{{$L('创建')}}</Button>
             </div>
-            <GroupExistTips ref="groupExistTipsRef" @onContinue="submitCreateGroup(true)"/>
+            <GroupExistTips ref="groupExistTipsRef" @onContinue="submitCreateGroup(true)" @close="disableCreateGroup"/>
         </Modal>
 
         <!--导出任务统计-->
@@ -1046,6 +1046,10 @@ export default {
             }
             this.createGroupData = {userids, uncancelable: [this.userId]}
             this.createGroupShow = true
+        },
+
+        disableCreateGroup() {
+            this.createGroupShow = false;
         },
 
         submitCreateGroup(affirm = false) {

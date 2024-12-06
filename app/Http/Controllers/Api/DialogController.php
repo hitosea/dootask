@@ -2804,22 +2804,36 @@ class DialogController extends AbstractController
         }
         //
         $dialogs = WebSocketDialog::whereGroupType('user')->whereType('group')->get();
+        $dialogIds = $dialogs->pluck('id');
 
+        // 查找包含所有指定用户的群组(共有群组)
         $commonDialogs = WebSocketDialogUser::select('dialog_id')
-                ->whereIn('dialog_id', $dialogs->pluck('id'))
+                ->whereIn('dialog_id', $dialogIds)
                 ->whereIn('userid', $userids)
                 ->groupBy('dialog_id')
                 ->havingRaw('COUNT(DISTINCT userid) = ?', [count($userids)])
-                ->pluck('dialog_id') // 转为一列数据
-                ->toArray();         // 转为纯数组
+                ->pluck('dialog_id')
+                ->toArray();
+
+        // 查找只包含指定用户的群组(专有群组)
+        $exclusiveDialogs = WebSocketDialogUser::select('dialog_id')
+                ->whereIn('dialog_id', $dialogIds)
+                ->groupBy('dialog_id')
+                ->havingRaw('COUNT(DISTINCT userid) = ?', [count($userids)])
+                ->havingRaw('COUNT(CASE WHEN userid IN (' . implode(',', $userids) . ') THEN 1 END) = ?', [count($userids)])
+                ->pluck('dialog_id')
+                ->toArray();
+
+        $allDialogIds = array_unique(array_merge($commonDialogs, $exclusiveDialogs));
         
-        $result = $dialogs->whereIn('id', $commonDialogs)->map(function ($dialog) {
+        $result = $dialogs->whereIn('id', $allDialogIds)->map(function ($dialog) use ($exclusiveDialogs) {
             return [
                 'dialog_id' => $dialog->id,
                 'avatar'    => $dialog->avatar,
-                'name'      => $dialog->name, // 假设 `name` 是对话的名称字段
-                'type'      => $dialog->type, // 假设 `type` 是对话类型字段
-                'group_type'=> $dialog->group_type, // 假设 `group_type` 是分组类型字段
+                'name'      => $dialog->name, 
+                'type'      => $dialog->type, 
+                'group_type'=> $dialog->group_type,
+                'is_exclusive' => in_array($dialog->id, $exclusiveDialogs)
             ];
         })->values();
 
