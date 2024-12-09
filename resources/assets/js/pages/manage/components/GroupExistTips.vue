@@ -122,6 +122,14 @@ export default {
 </script>
 
 <style>
+.group-exist-tips .ivu-modal-body{
+    max-height: 500px;
+    overflow: auto;
+}
+</style>
+
+<style scoped>
+
 .group-section {
     margin-bottom: 16px;
 }
@@ -138,6 +146,7 @@ export default {
     margin: 4px 0;
     transition: background-color 0.2s;
 }
+
 
 .group-item:hover {
     background-color: #f5f5f5;
@@ -168,6 +177,9 @@ export default {
 .dialog-avatar {
     margin-right: 12px;
     flex-shrink: 0;
+}
+body.dark-mode-reverse .icon-avatar{
+    color: #1c1917;
 }
 
 .group-name {
